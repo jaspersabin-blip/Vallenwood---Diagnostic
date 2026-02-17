@@ -1,13 +1,18 @@
-/templates
-  exec_summary.md
-  full_diagnostic.md
-  prompt_exec_summary.txt
-  prompt_full_diagnostic.txt
+# Brand-to-GTM OS Diagnostic
 
-/scoring
-  scoring_rules.md
-  scoring_map.json
+This repository contains:
 
-/samples
-  sample_submission.json
-  sample_outputs.md
+- Scoring logic for the diagnostic
+- AI prompt templates
+- Output templates (Exec Summary + Full Diagnostic)
+- Sample submissions for testing
+
+## Architecture
+
+Form → Zapier → Score → AI Generation → Google Doc → PDF → Email
+
+## Segmentation Bands
+
+0–6: Foundational
+7–12: Scaling
+13+: High-Leverage Alignment
