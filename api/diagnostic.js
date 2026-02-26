@@ -1,4 +1,8 @@
 // api/diagnostic.js
+// Drop-in replacement for your current file.
+// Keeps your existing Zapier fields (email_subject, email_body_text, etc.)
+// Adds a new structured `report` object (schema v1.0) for future PDF/LLM expansion.
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
@@ -10,12 +14,15 @@ export default async function handler(req, res) {
 
   const payload = req.body || {};
   const answers = payload.answers || {};
-  const tier = payload.tier || "exec"; // "exec" | "audit"
+
+  // Normalize tier naming (support both "audit" and "full" if you ever use it)
+  let tier = payload.tier || "exec"; // "exec" | "audit"
+  if (tier === "full") tier = "audit";
+
   const clientEmail = payload.client_email || "";
   const clientName = payload.client_name || "";
 
   const config = getConfig();
-
   const scored = score(answers, config);
 
   const content =
@@ -23,7 +30,24 @@ export default async function handler(req, res) {
       ? renderAudit({ scored, answers, clientName })
       : renderExecSummary({ scored, answers, clientName });
 
+  const report = buildReport({
+    tier,
+    clientName,
+    clientEmail,
+    answers,
+    scored,
+    config,
+    content
+  });
+
+  // Backward-compatible response for existing Zapier mappings:
   return res.status(200).json({
+    // ✅ new structured payload for PDF/LLM later
+    report,
+    report_json: JSON.stringify(report),
+
+
+    // ✅ keep old keys for now (so you don’t break Zaps)
     tier,
     overall_score: scored.total,
     band: scored.band,
@@ -37,6 +61,286 @@ export default async function handler(req, res) {
     client_email: clientEmail
   });
 }
+
+/* ---------------------------
+   Report Builder (Schema v1.0)
+---------------------------- */
+
+function buildReport({ tier, clientName, clientEmail, answers, scored, config, content }) {
+  const generatedAt = new Date().toISOString();
+
+  const pillarScoresArray = [
+    pillarObj("positioning", scored.pillars.positioning),
+    pillarObj("value_architecture", scored.pillars.value_architecture),
+    pillarObj("pricing_packaging", scored.pillars.pricing_packaging),
+    pillarObj("gtm_focus", scored.pillars.gtm_focus),
+    pillarObj("measurement", scored.pillars.measurement)
+  ];
+
+  const primary = buildPrimaryConstraint(scored);
+
+  const baseReport = {
+    schema_version: "1.0",
+    generated_at: generatedAt,
+    tier,
+    client: {
+      company_name: null,
+      contact_name: clientName || null,
+      contact_email: clientEmail || "",
+      website: null
+    },
+    inputs: {
+      source: "honeybook",
+      raw_answers: answers,
+      normalized_answers: normalizeAnswers(answers)
+    },
+    scoring: {
+      overall_score: scored.total,
+      overall_max: 25,
+      band: scored.band,
+      primary_constraint: primary,
+      pillar_scores: pillarScoresArray,
+      flags: (scored.flags || []).map((f, i) => ({
+        key: `flag_${i + 1}`,
+        severity: "medium",
+        title: f,
+        evidence: [],
+        recommendation: ""
+      }))
+    },
+    narrative: buildNarrative({ scored }),
+    deliverables: {
+      email: {
+        subject: content.subject,
+        body_text: content.bodyText,
+        body_html: null
+      },
+      pdf: {
+        title: tier === "audit" ? "Brand-to-GTM OS Strategic Audit" : "Brand-to-GTM OS Executive Summary",
+        pdf_url: null,
+        html_url: null,
+        pages_estimate: tier === "audit" ? 10 : 3
+      }
+    },
+    disclaimer: {
+      ai_assisted: false, // flip to true once you add LLM output
+      limitations: [
+        "This diagnostic is based on provided inputs and deterministic scoring rules.",
+        "Competitive analysis and pricing insights (when present) should be validated with market research."
+      ]
+    }
+  };
+
+  if (tier === "audit") {
+    baseReport.full_tier = buildFullTierPlaceholder({ scored, answers });
+  } else {
+    baseReport.exec_tier = buildExecTierUpsell({ scored });
+  }
+
+  return baseReport;
+}
+
+function pillarObj(key, score) {
+  return {
+    key,
+    label: prettyPillar(key),
+    score,
+    max: 5,
+    band: score >= 4 ? "Strong" : score >= 3 ? "Mixed" : "At Risk",
+    signals: [],
+    risks: score <= 2 ? ["Pillar appears underdeveloped based on structured signals."] : []
+  };
+}
+
+function buildPrimaryConstraint(scored) {
+  const key = scored.primaryConstraint;
+  return {
+    key,
+    label: prettyPillar(key),
+    why_it_matters:
+      "This pillar most constrains performance across brand clarity, pricing power, and go-to-market execution.",
+    symptoms: scored.flags?.length
+      ? scored.flags.slice(0, 3)
+      : ["No strong symptom flags detected from structured rules."],
+    downstream_impacts: [
+      "Lower win rates in competitive deals",
+      "Discounting pressure and margin compression",
+      "Inconsistent messaging and weak differentiation"
+    ]
+  };
+}
+
+function buildNarrative({ scored }) {
+  const headline = `${scored.band}: primary constraint is ${prettyPillar(scored.primaryConstraint)}`;
+  const observations = (scored.flags || []).length
+    ? scored.flags.slice(0, 4)
+    : ["No major red flags detected from structured inputs."];
+
+  return {
+    executive_summary: {
+      headline,
+      summary_paragraph:
+        "This diagnostic reflects alignment across five pillars of the Brand-to-GTM Operating System. The goal is to identify the constraint that, if improved, will unlock the most leverage.",
+      key_observations: observations,
+      what_to_do_next: [
+        "Confirm the primary constraint with a short review call",
+        "Prioritize 1–2 quick wins to improve clarity and commercial outcomes",
+        "Decide if a full Strategic Audit is warranted"
+      ]
+    },
+    pillar_interpretations: [
+      {
+        pillar_key: scored.primaryConstraint,
+        interpretation:
+          "Your lowest-scoring pillar is likely creating downstream friction across differentiation, pricing power, and GTM efficiency.",
+        quick_wins: [
+          "Define a sharper category POV and differentiation claim",
+          "Anchor value in measurable outcomes (economic proof)",
+          "Reduce discounting by tightening packaging and guardrails"
+        ],
+        questions_to_answer: [
+          "What do we win on besides price?",
+          "Which customer outcomes are repeatable and provable?",
+          "What is the simplest packaging structure customers understand quickly?"
+        ]
+      }
+    ]
+  };
+}
+
+function buildExecTierUpsell({ scored }) {
+  return {
+    top_moves_30_days: [
+      {
+        title: "Clarify positioning in one sentence",
+        why: "Positioning clarity reduces sales friction and improves pricing power.",
+        how: [
+          "Write a category POV + differentiation claim",
+          "Validate with 3 customer calls",
+          "Align homepage + pitch deck messaging"
+        ],
+        expected_impact: "Improved consistency in sales conversations and competitive win rates.",
+        effort: "low"
+      },
+      {
+        title: "Quantify value with 2–3 proof points",
+        why: "Economic proof reduces discounting and speeds deal cycles.",
+        how: [
+          "Identify top 2 metrics customers care about",
+          "Build 1-page ROI story template",
+          "Instrument one customer case quickly"
+        ],
+        expected_impact: "Higher close rate with fewer concessions.",
+        effort: "medium"
+      },
+      {
+        title: "Tighten pricing guardrails",
+        why: "Discounting often signals weak packaging and unclear value anchors.",
+        how: [
+          "Define discount thresholds",
+          "Standardize approval workflow",
+          "Improve tier naming and feature/value ladders"
+        ],
+        expected_impact: "Better margin stability and improved deal discipline.",
+        effort: "medium"
+      }
+    ],
+    upgrade_positioning: {
+      headline: "What the Full Strategic Audit Unlocks",
+      value_bullets: [
+        "A pillar-by-pillar diagnosis with specific root-cause hypotheses",
+        "SWOT tied directly to Brand-to-GTM levers",
+        "Competitive pricing & packaging audit (hypotheses + what-to-verify)",
+        "A prioritized 30/90-day roadmap + first sprint plan"
+      ],
+      what_you_get: [
+        "SWOT tied to Brand-to-GTM pillars",
+        "Competitive pricing & packaging audit (hypotheses + validation plan)",
+        "Prioritized 30/90-day roadmap with sprint plan"
+      ],
+      offer: {
+        name: "Full Strategic Audit",
+        price_usd: 499,
+        cta_label: "Upgrade to Full Audit",
+        cta_url: null
+      }
+    }
+  };
+}
+
+function buildFullTierPlaceholder({ scored, answers }) {
+  // Placeholder v1.0. You’ll replace these sections with LLM output later.
+  return {
+    swot: {
+      strengths: [{ point: "Strength placeholder", evidence: [] }],
+      weaknesses: [{ point: "Weakness placeholder", evidence: [] }],
+      opportunities: [{ point: "Opportunity placeholder", evidence: [] }],
+      threats: [{ point: "Threat placeholder", evidence: [] }]
+    },
+    competitive_context: {
+      category: answers["What category do you compete in?"] || null,
+      most_compared_to: answers["Who do customers compare you to most often?"]
+        ? [answers["Who do customers compare you to most often?"]]
+        : [],
+      competitive_archetypes: [],
+      positioning_hypotheses: []
+    },
+    pricing_packaging_audit: {
+      current_state_signals: [],
+      pricing_power_risks: [],
+      discounting_diagnosis: "",
+      packaging_issues: [],
+      hypotheses_to_test: [],
+      what_to_validate: [],
+      first_fixes: []
+    },
+    roadmap: {
+      north_star: "Establish clear positioning and value proof to reduce discounting and improve GTM efficiency.",
+      principles: ["Clarity over breadth", "Proof over promises", "Focus over fragmentation"],
+      thirty_day: [],
+      ninety_day: [],
+      six_to_twelve_month: []
+    },
+    first_sprint_plan: { weeks: [] },
+    appendix: {
+      response_summary: Object.entries(answers).map(([question, answer]) => ({
+        question,
+        answer: String(answer ?? ""),
+        notes: null
+      }))
+    }
+  };
+}
+
+function normalizeAnswers(answers) {
+  return {
+    annual_revenue: answers["Annual Revenue"] ?? null,
+    revenue_model: answers["Primary Revenue Model"] ?? null,
+    acv: answers["Average Contract Value (ACV)"] ?? null,
+    sales_cycle: answers["Average Sales Cycle Length"] ?? null,
+    close_rate: answers["Close Rate (%)"] ?? null,
+    category: answers["What category do you compete in?"] ?? null,
+    compared_to: answers["Who do customers compare you to most often?"] ?? null,
+    win_reason: answers["Why do you most often win deals?"] ?? null,
+    lose_reason: answers["Why do you most often lose deals?"] ?? null,
+    positioning_consistency: answers["Do customers describe your company consistently?"] ?? null,
+    roi_repeatable: answers["Can you quantify ROI for most customers?"] ?? null,
+    sales_lead: answers["Sales conversations primarily lead with:"] ?? null,
+    discounting: answers["How often are discounts required to close deals?"] ?? null,
+    pricing_clarity: answers["Do customers clearly understand your pricing tiers?"] ?? null,
+    gross_margin: answers["What is your gross margin (%)?"] ?? null,
+    acquisition_channels: answers["What are your primary acquisition channels (select up to 3)"] ?? null,
+    cac_by_channel: answers["Do you know CAC by channel?"] ?? null,
+    growth_status: answers["How would you rate your growth status?"] ?? null,
+    marketing_measured_by: answers["Marketing is measured primarily by:"] ?? null,
+    attribution_trusted: answers["Is attribution trusted internally?"] ?? null,
+    forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null
+  };
+}
+
+/* ---------------------------
+   Existing Scoring + Copy (unchanged)
+---------------------------- */
 
 function getConfig() {
   return {
@@ -141,7 +445,7 @@ Key observations:
 ${topFlags.length ? topFlags.map(f => `- ${f}`).join("\n") : "- No major red flags detected from the structured inputs."}
 
 Next step:
-Reply to this email or book your 30-minute intro call to walk through the findings and decide whether a full Strategic Audit ($499) is warranted.
+Reply to this email or book your 30-minute intro call to walk through the summary and learn more about the benefits of a full Brand-to-GTM OS diagnostic.
 
 — Jasper
 `;
@@ -150,8 +454,6 @@ Reply to this email or book your 30-minute intro call to walk through the findin
 }
 
 function renderAudit({ scored, answers, clientName }) {
-  // This is a v1 “full audit” as a detailed text report.
-  // Later we can upgrade to PDF output.
   const bodyText =
 `Hi ${clientName || "there"},
 
