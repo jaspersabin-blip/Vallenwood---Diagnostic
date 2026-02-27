@@ -13,7 +13,17 @@ export default async function handler(req, res) {
   }
 
   const payload = req.body || {};
-  const answers = payload.answers || {};
+  const answers = payload.answers;
+
+  if (
+    answers === undefined ||
+    answers === null ||
+    typeof answers !== "object" ||
+    Array.isArray(answers) ||
+    Object.keys(answers).length === 0
+  ) {
+    return res.status(400).json({ error: "Invalid payload: 'answers' must be a non-empty object." });
+  }
 
   // Normalize tier naming (support both "audit" and "full" if you ever use it)
   let tier = payload.tier || "exec"; // "exec" | "audit"
@@ -392,8 +402,25 @@ function getConfig() {
   };
 }
 
+function normalizeKey(str) {
+  return str.trim().toLowerCase().replace(/[?!.]+$/, "");
+}
+
+function normalizeValue(str) {
+  return (str || "").trim().toLowerCase().replace(/[?.!]+$/, "");
+}
+
+function buildNormalizedLookup(answers) {
+  const lookup = {};
+  for (const [k, v] of Object.entries(answers)) {
+    lookup[normalizeKey(k)] = v;
+  }
+  return lookup;
+}
+
 function score(answers, config) {
   const base = config.pillar_base_score;
+  const normalizedLookup = buildNormalizedLookup(answers);
 
   const pillars = {
     positioning: base,
@@ -409,7 +436,8 @@ function score(answers, config) {
     for (const rule of config.score_rules[pillar]) {
       const field = Object.keys(rule.if)[0];
       const expected = rule.if[field];
-      if ((answers[field] || "").trim() === expected) {
+      const rawAnswer = field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
+      if (normalizeValue(rawAnswer) === normalizeValue(expected)) {
         pillars[pillar] += rule.delta;
         if (rule.flag) flags.push(rule.flag);
       }
