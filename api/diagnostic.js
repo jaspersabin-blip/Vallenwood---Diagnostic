@@ -3,6 +3,8 @@
 // Keeps your existing Zapier fields (email_subject, email_body_text, etc.)
 // Adds a new structured `report` object (schema v1.0) for future PDF/LLM expansion.
 
+import OpenAI from "openai";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
@@ -48,6 +50,27 @@ export default async function handler(req, res) {
     scored,
     config,
     content
+    // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
+const llmEnabled = process.env.LLM_ENRICH === "1";
+
+if (llmEnabled && tier === "audit") {
+  try {
+    const enriched = await enrichAuditReport(report);
+
+    if (enriched?.full_tier) {
+      report.full_tier = enriched.full_tier;
+    }
+
+    if (enriched?.narrative) {
+      report.narrative = enriched.narrative;
+    }
+
+    report.disclaimer.ai_assisted = true;
+  } catch (err) {
+    console.error("LLM enrichment failed:", err?.message || err);
+    // Fail silently — never break Zapier
+  }
+}
   });
 
   // Backward-compatible response for existing Zapier mappings:
@@ -531,4 +554,110 @@ function prettyPillar(key) {
     measurement: "Measurement"
   };
   return map[key] || key;
+}
+// =============================
+// ===== LLM ENRICHMENT =======
+// =============================
+
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("Missing OPENAI_API_KEY");
+  }
+
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+}
+
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function validateAuditEnrichment(obj) {
+  if (!obj || typeof obj !== "object") return false;
+  if (!obj.full_tier) return false;
+  if (!obj.full_tier.swot) return false;
+  if (!obj.full_tier.roadmap) return false;
+  return true;
+}
+
+async function enrichAuditReport(report) {
+  const client = getOpenAIClient();
+  const model = process.env.LLM_MODEL || "gpt-5";
+
+  const compactInput = {
+    tier: report.tier,
+    scoring: report.scoring,
+    normalized_answers: report.inputs?.normalized_answers
+  };
+
+  const systemPrompt = `
+You are a senior B2B brand and go-to-market strategist.
+Return ONLY valid JSON.
+No markdown. No commentary.
+Do not fabricate market data. Use hypotheses when information is missing.
+`;
+
+  const userPrompt = `
+Using the diagnostic data below, produce a JSON object matching this structure:
+
+{
+  "narrative": { ...optional improved narrative... },
+  "full_tier": {
+    "swot": {
+      "strengths": [{"point":"","evidence":[]}],
+      "weaknesses": [{"point":"","evidence":[]}],
+      "opportunities": [{"point":"","evidence":[]}],
+      "threats": [{"point":"","evidence":[]}]
+    },
+    "competitive_context": {
+      "category": string|null,
+      "most_compared_to": string[],
+      "competitive_archetypes": string[],
+      "positioning_hypotheses": string[]
+    },
+    "pricing_packaging_audit": {
+      "current_state_signals": string[],
+      "pricing_power_risks": string[],
+      "discounting_diagnosis": string,
+      "packaging_issues": string[],
+      "hypotheses_to_test": string[],
+      "what_to_validate": string[],
+      "first_fixes": string[]
+    },
+    "roadmap": {
+      "north_star": string,
+      "principles": string[],
+      "thirty_day": [],
+      "ninety_day": [],
+      "six_to_twelve_month": []
+    }
+  }
+}
+
+Diagnostic data:
+${JSON.stringify(compactInput)}
+`;
+
+  const response = await client.responses.create({
+    model,
+    input: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ],
+    temperature: 0.4
+  });
+
+  const text = response.output_text || "";
+  const parsed = safeJsonParse(text);
+
+  if (!validateAuditEnrichment(parsed)) {
+    throw new Error("Invalid LLM enrichment output");
+  }
+
+  return parsed;
 }
