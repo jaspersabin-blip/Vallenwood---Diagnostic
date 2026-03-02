@@ -1,98 +1,111 @@
 // api/diagnostic.js
-// Drop-in replacement for your current file.
-// Keeps your existing Zapier fields (email_subject, email_body_text, etc.)
-// Adds a new structured `report` object (schema v1.0) for future PDF/LLM expansion.
+// Drop-in replacement.
+// - Keeps existing Zapier flat fields (tier, overall_score, email_subject, etc.)
+// - Adds: report (object) + report_json (string)
+// - Adds payload validation (400 if answers missing / not object / empty)
+// - Adds answer-key normalization (minor punctuation/case differences won't break scoring)
+// - Adds optional audit-tier LLM enrichment behind feature flag (LLM_ENRICH=1)
 
 import OpenAI from "openai";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-
-  // Simple auth so random people can’t hit your endpoint
-  const token = req.headers["x-vw-token"];
-  if (!token || token !== process.env.VW_TOKEN) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const payload = req.body || {};
-  const answers = payload.answers;
-
-  if (
-    answers === undefined ||
-    answers === null ||
-    typeof answers !== "object" ||
-    Array.isArray(answers) ||
-    Object.keys(answers).length === 0
-  ) {
-    return res.status(400).json({ error: "Invalid payload: 'answers' must be a non-empty object." });
-  }
-
-  // Normalize tier naming (support both "audit" and "full" if you ever use it)
-  let tier = payload.tier || "exec"; // "exec" | "audit"
-  if (tier === "full") tier = "audit";
-
-  const clientEmail = payload.client_email || "";
-  const clientName = payload.client_name || "";
-
-  const config = getConfig();
-  const scored = score(answers, config);
-
-  const content =
-    tier === "audit"
-      ? renderAudit({ scored, answers, clientName })
-      : renderExecSummary({ scored, answers, clientName });
-
-  const report = buildReport({
-    tier,
-    clientName,
-    clientEmail,
-    answers,
-    scored,
-    config,
-    content
-  });
-
-  // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
-  const llmEnabled = process.env.LLM_ENRICH === "1";
-
-  if (llmEnabled && tier === "audit") {
-    try {
-      const enriched = await enrichAuditReport(report);
-
-      if (enriched?.full_tier) report.full_tier = enriched.full_tier;
-      if (enriched?.narrative) report.narrative = enriched.narrative;
-
-      report.disclaimer.ai_assisted = true;
-    } catch (err) {
-      console.error("LLM enrichment failed:", err?.message || err);
-      // Fail silently — never break Zapier
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "POST only" });
     }
+
+    // Simple auth so random people can’t hit your endpoint
+    const token = req.headers["x-vw-token"];
+    if (!token || token !== process.env.VW_TOKEN) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const payload = req.body || {};
+    const answers = payload.answers;
+
+    // Validate answers
+    if (
+      answers === undefined ||
+      answers === null ||
+      typeof answers !== "object" ||
+      Array.isArray(answers) ||
+      Object.keys(answers).length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Invalid payload: 'answers' must be a non-empty object." });
+    }
+
+    // Tier normalization
+    let tier = payload.tier || "exec"; // "exec" | "audit"
+    if (tier === "full") tier = "audit";
+
+    const clientEmail = payload.client_email || "";
+    const clientName = payload.client_name || "";
+
+    const config = getConfig();
+    const scored = score(answers, config);
+
+    const content =
+      tier === "audit"
+        ? renderAudit({ scored, answers, clientName })
+        : renderExecSummary({ scored, answers, clientName });
+
+    const report = buildReport({
+      tier,
+      clientName,
+      clientEmail,
+      answers,
+      scored,
+      config,
+      content
+    });
+
+    // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
+    const llmEnabled = process.env.LLM_ENRICH === "1";
+
+    if (llmEnabled && tier === "audit") {
+      try {
+        const enriched = await enrichAuditReport(report);
+
+        if (enriched?.full_tier) report.full_tier = enriched.full_tier;
+        if (enriched?.narrative) report.narrative = enriched.narrative;
+
+        if (report?.disclaimer) report.disclaimer.ai_assisted = true;
+      } catch (err) {
+        console.error("LLM enrichment failed:", err?.message || err);
+        // Fail silently — never break Zapier
+      }
+    }
+
+    // Backward-compatible response for existing Zapier mappings:
+    return res.status(200).json({
+      // ✅ new structured payload for PDF/LLM later
+      report,
+      report_json: JSON.stringify(report),
+
+      // ✅ keep old keys for now (so you don’t break Zaps)
+      tier,
+      overall_score: scored.total,
+      band: scored.band,
+      primary_constraint: scored.primaryConstraint,
+      pillar_scores: scored.pillars,
+      flags: scored.flags,
+      email_subject: content.subject,
+      email_body_text: content.bodyText,
+      client_email: clientEmail
+    });
+  } catch (err) {
+    console.error("Unhandled error:", err?.message || err);
+    return res.status(500).json({ error: "Server error" });
   }
-
-  // Backward-compatible response for existing Zapier mappings:
-  return res.status(200).json({
-    // ✅ new structured payload for PDF/LLM later
-    report,
-    report_json: JSON.stringify(report),
-
-    // ✅ keep old keys for now (so you don’t break Zaps)
-    tier,
-    overall_score: scored.total,
-    band: scored.band,
-    primary_constraint: scored.primaryConstraint,
-    pillar_scores: scored.pillars,
-    flags: scored.flags,
-    email_subject: content.subject,
-    email_body_text: content.bodyText,
-    client_email: clientEmail
-  });
 }
 
 /* ---------------------------
    Report Builder (Schema v1.0)
 ---------------------------- */
 
-function buildReport({ tier, clientName, clientEmail, answers, scored, config, content }) {
+function buildReport({ tier, clientName, clientEmail, answers, scored, content }) {
   const generatedAt = new Date().toISOString();
 
   const pillarScoresArray = [
@@ -149,7 +162,7 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, config, c
       }
     },
     disclaimer: {
-      ai_assisted: false, // flip to true once you add LLM output
+      ai_assisted: false,
       limitations: [
         "This diagnostic is based on provided inputs and deterministic scoring rules.",
         "Competitive analysis and pricing insights (when present) should be validated with market research."
@@ -158,9 +171,9 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, config, c
   };
 
   if (tier === "audit") {
-    baseReport.full_tier = buildFullTierPlaceholder({ scored, answers });
+    baseReport.full_tier = buildFullTierPlaceholder({ answers });
   } else {
-    baseReport.exec_tier = buildExecTierUpsell({ scored });
+    baseReport.exec_tier = buildExecTierUpsell();
   }
 
   return baseReport;
@@ -198,9 +211,8 @@ function buildPrimaryConstraint(scored) {
 
 function buildNarrative({ scored }) {
   const headline = `${scored.band}: primary constraint is ${prettyPillar(scored.primaryConstraint)}`;
-  const observations = (scored.flags || []).length
-    ? scored.flags.slice(0, 4)
-    : ["No major red flags detected from structured inputs."];
+  const observations =
+    (scored.flags || []).length > 0 ? scored.flags.slice(0, 4) : ["No major red flags detected from structured inputs."];
 
   return {
     executive_summary: {
@@ -234,7 +246,7 @@ function buildNarrative({ scored }) {
   };
 }
 
-function buildExecTierUpsell({ scored }) {
+function buildExecTierUpsell() {
   return {
     top_moves_30_days: [
       {
@@ -294,8 +306,7 @@ function buildExecTierUpsell({ scored }) {
   };
 }
 
-function buildFullTierPlaceholder({ scored, answers }) {
-  // Placeholder v1.0. You’ll replace these sections with LLM output later.
+function buildFullTierPlaceholder({ answers }) {
   return {
     swot: {
       strengths: [{ point: "Strength placeholder", evidence: [] }],
@@ -338,6 +349,7 @@ function buildFullTierPlaceholder({ scored, answers }) {
   };
 }
 
+// Optional: map verbose question strings to stable keys for LLM use.
 function normalizeAnswers(answers) {
   return {
     annual_revenue: answers["Annual Revenue"] ?? null,
@@ -365,7 +377,7 @@ function normalizeAnswers(answers) {
 }
 
 /* ---------------------------
-   Existing Scoring + Copy (unchanged)
+   Existing Scoring + Copy
 ---------------------------- */
 
 function getConfig() {
@@ -419,11 +431,17 @@ function getConfig() {
 }
 
 function normalizeKey(str) {
-  return str.trim().toLowerCase().replace(/[?!.]+$/, "");
+  return String(str || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[?!.]+$/, "");
 }
 
 function normalizeValue(str) {
-  return (str || "").trim().toLowerCase().replace(/[?.!]+$/, "");
+  return String(str || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[?!.]+$/, "");
 }
 
 function buildNormalizedLookup(answers) {
@@ -452,6 +470,7 @@ function score(answers, config) {
     for (const rule of config.score_rules[pillar]) {
       const field = Object.keys(rule.if)[0];
       const expected = rule.if[field];
+
       const rawAnswer = field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
       if (normalizeValue(rawAnswer) === normalizeValue(expected)) {
         pillars[pillar] += rule.delta;
@@ -466,7 +485,7 @@ function score(answers, config) {
   }
 
   const total = Object.values(pillars).reduce((a, b) => a + b, 0);
-  const band = config.alignment_bands.find(b => total >= b.min && total <= b.max)?.label || "Unknown";
+  const band = config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label || "Unknown";
 
   const primaryConstraint = Object.keys(pillars).sort((a, b) => pillars[a] - pillars[b])[0];
 
@@ -477,8 +496,7 @@ function renderExecSummary({ scored, clientName }) {
   const nicePillar = prettyPillar(scored.primaryConstraint);
   const topFlags = (scored.flags || []).slice(0, 2);
 
-  const bodyText =
-`Hi ${clientName || "there"},
+  const bodyText = `Hi ${clientName || "there"},
 
 Your Brand-to-GTM OS Executive Summary is ready.
 
@@ -486,7 +504,7 @@ Overall alignment: ${scored.band} (Score: ${scored.total}/25)
 Primary constraint: ${nicePillar}
 
 Key observations:
-${topFlags.length ? topFlags.map(f => `- ${f}`).join("\n") : "- No major red flags detected from the structured inputs."}
+${topFlags.length ? topFlags.map((f) => `- ${f}`).join("\n") : "- No major red flags detected from the structured inputs."}
 
 Next step:
 Reply to this email or book your 30-minute intro call to walk through the summary and learn more about the benefits of a full Brand-to-GTM OS diagnostic.
@@ -497,9 +515,8 @@ Reply to this email or book your 30-minute intro call to walk through the summar
   return { subject: "Your Brand-to-GTM OS Executive Summary", bodyText };
 }
 
-function renderAudit({ scored, answers, clientName }) {
-  const bodyText =
-`Hi ${clientName || "there"},
+function renderAudit({ scored, clientName }) {
+  const bodyText = `Hi ${clientName || "there"},
 
 Your Brand-to-GTM OS Strategic Audit is ready.
 
@@ -516,7 +533,7 @@ Primary constraint:
 - ${prettyPillar(scored.primaryConstraint)}
 
 Risk flags:
-${(scored.flags || []).length ? scored.flags.map(f => `- ${f}`).join("\n") : "- None detected from structured rules."}
+${(scored.flags || []).length ? scored.flags.map((f) => `- ${f}`).join("\n") : "- None detected from structured rules."}
 
 Working hypotheses (v1):
 - If your wins/losses are price-driven, strengthen economic value proof + differentiation narrative.
@@ -548,18 +565,14 @@ function prettyPillar(key) {
   };
   return map[key] || key;
 }
-// =============================
-// ===== LLM ENRICHMENT =======
-// =============================
+
+/* ---------------------------
+   LLM Enrichment (Audit tier only)
+---------------------------- */
 
 function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("Missing OPENAI_API_KEY");
-  }
-
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+  if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
 function safeJsonParse(text) {
@@ -572,7 +585,7 @@ function safeJsonParse(text) {
 
 function validateAuditEnrichment(obj) {
   if (!obj || typeof obj !== "object") return false;
-  if (!obj.full_tier) return false;
+  if (!obj.full_tier || typeof obj.full_tier !== "object") return false;
   if (!obj.full_tier.swot) return false;
   if (!obj.full_tier.roadmap) return false;
   return true;
@@ -588,12 +601,8 @@ async function enrichAuditReport(report) {
     normalized_answers: report.inputs?.normalized_answers
   };
 
-  const systemPrompt = `
-You are a senior B2B brand and go-to-market strategist.
-Return ONLY valid JSON.
-No markdown. No commentary.
-Do not fabricate market data. Use hypotheses when information is missing.
-`;
+  const systemPrompt =
+    "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing.";
 
   const userPrompt = `
 Using the diagnostic data below, produce a JSON object matching this structure:
@@ -625,16 +634,16 @@ Using the diagnostic data below, produce a JSON object matching this structure:
     "roadmap": {
       "north_star": string,
       "principles": string[],
-      "thirty_day": [],
-      "ninety_day": [],
-      "six_to_twelve_month": []
+      "thirty_day": string[],
+      "ninety_day": string[],
+      "six_to_twelve_month": string[]
     }
   }
 }
 
 Diagnostic data:
 ${JSON.stringify(compactInput)}
-`;
+`.trim();
 
   const response = await client.responses.create({
     model,
