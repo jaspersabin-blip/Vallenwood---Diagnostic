@@ -50,35 +50,30 @@ export default async function handler(req, res) {
     scored,
     config,
     content
-    // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
-const llmEnabled = process.env.LLM_ENRICH === "1";
-
-if (llmEnabled && tier === "audit") {
-  try {
-    const enriched = await enrichAuditReport(report);
-
-    if (enriched?.full_tier) {
-      report.full_tier = enriched.full_tier;
-    }
-
-    if (enriched?.narrative) {
-      report.narrative = enriched.narrative;
-    }
-
-    report.disclaimer.ai_assisted = true;
-  } catch (err) {
-    console.error("LLM enrichment failed:", err?.message || err);
-    // Fail silently — never break Zapier
-  }
-}
   });
+
+  // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
+  const llmEnabled = process.env.LLM_ENRICH === "1";
+
+  if (llmEnabled && tier === "audit") {
+    try {
+      const enriched = await enrichAuditReport(report);
+
+      if (enriched?.full_tier) report.full_tier = enriched.full_tier;
+      if (enriched?.narrative) report.narrative = enriched.narrative;
+
+      report.disclaimer.ai_assisted = true;
+    } catch (err) {
+      console.error("LLM enrichment failed:", err?.message || err);
+      // Fail silently — never break Zapier
+    }
+  }
 
   // Backward-compatible response for existing Zapier mappings:
   return res.status(200).json({
     // ✅ new structured payload for PDF/LLM later
     report,
     report_json: JSON.stringify(report),
-
 
     // ✅ keep old keys for now (so you don’t break Zaps)
     tier,
@@ -89,8 +84,6 @@ if (llmEnabled && tier === "audit") {
     flags: scored.flags,
     email_subject: content.subject,
     email_body_text: content.bodyText,
-    // Optional if you want HTML later:
-    // email_body_html: content.bodyHtml,
     client_email: clientEmail
   });
 }
