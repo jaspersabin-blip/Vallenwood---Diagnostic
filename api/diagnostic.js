@@ -7,6 +7,7 @@
 // - Adds optional audit-tier LLM enrichment behind feature flag (LLM_ENRICH=1)
 
 import OpenAI from "openai";
+import { createDiagLogger } from "../lib/diagLogger.js";
 
 export default async function handler(req, res) {
   try {
