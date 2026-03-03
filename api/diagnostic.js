@@ -73,9 +73,26 @@ export default async function handler(req, res) {
 
         if (report?.disclaimer) report.disclaimer.ai_assisted = true;
       } catch (err) {
-        console.error("LLM enrichment failed:", err?.message || err);
-        // Fail silently — never break Zapier
-      }
+  console.error("LLM enrichment failed (raw):", err);
+
+  // Try to print the most useful fields (OpenAI SDK errors often include these)
+  console.error("LLM enrichment failed (details):", {
+    message: err?.message,
+    name: err?.name,
+    status: err?.status,
+    code: err?.code,
+    type: err?.type,
+    cause: err?.cause,
+  });
+
+  // Some SDK errors carry response data in nested fields; this helps surface it
+  try {
+    console.error(
+      "LLM enrichment failed (stringified):",
+      JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+    );
+  } catch (_) {}
+}
     }
 
     // Backward-compatible response for existing Zapier mappings:
