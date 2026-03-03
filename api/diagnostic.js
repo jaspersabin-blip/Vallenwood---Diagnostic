@@ -667,8 +667,7 @@ ${JSON.stringify(compactInput)}
     input: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
-    ],
-    temperature: 0.4
+    ]
   });
 
   const text = response.output_text || "";
