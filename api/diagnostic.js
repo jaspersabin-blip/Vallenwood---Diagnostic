@@ -1,82 +1,159 @@
 // api/diagnostic.js
-// Drop-in replacement for your current file.
-// Keeps your existing Zapier fields (email_subject, email_body_text, etc.)
-// Adds a new structured `report` object (schema v1.0) for future PDF/LLM expansion.
+// Drop-in replacement.
+// - Keeps existing Zapier flat fields (tier, overall_score, email_subject, etc.)
+// - Adds: report (object) + report_json (string)
+// - Adds payload validation (400 if answers missing / not object / empty)
+// - Adds answer-key normalization (minor punctuation/case differences won't break scoring)
+// - Adds optional audit-tier LLM enrichment behind feature flag (LLM_ENRICH=1)
+
+import OpenAI from "openai";
+import { createDiagLogger } from "../lib/diagLogger.js";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  const L = createDiagLogger(req);
+  L.start();
 
-  // Simple auth so random people can’t hit your endpoint
-  const token = req.headers["x-vw-token"];
-  if (!token || token !== process.env.VW_TOKEN) {
-    return res.status(401).json({ error: "Unauthorized" });
+  try {
+    if (req.method !== "POST") {
+      L.finish(405);
+      return res.status(405).json({ error: "POST only" });
+    }
+
+    // Simple auth so random people can’t hit your endpoint
+    const token = req.headers["x-vw-token"];
+    if (!token || token !== process.env.VW_TOKEN) {
+      L.finish(401);
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const payload = req.body || {};
+    const answers = payload.answers;
+
+    L.log("payload received", {
+      tier: payload?.tier,
+      answers_keys:
+        answers && typeof answers === "object" && !Array.isArray(answers)
+          ? Object.keys(answers).length
+          : null,
+    });
+
+    // Validate answers
+    if (
+      answers === undefined ||
+      answers === null ||
+      typeof answers !== "object" ||
+      Array.isArray(answers) ||
+      Object.keys(answers).length === 0
+    ) {
+      L.finish(400);
+      return res
+        .status(400)
+        .json({ error: "Invalid payload: 'answers' must be a non-empty object." });
+    }
+
+    // Tier normalization
+    let tier = payload.tier || "exec"; // "exec" | "audit"
+    if (tier === "full") tier = "audit";
+
+    const clientEmail = payload.client_email || "";
+    const clientName = payload.client_name || "";
+
+    const tScore = L.mark();
+    const config = getConfig();
+    const scored = score(answers, config);
+    L.step("score", tScore, { total: scored?.total, band: scored?.band });
+
+    const tRender = L.mark();
+    const content =
+      tier === "audit"
+        ? renderAudit({ scored, answers, clientName })
+        : renderExecSummary({ scored, answers, clientName });
+    L.step("render", tRender);
+
+    const tBuild = L.mark();
+    const report = buildReport({
+      tier,
+      clientName,
+      clientEmail,
+      answers,
+      scored,
+      config,
+      content,
+    });
+    L.step("buildReport", tBuild);
+
+    // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
+    const llmEnabled = process.env.LLM_ENRICH === "1";
+    const llmModel = process.env.LLM_MODEL || "gpt-5";
+
+    if (llmEnabled && tier === "audit") {
+      const tEnrich = L.mark();
+      try {
+        L.log(`LLM enrichment START model=${llmModel}`);
+
+        const enriched = await enrichAuditReport(report);
+
+        L.step("enrichAuditReport OK", tEnrich, {
+          has_full_tier: !!enriched?.full_tier,
+          has_narrative: !!enriched?.narrative,
+        });
+
+        if (enriched?.full_tier) report.full_tier = enriched.full_tier;
+        if (enriched?.narrative) report.narrative = enriched.narrative;
+
+        if (report?.disclaimer) report.disclaimer.ai_assisted = true;
+      } catch (err) {
+        L.step("enrichAuditReport FAIL", tEnrich, {
+          message: err?.message,
+          name: err?.name,
+          status: err?.status,
+          code: err?.code,
+          type: err?.type,
+        });
+
+        // Do NOT throw — keep server alive and return deterministic output.
+        console.error("[diag] LLM enrichment failed (raw):", err);
+        try {
+          console.error(
+            "[diag] LLM enrichment failed (stringified):",
+            JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+          );
+        } catch (_) {}
+      }
+    }
+
+    L.finish(200);
+
+    // Backward-compatible response for existing Zapier mappings:
+    return res.status(200).json({
+      // ✅ new structured payload for PDF/LLM later
+      report,
+      report_json: JSON.stringify(report),
+
+      // ✅ keep old keys for now (so you don’t break Zaps)
+      tier,
+      overall_score: scored.total,
+      band: scored.band,
+      primary_constraint: scored.primaryConstraint,
+      pillar_scores: scored.pillars,
+      flags: scored.flags,
+      email_subject: content.subject,
+      email_body_text: content.bodyText,
+      client_email: clientEmail,
+    });
+  } catch (err) {
+    L.error("Unhandled error", { message: err?.message, name: err?.name });
+    L.finish(500);
+    console.error("[diag] Unhandled error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
-
-  const payload = req.body || {};
-  const answers = payload.answers;
-
-  if (
-    answers === undefined ||
-    answers === null ||
-    typeof answers !== "object" ||
-    Array.isArray(answers) ||
-    Object.keys(answers).length === 0
-  ) {
-    return res.status(400).json({ error: "Invalid payload: 'answers' must be a non-empty object." });
-  }
-
-  // Normalize tier naming (support both "audit" and "full" if you ever use it)
-  let tier = payload.tier || "exec"; // "exec" | "audit"
-  if (tier === "full") tier = "audit";
-
-  const clientEmail = payload.client_email || "";
-  const clientName = payload.client_name || "";
-
-  const config = getConfig();
-  const scored = score(answers, config);
-
-  const content =
-    tier === "audit"
-      ? renderAudit({ scored, answers, clientName })
-      : renderExecSummary({ scored, answers, clientName });
-
-  const report = buildReport({
-    tier,
-    clientName,
-    clientEmail,
-    answers,
-    scored,
-    config,
-    content
-  });
-
-  // Backward-compatible response for existing Zapier mappings:
-  return res.status(200).json({
-    // ✅ new structured payload for PDF/LLM later
-    report,
-    report_json: JSON.stringify(report),
-
-
-    // ✅ keep old keys for now (so you don’t break Zaps)
-    tier,
-    overall_score: scored.total,
-    band: scored.band,
-    primary_constraint: scored.primaryConstraint,
-    pillar_scores: scored.pillars,
-    flags: scored.flags,
-    email_subject: content.subject,
-    email_body_text: content.bodyText,
-    // Optional if you want HTML later:
-    // email_body_html: content.bodyHtml,
-    client_email: clientEmail
-  });
 }
 
 /* ---------------------------
    Report Builder (Schema v1.0)
 ---------------------------- */
 
-function buildReport({ tier, clientName, clientEmail, answers, scored, config, content }) {
+function buildReport({ tier, clientName, clientEmail, answers, scored, content }) {
   const generatedAt = new Date().toISOString();
 
   const pillarScoresArray = [
@@ -84,7 +161,7 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, config, c
     pillarObj("value_architecture", scored.pillars.value_architecture),
     pillarObj("pricing_packaging", scored.pillars.pricing_packaging),
     pillarObj("gtm_focus", scored.pillars.gtm_focus),
-    pillarObj("measurement", scored.pillars.measurement)
+    pillarObj("measurement", scored.pillars.measurement),
   ];
 
   const primary = buildPrimaryConstraint(scored);
@@ -97,12 +174,12 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, config, c
       company_name: null,
       contact_name: clientName || null,
       contact_email: clientEmail || "",
-      website: null
+      website: null,
     },
     inputs: {
       source: "honeybook",
       raw_answers: answers,
-      normalized_answers: normalizeAnswers(answers)
+      normalized_answers: normalizeAnswers(answers),
     },
     scoring: {
       overall_score: scored.total,
@@ -115,36 +192,39 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, config, c
         severity: "medium",
         title: f,
         evidence: [],
-        recommendation: ""
-      }))
+        recommendation: "",
+      })),
     },
     narrative: buildNarrative({ scored }),
     deliverables: {
       email: {
         subject: content.subject,
         body_text: content.bodyText,
-        body_html: null
+        body_html: null,
       },
       pdf: {
-        title: tier === "audit" ? "Brand-to-GTM OS Strategic Audit" : "Brand-to-GTM OS Executive Summary",
+        title:
+          tier === "audit"
+            ? "Brand-to-GTM OS Strategic Audit"
+            : "Brand-to-GTM OS Executive Summary",
         pdf_url: null,
         html_url: null,
-        pages_estimate: tier === "audit" ? 10 : 3
-      }
+        pages_estimate: tier === "audit" ? 10 : 3,
+      },
     },
     disclaimer: {
-      ai_assisted: false, // flip to true once you add LLM output
+      ai_assisted: false,
       limitations: [
         "This diagnostic is based on provided inputs and deterministic scoring rules.",
-        "Competitive analysis and pricing insights (when present) should be validated with market research."
-      ]
-    }
+        "Competitive analysis and pricing insights (when present) should be validated with market research.",
+      ],
+    },
   };
 
   if (tier === "audit") {
-    baseReport.full_tier = buildFullTierPlaceholder({ scored, answers });
+    baseReport.full_tier = buildFullTierPlaceholder({ answers });
   } else {
-    baseReport.exec_tier = buildExecTierUpsell({ scored });
+    baseReport.exec_tier = buildExecTierUpsell();
   }
 
   return baseReport;
@@ -158,7 +238,7 @@ function pillarObj(key, score) {
     max: 5,
     band: score >= 4 ? "Strong" : score >= 3 ? "Mixed" : "At Risk",
     signals: [],
-    risks: score <= 2 ? ["Pillar appears underdeveloped based on structured signals."] : []
+    risks: score <= 2 ? ["Pillar appears underdeveloped based on structured signals."] : [],
   };
 }
 
@@ -175,16 +255,19 @@ function buildPrimaryConstraint(scored) {
     downstream_impacts: [
       "Lower win rates in competitive deals",
       "Discounting pressure and margin compression",
-      "Inconsistent messaging and weak differentiation"
-    ]
+      "Inconsistent messaging and weak differentiation",
+    ],
   };
 }
 
 function buildNarrative({ scored }) {
-  const headline = `${scored.band}: primary constraint is ${prettyPillar(scored.primaryConstraint)}`;
-  const observations = (scored.flags || []).length
-    ? scored.flags.slice(0, 4)
-    : ["No major red flags detected from structured inputs."];
+  const headline = `${scored.band}: primary constraint is ${prettyPillar(
+    scored.primaryConstraint
+  )}`;
+  const observations =
+    (scored.flags || []).length > 0
+      ? scored.flags.slice(0, 4)
+      : ["No major red flags detected from structured inputs."];
 
   return {
     executive_summary: {
@@ -195,8 +278,8 @@ function buildNarrative({ scored }) {
       what_to_do_next: [
         "Confirm the primary constraint with a short review call",
         "Prioritize 1–2 quick wins to improve clarity and commercial outcomes",
-        "Decide if a full Strategic Audit is warranted"
-      ]
+        "Decide if a full Strategic Audit is warranted",
+      ],
     },
     pillar_interpretations: [
       {
@@ -206,19 +289,19 @@ function buildNarrative({ scored }) {
         quick_wins: [
           "Define a sharper category POV and differentiation claim",
           "Anchor value in measurable outcomes (economic proof)",
-          "Reduce discounting by tightening packaging and guardrails"
+          "Reduce discounting by tightening packaging and guardrails",
         ],
         questions_to_answer: [
           "What do we win on besides price?",
           "Which customer outcomes are repeatable and provable?",
-          "What is the simplest packaging structure customers understand quickly?"
-        ]
-      }
-    ]
+          "What is the simplest packaging structure customers understand quickly?",
+        ],
+      },
+    ],
   };
 }
 
-function buildExecTierUpsell({ scored }) {
+function buildExecTierUpsell() {
   return {
     top_moves_30_days: [
       {
@@ -227,10 +310,11 @@ function buildExecTierUpsell({ scored }) {
         how: [
           "Write a category POV + differentiation claim",
           "Validate with 3 customer calls",
-          "Align homepage + pitch deck messaging"
+          "Align homepage + pitch deck messaging",
         ],
-        expected_impact: "Improved consistency in sales conversations and competitive win rates.",
-        effort: "low"
+        expected_impact:
+          "Improved consistency in sales conversations and competitive win rates.",
+        effort: "low",
       },
       {
         title: "Quantify value with 2–3 proof points",
@@ -238,10 +322,10 @@ function buildExecTierUpsell({ scored }) {
         how: [
           "Identify top 2 metrics customers care about",
           "Build 1-page ROI story template",
-          "Instrument one customer case quickly"
+          "Instrument one customer case quickly",
         ],
         expected_impact: "Higher close rate with fewer concessions.",
-        effort: "medium"
+        effort: "medium",
       },
       {
         title: "Tighten pricing guardrails",
@@ -249,11 +333,11 @@ function buildExecTierUpsell({ scored }) {
         how: [
           "Define discount thresholds",
           "Standardize approval workflow",
-          "Improve tier naming and feature/value ladders"
+          "Improve tier naming and feature/value ladders",
         ],
         expected_impact: "Better margin stability and improved deal discipline.",
-        effort: "medium"
-      }
+        effort: "medium",
+      },
     ],
     upgrade_positioning: {
       headline: "What the Full Strategic Audit Unlocks",
@@ -261,31 +345,30 @@ function buildExecTierUpsell({ scored }) {
         "A pillar-by-pillar diagnosis with specific root-cause hypotheses",
         "SWOT tied directly to Brand-to-GTM levers",
         "Competitive pricing & packaging audit (hypotheses + what-to-verify)",
-        "A prioritized 30/90-day roadmap + first sprint plan"
+        "A prioritized 30/90-day roadmap + first sprint plan",
       ],
       what_you_get: [
         "SWOT tied to Brand-to-GTM pillars",
         "Competitive pricing & packaging audit (hypotheses + validation plan)",
-        "Prioritized 30/90-day roadmap with sprint plan"
+        "Prioritized 30/90-day roadmap with sprint plan",
       ],
       offer: {
         name: "Full Strategic Audit",
         price_usd: 499,
         cta_label: "Upgrade to Full Audit",
-        cta_url: null
-      }
-    }
+        cta_url: null,
+      },
+    },
   };
 }
 
-function buildFullTierPlaceholder({ scored, answers }) {
-  // Placeholder v1.0. You’ll replace these sections with LLM output later.
+function buildFullTierPlaceholder({ answers }) {
   return {
     swot: {
       strengths: [{ point: "Strength placeholder", evidence: [] }],
       weaknesses: [{ point: "Weakness placeholder", evidence: [] }],
       opportunities: [{ point: "Opportunity placeholder", evidence: [] }],
-      threats: [{ point: "Threat placeholder", evidence: [] }]
+      threats: [{ point: "Threat placeholder", evidence: [] }],
     },
     competitive_context: {
       category: answers["What category do you compete in?"] || null,
@@ -293,7 +376,7 @@ function buildFullTierPlaceholder({ scored, answers }) {
         ? [answers["Who do customers compare you to most often?"]]
         : [],
       competitive_archetypes: [],
-      positioning_hypotheses: []
+      positioning_hypotheses: [],
     },
     pricing_packaging_audit: {
       current_state_signals: [],
@@ -302,26 +385,28 @@ function buildFullTierPlaceholder({ scored, answers }) {
       packaging_issues: [],
       hypotheses_to_test: [],
       what_to_validate: [],
-      first_fixes: []
+      first_fixes: [],
     },
     roadmap: {
-      north_star: "Establish clear positioning and value proof to reduce discounting and improve GTM efficiency.",
+      north_star:
+        "Establish clear positioning and value proof to reduce discounting and improve GTM efficiency.",
       principles: ["Clarity over breadth", "Proof over promises", "Focus over fragmentation"],
       thirty_day: [],
       ninety_day: [],
-      six_to_twelve_month: []
+      six_to_twelve_month: [],
     },
     first_sprint_plan: { weeks: [] },
     appendix: {
       response_summary: Object.entries(answers).map(([question, answer]) => ({
         question,
         answer: String(answer ?? ""),
-        notes: null
-      }))
-    }
+        notes: null,
+      })),
+    },
   };
 }
 
+// Optional: map verbose question strings to stable keys for LLM use.
 function normalizeAnswers(answers) {
   return {
     annual_revenue: answers["Annual Revenue"] ?? null,
@@ -344,12 +429,12 @@ function normalizeAnswers(answers) {
     growth_status: answers["How would you rate your growth status?"] ?? null,
     marketing_measured_by: answers["Marketing is measured primarily by:"] ?? null,
     attribution_trusted: answers["Is attribution trusted internally?"] ?? null,
-    forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null
+    forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null,
   };
 }
 
 /* ---------------------------
-   Existing Scoring + Copy (unchanged)
+   Existing Scoring + Copy
 ---------------------------- */
 
 function getConfig() {
@@ -360,54 +445,70 @@ function getConfig() {
     pillar_max: 5,
     score_rules: {
       positioning: [
-        { if: { "Why do you most often win deals?": "Lowest price" }, delta: -2, flag: "Price-led wins suggest commoditization risk." },
-        { if: { "Why do you most often lose deals?": "Price" }, delta: -2, flag: "Pricing pressure indicates weak value anchoring." },
-        { if: { "Why do you most often lose deals?": "Lack of differentiation" }, delta: -2, flag: "Differentiation gap in competitive deals." },
-        { if: { "Do customers describe your company consistently?": "Often unclear" }, delta: -2, flag: "Positioning clarity issue." },
+        {
+          if: { "Why do you most often win deals?": "Lowest price" },
+          delta: -2,
+          flag: "Price-led wins suggest commoditization risk.",
+        },
+        {
+          if: { "Why do you most often lose deals?": "Price" },
+          delta: -2,
+          flag: "Pricing pressure indicates weak value anchoring.",
+        },
+        {
+          if: { "Why do you most often lose deals?": "Lack of differentiation" },
+          delta: -2,
+          flag: "Differentiation gap in competitive deals.",
+        },
+        {
+          if: { "Do customers describe your company consistently?": "Often unclear" },
+          delta: -2,
+          flag: "Positioning clarity issue.",
+        },
         { if: { "Why do you most often win deals?": "Clear differentiation" }, delta: 2 },
-        { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 }
+        { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 },
       ],
       value_architecture: [
         { if: { "Can you quantify ROI for most customers?": "Yes — documented & repeatable" }, delta: 3 },
         { if: { "Can you quantify ROI for most customers?": "No" }, delta: -3, flag: "ROI not clearly quantified." },
         { if: { "Sales conversations primarily lead with:": "Features" }, delta: -2, flag: "Feature-led selling limits pricing power." },
         { if: { "Sales conversations primarily lead with:": "Financial ROI" }, delta: 2 },
-        { if: { "What financial metrics do customers see improve due to your product?": "Not clearly defined" }, delta: -2, flag: "Economic value not clearly anchored to metrics." }
+        { if: { "What financial metrics do customers see improve due to your product?": "Not clearly defined" }, delta: -2, flag: "Economic value not clearly anchored to metrics." },
       ],
       pricing_packaging: [
         { if: { "How often are discounts required to close deals?": "Frequently (40%+)" }, delta: -3, flag: "Frequent discounting compresses margin." },
         { if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" }, delta: -1 },
         { if: { "Do customers clearly understand your pricing tiers?": "Often confused" }, delta: -2, flag: "Pricing structure may be unclear." },
         { if: { "What is your gross margin (%)?": "Under 50%" }, delta: -2 },
-        { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 }
+        { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 },
       ],
       gtm_focus: [
         { if: { "Do you know CAC by channel?": "No" }, delta: -2, flag: "Channel economics unclear." },
         { if: { "How would you rate your growth status?": "Stalled" }, delta: -2, flag: "Growth stall indicator." },
-        { if: { "How would you rate your growth status?": "Plateauing" }, delta: -1 }
+        { if: { "How would you rate your growth status?": "Plateauing" }, delta: -1 },
       ],
       measurement: [
         { if: { "Marketing is measured primarily by:": "Leads" }, delta: -2, flag: "Lead-focused measurement may signal vanity metrics." },
         { if: { "Marketing is measured primarily by:": "Revenue" }, delta: 2 },
         { if: { "Is attribution trusted internally?": "No" }, delta: -2, flag: "Attribution credibility gap." },
-        { if: { "Are revenue forecasts accurate within 10%": "No" }, delta: -2, flag: "Forecast reliability risk." }
-      ]
+        { if: { "Are revenue forecasts accurate within 10%": "No" }, delta: -2, flag: "Forecast reliability risk." },
+      ],
     },
     alignment_bands: [
       { min: 24, max: 30, label: "Structurally Aligned" },
       { min: 18, max: 23, label: "Operational Friction" },
       { min: 12, max: 17, label: "Strategic Leakage" },
-      { min: 0, max: 11, label: "Structural Misalignment" }
-    ]
+      { min: 0, max: 11, label: "Structural Misalignment" },
+    ],
   };
 }
 
 function normalizeKey(str) {
-  return str.trim().toLowerCase().replace(/[?!.]+$/, "");
+  return String(str || "").trim().toLowerCase().replace(/[?!.]+$/, "");
 }
 
 function normalizeValue(str) {
-  return (str || "").trim().toLowerCase().replace(/[?.!]+$/, "");
+  return String(str || "").trim().toLowerCase().replace(/[?!.]+$/, "");
 }
 
 function buildNormalizedLookup(answers) {
@@ -427,7 +528,7 @@ function score(answers, config) {
     value_architecture: base,
     pricing_packaging: base,
     gtm_focus: base,
-    measurement: base
+    measurement: base,
   };
 
   const flags = [];
@@ -436,6 +537,7 @@ function score(answers, config) {
     for (const rule of config.score_rules[pillar]) {
       const field = Object.keys(rule.if)[0];
       const expected = rule.if[field];
+
       const rawAnswer = field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
       if (normalizeValue(rawAnswer) === normalizeValue(expected)) {
         pillars[pillar] += rule.delta;
@@ -450,7 +552,8 @@ function score(answers, config) {
   }
 
   const total = Object.values(pillars).reduce((a, b) => a + b, 0);
-  const band = config.alignment_bands.find(b => total >= b.min && total <= b.max)?.label || "Unknown";
+  const band =
+    config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label || "Unknown";
 
   const primaryConstraint = Object.keys(pillars).sort((a, b) => pillars[a] - pillars[b])[0];
 
@@ -461,8 +564,7 @@ function renderExecSummary({ scored, clientName }) {
   const nicePillar = prettyPillar(scored.primaryConstraint);
   const topFlags = (scored.flags || []).slice(0, 2);
 
-  const bodyText =
-`Hi ${clientName || "there"},
+  const bodyText = `Hi ${clientName || "there"},
 
 Your Brand-to-GTM OS Executive Summary is ready.
 
@@ -470,7 +572,11 @@ Overall alignment: ${scored.band} (Score: ${scored.total}/25)
 Primary constraint: ${nicePillar}
 
 Key observations:
-${topFlags.length ? topFlags.map(f => `- ${f}`).join("\n") : "- No major red flags detected from the structured inputs."}
+${
+  topFlags.length
+    ? topFlags.map((f) => `- ${f}`).join("\n")
+    : "- No major red flags detected from the structured inputs."
+}
 
 Next step:
 Reply to this email or book your 30-minute intro call to walk through the summary and learn more about the benefits of a full Brand-to-GTM OS diagnostic.
@@ -481,9 +587,8 @@ Reply to this email or book your 30-minute intro call to walk through the summar
   return { subject: "Your Brand-to-GTM OS Executive Summary", bodyText };
 }
 
-function renderAudit({ scored, answers, clientName }) {
-  const bodyText =
-`Hi ${clientName || "there"},
+function renderAudit({ scored, clientName }) {
+  const bodyText = `Hi ${clientName || "there"},
 
 Your Brand-to-GTM OS Strategic Audit is ready.
 
@@ -500,7 +605,11 @@ Primary constraint:
 - ${prettyPillar(scored.primaryConstraint)}
 
 Risk flags:
-${(scored.flags || []).length ? scored.flags.map(f => `- ${f}`).join("\n") : "- None detected from structured rules."}
+${
+  (scored.flags || []).length
+    ? scored.flags.map((f) => `- ${f}`).join("\n")
+    : "- None detected from structured rules."
+}
 
 Working hypotheses (v1):
 - If your wins/losses are price-driven, strengthen economic value proof + differentiation narrative.
@@ -528,7 +637,106 @@ function prettyPillar(key) {
     value_architecture: "Value Architecture",
     pricing_packaging: "Pricing & Packaging",
     gtm_focus: "GTM Focus",
-    measurement: "Measurement"
+    measurement: "Measurement",
   };
   return map[key] || key;
+}
+
+/* ---------------------------
+   LLM Enrichment (Audit tier only)
+---------------------------- */
+
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function validateAuditEnrichment(obj) {
+  if (!obj || typeof obj !== "object") return false;
+  if (!obj.full_tier || typeof obj.full_tier !== "object") return false;
+  if (!obj.full_tier.swot) return false;
+  if (!obj.full_tier.roadmap) return false;
+  return true;
+}
+
+async function enrichAuditReport(report) {
+  const client = getOpenAIClient();
+  const model = process.env.LLM_MODEL || "gpt-5";
+
+  const compactInput = {
+    tier: report.tier,
+    scoring: report.scoring,
+    normalized_answers: report.inputs?.normalized_answers,
+  };
+
+  const systemPrompt =
+    "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing.";
+
+  // IMPORTANT: keep this as a string prompt; it's fine to include structure examples,
+  // but the model must output valid JSON.
+  const userPrompt = `
+Using the diagnostic data below, return ONLY valid JSON with this shape:
+
+{
+  "narrative": { "text": "..." },
+  "full_tier": {
+    "swot": {
+      "strengths": [{"point":"","evidence":[]}],
+      "weaknesses": [{"point":"","evidence":[]}],
+      "opportunities": [{"point":"","evidence":[]}],
+      "threats": [{"point":"","evidence":[]}]
+    },
+    "competitive_context": {
+      "category": null,
+      "most_compared_to": [],
+      "competitive_archetypes": [],
+      "positioning_hypotheses": []
+    },
+    "pricing_packaging_audit": {
+      "current_state_signals": [],
+      "pricing_power_risks": [],
+      "discounting_diagnosis": "",
+      "packaging_issues": [],
+      "hypotheses_to_test": [],
+      "what_to_validate": [],
+      "first_fixes": []
+    },
+    "roadmap": {
+      "north_star": "",
+      "principles": [],
+      "thirty_day": [],
+      "ninety_day": [],
+      "six_to_twelve_month": []
+    }
+  }
+}
+
+Diagnostic data:
+${JSON.stringify(compactInput)}
+`.trim();
+
+  const response = await client.responses.create({
+    model,
+    input: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+  });
+
+  const text = response.output_text || "";
+  const parsed = safeJsonParse(text);
+
+  if (!validateAuditEnrichment(parsed)) {
+    throw new Error("Invalid LLM enrichment output");
+  }
+
+  return parsed;
 }
