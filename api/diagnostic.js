@@ -10,19 +10,32 @@ import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
 
 export default async function handler(req, res) {
+  const L = createDiagLogger(req);
+  L.start();
+
   try {
     if (req.method !== "POST") {
+      L.finish(405);
       return res.status(405).json({ error: "POST only" });
     }
 
     // Simple auth so random people can’t hit your endpoint
     const token = req.headers["x-vw-token"];
     if (!token || token !== process.env.VW_TOKEN) {
+      L.finish(401);
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const payload = req.body || {};
     const answers = payload.answers;
+
+    L.log("payload received", {
+      tier: payload?.tier,
+      answers_keys:
+        answers && typeof answers === "object" && !Array.isArray(answers)
+          ? Object.keys(answers).length
+          : null,
+    });
 
     // Validate answers
     if (
@@ -32,6 +45,7 @@ export default async function handler(req, res) {
       Array.isArray(answers) ||
       Object.keys(answers).length === 0
     ) {
+      L.finish(400);
       return res
         .status(400)
         .json({ error: "Invalid payload: 'answers' must be a non-empty object." });
@@ -44,14 +58,19 @@ export default async function handler(req, res) {
     const clientEmail = payload.client_email || "";
     const clientName = payload.client_name || "";
 
+    const tScore = L.mark();
     const config = getConfig();
     const scored = score(answers, config);
+    L.step("score", tScore, { total: scored?.total, band: scored?.band });
 
+    const tRender = L.mark();
     const content =
       tier === "audit"
         ? renderAudit({ scored, answers, clientName })
         : renderExecSummary({ scored, answers, clientName });
+    L.step("render", tRender);
 
+    const tBuild = L.mark();
     const report = buildReport({
       tier,
       clientName,
@@ -59,42 +78,51 @@ export default async function handler(req, res) {
       answers,
       scored,
       config,
-      content
+      content,
     });
+    L.step("buildReport", tBuild);
 
     // ===== AUDIT LLM ENRICHMENT (Feature Flag Controlled) =====
     const llmEnabled = process.env.LLM_ENRICH === "1";
+    const llmModel = process.env.LLM_MODEL || "gpt-5";
 
     if (llmEnabled && tier === "audit") {
+      const tEnrich = L.mark();
       try {
+        L.log(`LLM enrichment START model=${llmModel}`);
+
         const enriched = await enrichAuditReport(report);
+
+        L.step("enrichAuditReport OK", tEnrich, {
+          has_full_tier: !!enriched?.full_tier,
+          has_narrative: !!enriched?.narrative,
+        });
 
         if (enriched?.full_tier) report.full_tier = enriched.full_tier;
         if (enriched?.narrative) report.narrative = enriched.narrative;
 
         if (report?.disclaimer) report.disclaimer.ai_assisted = true;
       } catch (err) {
-  console.error("LLM enrichment failed (raw):", err);
+        L.step("enrichAuditReport FAIL", tEnrich, {
+          message: err?.message,
+          name: err?.name,
+          status: err?.status,
+          code: err?.code,
+          type: err?.type,
+        });
 
-  // Try to print the most useful fields (OpenAI SDK errors often include these)
-  console.error("LLM enrichment failed (details):", {
-    message: err?.message,
-    name: err?.name,
-    status: err?.status,
-    code: err?.code,
-    type: err?.type,
-    cause: err?.cause,
-  });
-
-  // Some SDK errors carry response data in nested fields; this helps surface it
-  try {
-    console.error(
-      "LLM enrichment failed (stringified):",
-      JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
-    );
-  } catch (_) {}
-}
+        // Do NOT throw — keep server alive and return deterministic output.
+        console.error("[diag] LLM enrichment failed (raw):", err);
+        try {
+          console.error(
+            "[diag] LLM enrichment failed (stringified):",
+            JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+          );
+        } catch (_) {}
+      }
     }
+
+    L.finish(200);
 
     // Backward-compatible response for existing Zapier mappings:
     return res.status(200).json({
@@ -111,10 +139,12 @@ export default async function handler(req, res) {
       flags: scored.flags,
       email_subject: content.subject,
       email_body_text: content.bodyText,
-      client_email: clientEmail
+      client_email: clientEmail,
     });
   } catch (err) {
-    console.error("Unhandled error:", err?.message || err);
+    L.error("Unhandled error", { message: err?.message, name: err?.name });
+    L.finish(500);
+    console.error("[diag] Unhandled error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 }
@@ -131,7 +161,7 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, content }
     pillarObj("value_architecture", scored.pillars.value_architecture),
     pillarObj("pricing_packaging", scored.pillars.pricing_packaging),
     pillarObj("gtm_focus", scored.pillars.gtm_focus),
-    pillarObj("measurement", scored.pillars.measurement)
+    pillarObj("measurement", scored.pillars.measurement),
   ];
 
   const primary = buildPrimaryConstraint(scored);
@@ -144,12 +174,12 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, content }
       company_name: null,
       contact_name: clientName || null,
       contact_email: clientEmail || "",
-      website: null
+      website: null,
     },
     inputs: {
       source: "honeybook",
       raw_answers: answers,
-      normalized_answers: normalizeAnswers(answers)
+      normalized_answers: normalizeAnswers(answers),
     },
     scoring: {
       overall_score: scored.total,
@@ -162,30 +192,33 @@ function buildReport({ tier, clientName, clientEmail, answers, scored, content }
         severity: "medium",
         title: f,
         evidence: [],
-        recommendation: ""
-      }))
+        recommendation: "",
+      })),
     },
     narrative: buildNarrative({ scored }),
     deliverables: {
       email: {
         subject: content.subject,
         body_text: content.bodyText,
-        body_html: null
+        body_html: null,
       },
       pdf: {
-        title: tier === "audit" ? "Brand-to-GTM OS Strategic Audit" : "Brand-to-GTM OS Executive Summary",
+        title:
+          tier === "audit"
+            ? "Brand-to-GTM OS Strategic Audit"
+            : "Brand-to-GTM OS Executive Summary",
         pdf_url: null,
         html_url: null,
-        pages_estimate: tier === "audit" ? 10 : 3
-      }
+        pages_estimate: tier === "audit" ? 10 : 3,
+      },
     },
     disclaimer: {
       ai_assisted: false,
       limitations: [
         "This diagnostic is based on provided inputs and deterministic scoring rules.",
-        "Competitive analysis and pricing insights (when present) should be validated with market research."
-      ]
-    }
+        "Competitive analysis and pricing insights (when present) should be validated with market research.",
+      ],
+    },
   };
 
   if (tier === "audit") {
@@ -205,7 +238,7 @@ function pillarObj(key, score) {
     max: 5,
     band: score >= 4 ? "Strong" : score >= 3 ? "Mixed" : "At Risk",
     signals: [],
-    risks: score <= 2 ? ["Pillar appears underdeveloped based on structured signals."] : []
+    risks: score <= 2 ? ["Pillar appears underdeveloped based on structured signals."] : [],
   };
 }
 
@@ -222,15 +255,19 @@ function buildPrimaryConstraint(scored) {
     downstream_impacts: [
       "Lower win rates in competitive deals",
       "Discounting pressure and margin compression",
-      "Inconsistent messaging and weak differentiation"
-    ]
+      "Inconsistent messaging and weak differentiation",
+    ],
   };
 }
 
 function buildNarrative({ scored }) {
-  const headline = `${scored.band}: primary constraint is ${prettyPillar(scored.primaryConstraint)}`;
+  const headline = `${scored.band}: primary constraint is ${prettyPillar(
+    scored.primaryConstraint
+  )}`;
   const observations =
-    (scored.flags || []).length > 0 ? scored.flags.slice(0, 4) : ["No major red flags detected from structured inputs."];
+    (scored.flags || []).length > 0
+      ? scored.flags.slice(0, 4)
+      : ["No major red flags detected from structured inputs."];
 
   return {
     executive_summary: {
@@ -241,8 +278,8 @@ function buildNarrative({ scored }) {
       what_to_do_next: [
         "Confirm the primary constraint with a short review call",
         "Prioritize 1–2 quick wins to improve clarity and commercial outcomes",
-        "Decide if a full Strategic Audit is warranted"
-      ]
+        "Decide if a full Strategic Audit is warranted",
+      ],
     },
     pillar_interpretations: [
       {
@@ -252,15 +289,15 @@ function buildNarrative({ scored }) {
         quick_wins: [
           "Define a sharper category POV and differentiation claim",
           "Anchor value in measurable outcomes (economic proof)",
-          "Reduce discounting by tightening packaging and guardrails"
+          "Reduce discounting by tightening packaging and guardrails",
         ],
         questions_to_answer: [
           "What do we win on besides price?",
           "Which customer outcomes are repeatable and provable?",
-          "What is the simplest packaging structure customers understand quickly?"
-        ]
-      }
-    ]
+          "What is the simplest packaging structure customers understand quickly?",
+        ],
+      },
+    ],
   };
 }
 
@@ -273,10 +310,11 @@ function buildExecTierUpsell() {
         how: [
           "Write a category POV + differentiation claim",
           "Validate with 3 customer calls",
-          "Align homepage + pitch deck messaging"
+          "Align homepage + pitch deck messaging",
         ],
-        expected_impact: "Improved consistency in sales conversations and competitive win rates.",
-        effort: "low"
+        expected_impact:
+          "Improved consistency in sales conversations and competitive win rates.",
+        effort: "low",
       },
       {
         title: "Quantify value with 2–3 proof points",
@@ -284,10 +322,10 @@ function buildExecTierUpsell() {
         how: [
           "Identify top 2 metrics customers care about",
           "Build 1-page ROI story template",
-          "Instrument one customer case quickly"
+          "Instrument one customer case quickly",
         ],
         expected_impact: "Higher close rate with fewer concessions.",
-        effort: "medium"
+        effort: "medium",
       },
       {
         title: "Tighten pricing guardrails",
@@ -295,11 +333,11 @@ function buildExecTierUpsell() {
         how: [
           "Define discount thresholds",
           "Standardize approval workflow",
-          "Improve tier naming and feature/value ladders"
+          "Improve tier naming and feature/value ladders",
         ],
         expected_impact: "Better margin stability and improved deal discipline.",
-        effort: "medium"
-      }
+        effort: "medium",
+      },
     ],
     upgrade_positioning: {
       headline: "What the Full Strategic Audit Unlocks",
@@ -307,20 +345,20 @@ function buildExecTierUpsell() {
         "A pillar-by-pillar diagnosis with specific root-cause hypotheses",
         "SWOT tied directly to Brand-to-GTM levers",
         "Competitive pricing & packaging audit (hypotheses + what-to-verify)",
-        "A prioritized 30/90-day roadmap + first sprint plan"
+        "A prioritized 30/90-day roadmap + first sprint plan",
       ],
       what_you_get: [
         "SWOT tied to Brand-to-GTM pillars",
         "Competitive pricing & packaging audit (hypotheses + validation plan)",
-        "Prioritized 30/90-day roadmap with sprint plan"
+        "Prioritized 30/90-day roadmap with sprint plan",
       ],
       offer: {
         name: "Full Strategic Audit",
         price_usd: 499,
         cta_label: "Upgrade to Full Audit",
-        cta_url: null
-      }
-    }
+        cta_url: null,
+      },
+    },
   };
 }
 
@@ -330,7 +368,7 @@ function buildFullTierPlaceholder({ answers }) {
       strengths: [{ point: "Strength placeholder", evidence: [] }],
       weaknesses: [{ point: "Weakness placeholder", evidence: [] }],
       opportunities: [{ point: "Opportunity placeholder", evidence: [] }],
-      threats: [{ point: "Threat placeholder", evidence: [] }]
+      threats: [{ point: "Threat placeholder", evidence: [] }],
     },
     competitive_context: {
       category: answers["What category do you compete in?"] || null,
@@ -338,7 +376,7 @@ function buildFullTierPlaceholder({ answers }) {
         ? [answers["Who do customers compare you to most often?"]]
         : [],
       competitive_archetypes: [],
-      positioning_hypotheses: []
+      positioning_hypotheses: [],
     },
     pricing_packaging_audit: {
       current_state_signals: [],
@@ -347,23 +385,24 @@ function buildFullTierPlaceholder({ answers }) {
       packaging_issues: [],
       hypotheses_to_test: [],
       what_to_validate: [],
-      first_fixes: []
+      first_fixes: [],
     },
     roadmap: {
-      north_star: "Establish clear positioning and value proof to reduce discounting and improve GTM efficiency.",
+      north_star:
+        "Establish clear positioning and value proof to reduce discounting and improve GTM efficiency.",
       principles: ["Clarity over breadth", "Proof over promises", "Focus over fragmentation"],
       thirty_day: [],
       ninety_day: [],
-      six_to_twelve_month: []
+      six_to_twelve_month: [],
     },
     first_sprint_plan: { weeks: [] },
     appendix: {
       response_summary: Object.entries(answers).map(([question, answer]) => ({
         question,
         answer: String(answer ?? ""),
-        notes: null
-      }))
-    }
+        notes: null,
+      })),
+    },
   };
 }
 
@@ -390,7 +429,7 @@ function normalizeAnswers(answers) {
     growth_status: answers["How would you rate your growth status?"] ?? null,
     marketing_measured_by: answers["Marketing is measured primarily by:"] ?? null,
     attribution_trusted: answers["Is attribution trusted internally?"] ?? null,
-    forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null
+    forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null,
   };
 }
 
@@ -406,60 +445,70 @@ function getConfig() {
     pillar_max: 5,
     score_rules: {
       positioning: [
-        { if: { "Why do you most often win deals?": "Lowest price" }, delta: -2, flag: "Price-led wins suggest commoditization risk." },
-        { if: { "Why do you most often lose deals?": "Price" }, delta: -2, flag: "Pricing pressure indicates weak value anchoring." },
-        { if: { "Why do you most often lose deals?": "Lack of differentiation" }, delta: -2, flag: "Differentiation gap in competitive deals." },
-        { if: { "Do customers describe your company consistently?": "Often unclear" }, delta: -2, flag: "Positioning clarity issue." },
+        {
+          if: { "Why do you most often win deals?": "Lowest price" },
+          delta: -2,
+          flag: "Price-led wins suggest commoditization risk.",
+        },
+        {
+          if: { "Why do you most often lose deals?": "Price" },
+          delta: -2,
+          flag: "Pricing pressure indicates weak value anchoring.",
+        },
+        {
+          if: { "Why do you most often lose deals?": "Lack of differentiation" },
+          delta: -2,
+          flag: "Differentiation gap in competitive deals.",
+        },
+        {
+          if: { "Do customers describe your company consistently?": "Often unclear" },
+          delta: -2,
+          flag: "Positioning clarity issue.",
+        },
         { if: { "Why do you most often win deals?": "Clear differentiation" }, delta: 2 },
-        { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 }
+        { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 },
       ],
       value_architecture: [
         { if: { "Can you quantify ROI for most customers?": "Yes — documented & repeatable" }, delta: 3 },
         { if: { "Can you quantify ROI for most customers?": "No" }, delta: -3, flag: "ROI not clearly quantified." },
         { if: { "Sales conversations primarily lead with:": "Features" }, delta: -2, flag: "Feature-led selling limits pricing power." },
         { if: { "Sales conversations primarily lead with:": "Financial ROI" }, delta: 2 },
-        { if: { "What financial metrics do customers see improve due to your product?": "Not clearly defined" }, delta: -2, flag: "Economic value not clearly anchored to metrics." }
+        { if: { "What financial metrics do customers see improve due to your product?": "Not clearly defined" }, delta: -2, flag: "Economic value not clearly anchored to metrics." },
       ],
       pricing_packaging: [
         { if: { "How often are discounts required to close deals?": "Frequently (40%+)" }, delta: -3, flag: "Frequent discounting compresses margin." },
         { if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" }, delta: -1 },
         { if: { "Do customers clearly understand your pricing tiers?": "Often confused" }, delta: -2, flag: "Pricing structure may be unclear." },
         { if: { "What is your gross margin (%)?": "Under 50%" }, delta: -2 },
-        { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 }
+        { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 },
       ],
       gtm_focus: [
         { if: { "Do you know CAC by channel?": "No" }, delta: -2, flag: "Channel economics unclear." },
         { if: { "How would you rate your growth status?": "Stalled" }, delta: -2, flag: "Growth stall indicator." },
-        { if: { "How would you rate your growth status?": "Plateauing" }, delta: -1 }
+        { if: { "How would you rate your growth status?": "Plateauing" }, delta: -1 },
       ],
       measurement: [
         { if: { "Marketing is measured primarily by:": "Leads" }, delta: -2, flag: "Lead-focused measurement may signal vanity metrics." },
         { if: { "Marketing is measured primarily by:": "Revenue" }, delta: 2 },
         { if: { "Is attribution trusted internally?": "No" }, delta: -2, flag: "Attribution credibility gap." },
-        { if: { "Are revenue forecasts accurate within 10%": "No" }, delta: -2, flag: "Forecast reliability risk." }
-      ]
+        { if: { "Are revenue forecasts accurate within 10%": "No" }, delta: -2, flag: "Forecast reliability risk." },
+      ],
     },
     alignment_bands: [
       { min: 24, max: 30, label: "Structurally Aligned" },
       { min: 18, max: 23, label: "Operational Friction" },
       { min: 12, max: 17, label: "Strategic Leakage" },
-      { min: 0, max: 11, label: "Structural Misalignment" }
-    ]
+      { min: 0, max: 11, label: "Structural Misalignment" },
+    ],
   };
 }
 
 function normalizeKey(str) {
-  return String(str || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[?!.]+$/, "");
+  return String(str || "").trim().toLowerCase().replace(/[?!.]+$/, "");
 }
 
 function normalizeValue(str) {
-  return String(str || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[?!.]+$/, "");
+  return String(str || "").trim().toLowerCase().replace(/[?!.]+$/, "");
 }
 
 function buildNormalizedLookup(answers) {
@@ -479,7 +528,7 @@ function score(answers, config) {
     value_architecture: base,
     pricing_packaging: base,
     gtm_focus: base,
-    measurement: base
+    measurement: base,
   };
 
   const flags = [];
@@ -503,7 +552,8 @@ function score(answers, config) {
   }
 
   const total = Object.values(pillars).reduce((a, b) => a + b, 0);
-  const band = config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label || "Unknown";
+  const band =
+    config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label || "Unknown";
 
   const primaryConstraint = Object.keys(pillars).sort((a, b) => pillars[a] - pillars[b])[0];
 
@@ -522,7 +572,11 @@ Overall alignment: ${scored.band} (Score: ${scored.total}/25)
 Primary constraint: ${nicePillar}
 
 Key observations:
-${topFlags.length ? topFlags.map((f) => `- ${f}`).join("\n") : "- No major red flags detected from the structured inputs."}
+${
+  topFlags.length
+    ? topFlags.map((f) => `- ${f}`).join("\n")
+    : "- No major red flags detected from the structured inputs."
+}
 
 Next step:
 Reply to this email or book your 30-minute intro call to walk through the summary and learn more about the benefits of a full Brand-to-GTM OS diagnostic.
@@ -551,7 +605,11 @@ Primary constraint:
 - ${prettyPillar(scored.primaryConstraint)}
 
 Risk flags:
-${(scored.flags || []).length ? scored.flags.map((f) => `- ${f}`).join("\n") : "- None detected from structured rules."}
+${
+  (scored.flags || []).length
+    ? scored.flags.map((f) => `- ${f}`).join("\n")
+    : "- None detected from structured rules."
+}
 
 Working hypotheses (v1):
 - If your wins/losses are price-driven, strengthen economic value proof + differentiation narrative.
@@ -579,7 +637,7 @@ function prettyPillar(key) {
     value_architecture: "Value Architecture",
     pricing_packaging: "Pricing & Packaging",
     gtm_focus: "GTM Focus",
-    measurement: "Measurement"
+    measurement: "Measurement",
   };
   return map[key] || key;
 }
@@ -616,17 +674,19 @@ async function enrichAuditReport(report) {
   const compactInput = {
     tier: report.tier,
     scoring: report.scoring,
-    normalized_answers: report.inputs?.normalized_answers
+    normalized_answers: report.inputs?.normalized_answers,
   };
 
   const systemPrompt =
     "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing.";
 
+  // IMPORTANT: keep this as a string prompt; it's fine to include structure examples,
+  // but the model must output valid JSON.
   const userPrompt = `
-Using the diagnostic data below, produce a JSON object matching this structure:
+Using the diagnostic data below, return ONLY valid JSON with this shape:
 
 {
-  "narrative": { ...optional improved narrative... },
+  "narrative": { "text": "..." },
   "full_tier": {
     "swot": {
       "strengths": [{"point":"","evidence":[]}],
@@ -635,26 +695,26 @@ Using the diagnostic data below, produce a JSON object matching this structure:
       "threats": [{"point":"","evidence":[]}]
     },
     "competitive_context": {
-      "category": string|null,
-      "most_compared_to": string[],
-      "competitive_archetypes": string[],
-      "positioning_hypotheses": string[]
+      "category": null,
+      "most_compared_to": [],
+      "competitive_archetypes": [],
+      "positioning_hypotheses": []
     },
     "pricing_packaging_audit": {
-      "current_state_signals": string[],
-      "pricing_power_risks": string[],
-      "discounting_diagnosis": string,
-      "packaging_issues": string[],
-      "hypotheses_to_test": string[],
-      "what_to_validate": string[],
-      "first_fixes": string[]
+      "current_state_signals": [],
+      "pricing_power_risks": [],
+      "discounting_diagnosis": "",
+      "packaging_issues": [],
+      "hypotheses_to_test": [],
+      "what_to_validate": [],
+      "first_fixes": []
     },
     "roadmap": {
-      "north_star": string,
-      "principles": string[],
-      "thirty_day": string[],
-      "ninety_day": string[],
-      "six_to_twelve_month": string[]
+      "north_star": "",
+      "principles": [],
+      "thirty_day": [],
+      "ninety_day": [],
+      "six_to_twelve_month": []
     }
   }
 }
@@ -667,8 +727,8 @@ ${JSON.stringify(compactInput)}
     model,
     input: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ]
+      { role: "user", content: userPrompt },
+    ],
   });
 
   const text = response.output_text || "";
