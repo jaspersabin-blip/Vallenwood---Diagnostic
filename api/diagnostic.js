@@ -558,10 +558,10 @@ function buildReport({ tier, clientName, clientEmail, answers, osScored, legacyS
     generated_at: generatedAt,
     tier,
     client: {
-      company_name: null,
+      company_name: clientCompany || null,
       contact_name: clientName || null,
       contact_email: clientEmail || "",
-      website: null,
+      website: clientWebsite || null,
     },
     inputs: {
       source: "honeybook",
