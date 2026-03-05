@@ -972,8 +972,10 @@ export default async function handler(req, res) {
     let tier = payload.tier || "exec"; // "exec" | "audit"
     if (tier === "full") tier = "audit";
 
-    const clientEmail = cleanScalar(payload.client_email) || "";
-    const clientName = cleanScalar(payload.client_name) || "";
+    const clientEmail = payload.client_email || "";
+    const clientName = payload.client_name || "";
+    const clientCompany = payload.client_company || "";
+    const clientWebsite = payload.client_website || "";
 
     // ---- Legacy scoring (kept) ----
     const tLegacy = L.mark();
@@ -1147,6 +1149,8 @@ export default async function handler(req, res) {
       tier,
       clientName,
       clientEmail,
+      clientCompany,
+      clientWebsite,
       answers,
       osScored,
       legacyScored,
