@@ -5,9 +5,252 @@
 // - Adds payload validation (400 if answers missing / not object / empty)
 // - Adds answer-key normalization (minor punctuation/case differences won't break scoring)
 // - Adds optional audit-tier LLM enrichment behind feature flag (LLM_ENRICH=1)
+// - Adds Brand-to-GTM OS Score (0–100) alongside existing 0–25 scoring
 
 import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
+
+/* =========================================================
+   Brand-to-GTM OS Score (v1.0) — 0 to 100
+   5 pillars x 20 points = 100
+   Deterministic (no AI needed)
+========================================================= */
+
+function cap(n, max) {
+  return Math.max(0, Math.min(n, max));
+}
+
+function scoreBand(totalScore) {
+  if (totalScore >= 80) return "High Brand-to-GTM alignment";
+  if (totalScore >= 65) return "Moderate system friction";
+  if (totalScore >= 50) return "Structural GTM misalignment";
+  return "Severe growth constraints";
+}
+
+// Helper: ensures acquisition channels are always an array
+function normalizeChannels(val) {
+  if (Array.isArray(val)) return val;
+
+  // If HoneyBook/Zapier sends a comma-separated or newline string
+  if (typeof val === "string") {
+    return val
+      .split(/,|\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+/**
+ * computeBrandToGtmOsScore expects stable keys (adapter below provides these)
+ */
+function computeBrandToGtmOsScore(answers) {
+  const pillar_scores = {
+    positioning: 0,
+    value_architecture: 0,
+    pricing_packaging: 0,
+    gtm_focus: 0,
+    measurement: 0,
+  };
+
+  // --- Optional firmographic modifiers (light influence) ---
+  const revenueModMap = {
+    "Under $5M": 0,
+    "$5–10M": 1,
+    "$10–25M": 2,
+    "$25–50M": 3,
+    "$50–100M": 4,
+    "$100M+": 4,
+  };
+
+  const acvModMap = {
+    "Under $10K": 0,
+    "$10–25K": 1,
+    "$25–75K": 2,
+    "$75–250K": 3,
+    "$250K+": 4,
+  };
+
+  const revenueMod = revenueModMap[answers.annual_revenue] ?? 0;
+  const acvMod = acvModMap[answers.acv] ?? 0;
+
+  pillar_scores.gtm_focus += revenueMod;
+  pillar_scores.measurement += revenueMod;
+
+  pillar_scores.value_architecture += acvMod;
+  pillar_scores.pricing_packaging += acvMod;
+
+  // 1) Positioning & Category
+  const winMap = {
+    "Clear differentiation": 6,
+    "Brand trust": 5,
+    "Feature depth": 4,
+    "Speed / Ease of Use": 4,
+    "Strong relationships": 2,
+    "Lowest price": 1,
+  };
+
+  const loseMap = {
+    "Lack of differentiation": 1,
+    "Unclear ROI": 2,
+    "Brand trust": 2,
+    "Procurement friction": 3,
+    "Feature gaps": 4,
+    "Price": 5,
+  };
+
+  const consistencyMap = {
+    "Yes — very consistent": 8,
+    "Somewhat": 5,
+    "Often unclear": 2,
+  };
+
+  pillar_scores.positioning += winMap[answers.win_reason] ?? 0;
+  pillar_scores.positioning += loseMap[answers.lose_reason] ?? 0;
+  pillar_scores.positioning += consistencyMap[answers.consistency] ?? 0;
+  pillar_scores.positioning = cap(pillar_scores.positioning, 20);
+
+  // 2) Value Architecture
+  const roiMap = {
+    "Yes — documented & repeatable": 8,
+    "Somewhat": 5,
+    "No": 2,
+  };
+
+  const leadWithMap = {
+    "Financial ROI": 6,
+    "Business outcomes": 5,
+    "Technical differentiation": 4,
+    "Features": 2,
+  };
+
+  const metricsMap = {
+    "Revenue growth": 6,
+    "Margin expansion": 6,
+    "Cost reduction": 5,
+    "Risk reduction": 4,
+    "Productivity gains": 4,
+    "Not clearly defined": 1,
+  };
+
+  pillar_scores.value_architecture += roiMap[answers.roi_quantifiable] ?? 0;
+  pillar_scores.value_architecture += leadWithMap[answers.sales_lead_with] ?? 0;
+  pillar_scores.value_architecture += metricsMap[answers.financial_metrics_improved] ?? 0;
+  pillar_scores.value_architecture = cap(pillar_scores.value_architecture, 20);
+
+  // 3) Pricing & Packaging
+  const discountMap = {
+    "Rarely (<10%)": 8,
+    "Sometimes (10–40%)": 5,
+    "Frequently (40%+)": 2,
+  };
+
+  const tierClarityMap = {
+    "Yes — very clear": 6,
+    "Somewhat": 4,
+    "Often confused": 2,
+  };
+
+  const marginMap = {
+    "75%+": 6,
+    "65–75%": 5,
+    "50–65%": 4,
+    "Under 50%": 2,
+  };
+
+  pillar_scores.pricing_packaging += discountMap[answers.discount_frequency] ?? 0;
+  pillar_scores.pricing_packaging += tierClarityMap[answers.pricing_tiers_clarity] ?? 0;
+  pillar_scores.pricing_packaging += marginMap[answers.gross_margin] ?? 0;
+  pillar_scores.pricing_packaging = cap(pillar_scores.pricing_packaging, 20);
+
+  // 4) GTM Focus
+  const channelPoints = {
+    "Partnerships": 3,
+    "Content": 3,
+    "Product-led": 3,
+    "Outbound SDR": 2,
+    "Founder-led selling": 2,
+    "Events": 2,
+    "Paid search": 1,
+    "Paid social": 1,
+  };
+
+  const salesCycleMap = {
+    "Under 1 month": 6,
+    "1–3 months": 5,
+    "3–6 months": 4,
+    "6–12 months": 3,
+    "12+ months": 2,
+  };
+
+  const closeRateMap = {
+    "40%+": 6,
+    "25–40%": 5,
+    "15–25%": 4,
+    "Under 15%": 2,
+  };
+
+  const channels = Array.isArray(answers.acquisition_channels) ? answers.acquisition_channels : [];
+  const channelScoreRaw = channels
+    .slice(0, 3)
+    .reduce((sum, ch) => sum + (channelPoints[ch] ?? 0), 0);
+
+  const channelScore = cap(channelScoreRaw, 8);
+
+  pillar_scores.gtm_focus += channelScore;
+  pillar_scores.gtm_focus += salesCycleMap[answers.sales_cycle] ?? 0;
+  pillar_scores.gtm_focus += closeRateMap[answers.close_rate] ?? 0;
+  pillar_scores.gtm_focus = cap(pillar_scores.gtm_focus, 20);
+
+  // 5) Measurement
+  const measuredByMap = {
+    "Revenue": 6,
+    "Pipeline": 5,
+    "Brand metrics": 3,
+    "Leads": 2,
+  };
+
+  const attributionMap = {
+    "Yes": 8,
+    "Debated": 5,
+    "No": 2,
+  };
+
+  const forecastMap = {
+    "Yes": 6,
+    "No": 2,
+  };
+
+  const cacMap = {
+    "Yes": 6,
+    "Rough estimates": 4,
+    "No": 2,
+  };
+
+  pillar_scores.measurement += measuredByMap[answers.marketing_measured_by] ?? 0;
+  pillar_scores.measurement += attributionMap[answers.attribution_trusted] ?? 0;
+  pillar_scores.measurement += forecastMap[answers.forecast_accuracy] ?? 0;
+  pillar_scores.measurement += cacMap[answers.cac_by_channel] ?? 0;
+  pillar_scores.measurement = cap(pillar_scores.measurement, 20);
+
+  const brand_to_gtm_os_score =
+    pillar_scores.positioning +
+    pillar_scores.value_architecture +
+    pillar_scores.pricing_packaging +
+    pillar_scores.gtm_focus +
+    pillar_scores.measurement;
+
+  return {
+    brand_to_gtm_os_score,
+    pillar_scores,
+    interpretation_band: scoreBand(brand_to_gtm_os_score),
+  };
+}
+
+/* =========================================================
+   Handler
+========================================================= */
 
 export default async function handler(req, res) {
   const L = createDiagLogger(req);
@@ -62,6 +305,37 @@ export default async function handler(req, res) {
     const config = getConfig();
     const scored = score(answers, config);
     L.step("score", tScore, { total: scored?.total, band: scored?.band });
+
+    // === NEW: Brand-to-GTM OS Score (0–100) ===
+    const na = normalizeAnswers(answers);
+
+    const osInputs = {
+      annual_revenue: na.annual_revenue,
+      acv: na.acv,
+      sales_cycle: na.sales_cycle,
+      close_rate: na.close_rate,
+
+      win_reason: na.win_reason,
+      lose_reason: na.lose_reason,
+      consistency: na.positioning_consistency,
+
+      roi_quantifiable: na.roi_repeatable,
+      sales_lead_with: na.sales_lead,
+      financial_metrics_improved: na.financial_metrics_improved,
+
+      discount_frequency: na.discounting,
+      pricing_tiers_clarity: na.pricing_clarity,
+      gross_margin: na.gross_margin,
+
+      acquisition_channels: normalizeChannels(na.acquisition_channels),
+      cac_by_channel: na.cac_by_channel,
+
+      marketing_measured_by: na.marketing_measured_by,
+      attribution_trusted: na.attribution_trusted,
+      forecast_accuracy: na.forecast_accuracy,
+    };
+
+    const osScored = computeBrandToGtmOsScore(osInputs);
 
     const tRender = L.mark();
     const content =
@@ -130,6 +404,11 @@ export default async function handler(req, res) {
       report,
       report_json: JSON.stringify(report),
 
+      // ✅ NEW: Brand-to-GTM OS Score (0–100 scale)
+      brand_to_gtm_os_score: osScored?.brand_to_gtm_os_score ?? null,
+      brand_to_gtm_os_band: osScored?.interpretation_band ?? null,
+      brand_to_gtm_os_pillar_scores: osScored?.pillar_scores ?? null,
+
       // ✅ keep old keys for now (so you don’t break Zaps)
       tier,
       overall_score: scored.total,
@@ -149,9 +428,9 @@ export default async function handler(req, res) {
   }
 }
 
-/* ---------------------------
+/* =========================================================
    Report Builder (Schema v1.0)
----------------------------- */
+========================================================= */
 
 function buildReport({ tier, clientName, clientEmail, answers, scored, content }) {
   const generatedAt = new Date().toISOString();
@@ -414,28 +693,37 @@ function normalizeAnswers(answers) {
     acv: answers["Average Contract Value (ACV)"] ?? null,
     sales_cycle: answers["Average Sales Cycle Length"] ?? null,
     close_rate: answers["Close Rate (%)"] ?? null,
+
     category: answers["What category do you compete in?"] ?? null,
     compared_to: answers["Who do customers compare you to most often?"] ?? null,
+
     win_reason: answers["Why do you most often win deals?"] ?? null,
     lose_reason: answers["Why do you most often lose deals?"] ?? null,
     positioning_consistency: answers["Do customers describe your company consistently?"] ?? null,
+
     roi_repeatable: answers["Can you quantify ROI for most customers?"] ?? null,
     sales_lead: answers["Sales conversations primarily lead with:"] ?? null,
+    financial_metrics_improved:
+      answers["What financial metrics do customers see improve due to your product?"] ?? null,
+
     discounting: answers["How often are discounts required to close deals?"] ?? null,
     pricing_clarity: answers["Do customers clearly understand your pricing tiers?"] ?? null,
     gross_margin: answers["What is your gross margin (%)?"] ?? null,
-    acquisition_channels: answers["What are your primary acquisition channels (select up to 3)"] ?? null,
+
+    acquisition_channels:
+      answers["What are your primary acquisition channels (select up to 3)"] ?? null,
     cac_by_channel: answers["Do you know CAC by channel?"] ?? null,
     growth_status: answers["How would you rate your growth status?"] ?? null,
+
     marketing_measured_by: answers["Marketing is measured primarily by:"] ?? null,
     attribution_trusted: answers["Is attribution trusted internally?"] ?? null,
     forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null,
   };
 }
 
-/* ---------------------------
-   Existing Scoring + Copy
----------------------------- */
+/* =========================================================
+   Existing Scoring + Copy (0–25) — keep for backward compat
+========================================================= */
 
 function getConfig() {
   return {
@@ -469,16 +757,42 @@ function getConfig() {
         { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 },
       ],
       value_architecture: [
-        { if: { "Can you quantify ROI for most customers?": "Yes — documented & repeatable" }, delta: 3 },
-        { if: { "Can you quantify ROI for most customers?": "No" }, delta: -3, flag: "ROI not clearly quantified." },
-        { if: { "Sales conversations primarily lead with:": "Features" }, delta: -2, flag: "Feature-led selling limits pricing power." },
+        {
+          if: { "Can you quantify ROI for most customers?": "Yes — documented & repeatable" },
+          delta: 3,
+        },
+        {
+          if: { "Can you quantify ROI for most customers?": "No" },
+          delta: -3,
+          flag: "ROI not clearly quantified.",
+        },
+        {
+          if: { "Sales conversations primarily lead with:": "Features" },
+          delta: -2,
+          flag: "Feature-led selling limits pricing power.",
+        },
         { if: { "Sales conversations primarily lead with:": "Financial ROI" }, delta: 2 },
-        { if: { "What financial metrics do customers see improve due to your product?": "Not clearly defined" }, delta: -2, flag: "Economic value not clearly anchored to metrics." },
+        {
+          if: {
+            "What financial metrics do customers see improve due to your product?":
+              "Not clearly defined",
+          },
+          delta: -2,
+          flag: "Economic value not clearly anchored to metrics.",
+        },
       ],
       pricing_packaging: [
-        { if: { "How often are discounts required to close deals?": "Frequently (40%+)" }, delta: -3, flag: "Frequent discounting compresses margin." },
+        {
+          if: { "How often are discounts required to close deals?": "Frequently (40%+)" },
+          delta: -3,
+          flag: "Frequent discounting compresses margin.",
+        },
         { if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" }, delta: -1 },
-        { if: { "Do customers clearly understand your pricing tiers?": "Often confused" }, delta: -2, flag: "Pricing structure may be unclear." },
+        {
+          if: { "Do customers clearly understand your pricing tiers?": "Often confused" },
+          delta: -2,
+          flag: "Pricing structure may be unclear.",
+        },
         { if: { "What is your gross margin (%)?": "Under 50%" }, delta: -2 },
         { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 },
       ],
@@ -642,9 +956,9 @@ function prettyPillar(key) {
   return map[key] || key;
 }
 
-/* ---------------------------
+/* =========================================================
    LLM Enrichment (Audit tier only)
----------------------------- */
+========================================================= */
 
 function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
@@ -680,8 +994,6 @@ async function enrichAuditReport(report) {
   const systemPrompt =
     "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing.";
 
-  // IMPORTANT: keep this as a string prompt; it's fine to include structure examples,
-  // but the model must output valid JSON.
   const userPrompt = `
 Using the diagnostic data below, return ONLY valid JSON with this shape:
 
