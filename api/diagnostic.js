@@ -1,8 +1,13 @@
 // api/diagnostic.js
-// Drop-in replacement (OS-first).
-// - OS score is the headline everywhere (API + report + emails)
-// - Legacy score remains (computed), but is only stored under report.scoring.legacy
-// - Keeps auth + payload validation + key normalization + optional LLM enrichment (audit only)
+// Drop-in replacement (OS-first + production hardening).
+// ✅ OS score is the headline everywhere (API + report + emails)
+// ✅ Legacy score remains computed, stored ONLY under report.scoring.legacy
+// ✅ Auth supports x-vw-token OR Authorization: Bearer <token>
+// ✅ Insufficient-data mode (Option 2) with missing-fields transparency
+// ✅ Defensive answer normalization (trim strings, empty->null, arrays handled)
+// ✅ Optional report_json via INCLUDE_REPORT_JSON=1
+// ✅ Versioning + Zapier-friendly summary output
+// ✅ Keeps optional LLM enrichment (audit only)
 
 import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
@@ -22,6 +27,17 @@ function scoreBand(totalScore) {
   return "Severe growth constraints";
 }
 
+function prettyPillar(key) {
+  const map = {
+    positioning: "Positioning & Category",
+    value_architecture: "Value Architecture",
+    pricing_packaging: "Pricing & Packaging",
+    gtm_focus: "GTM Focus",
+    measurement: "Measurement",
+  };
+  return map[key] || key || null;
+}
+
 function normalizeChannels(val) {
   if (Array.isArray(val)) return val;
   if (typeof val === "string") {
@@ -31,6 +47,39 @@ function normalizeChannels(val) {
       .filter(Boolean);
   }
   return [];
+}
+
+function cleanScalar(v) {
+  if (v === undefined || v === null) return null;
+  if (typeof v === "string") {
+    const t = v.trim();
+    return t === "" ? null : t;
+  }
+  if (typeof v === "number" || typeof v === "boolean") return v;
+  // For objects/arrays, return as-is; higher level normalization will handle where needed.
+  return v;
+}
+
+// Defensive normalization for incoming answers object:
+// - trims strings
+// - converts "" to null
+// - preserves arrays (and cleans strings inside arrays)
+function normalizeIncomingAnswers(answers) {
+  const out = {};
+  for (const [kRaw, vRaw] of Object.entries(answers || {})) {
+    const k = String(kRaw || "").trim();
+    if (!k) continue;
+
+    if (Array.isArray(vRaw)) {
+      out[k] = vRaw
+        .map((x) => (typeof x === "string" ? x.trim() : x))
+        .filter((x) => !(typeof x === "string" && x === ""));
+      if (out[k].length === 0) out[k] = null;
+    } else {
+      out[k] = cleanScalar(vRaw);
+    }
+  }
+  return out;
 }
 
 // Optional: map verbose question strings to stable keys
@@ -76,6 +125,8 @@ function normalizeAnswers(answers) {
    Brand-to-GTM OS Score (v1.0)
    5 pillars x 20 points = 100
 ========================================================= */
+
+const OS_SCORING_VERSION = "os_v1.0";
 
 function computeBrandToGtmOsScore(inputs) {
   const pillar_scores = {
@@ -278,9 +329,11 @@ function computeBrandToGtmOsScore(inputs) {
    Legacy Scoring (existing)
 ========================================================= */
 
+const LEGACY_SCORING_VERSION = "legacy_v1";
+
 function getConfig() {
   return {
-    version: "v1",
+    version: LEGACY_SCORING_VERSION,
     pillar_base_score: 3,
     pillar_min: 0,
     pillar_max: 5,
@@ -478,15 +531,18 @@ Reply to confirm your 60-minute review session time.
   return { subject: "Your Brand-to-GTM OS Strategic Audit", bodyText };
 }
 
-function prettyPillar(key) {
-  const map = {
-    positioning: "Positioning & Category",
-    value_architecture: "Value Architecture",
-    pricing_packaging: "Pricing & Packaging",
-    gtm_focus: "GTM Focus",
-    measurement: "Measurement",
-  };
-  return map[key] || key;
+function renderInsufficientDataEmail({ clientName }) {
+  const subject = "Your Brand-to-GTM OS Executive Summary";
+  const bodyText = `Hi ${clientName || "there"},
+
+Thanks — I received your submission, but there isn’t enough data yet to generate a reliable OS score.
+
+Next step:
+Reply with a bit more detail (or resubmit the form) so I can produce an accurate summary.
+
+— Jasper
+`;
+  return { subject, bodyText };
 }
 
 /* =========================================================
@@ -514,6 +570,9 @@ function buildReport({ tier, clientName, clientEmail, answers, osScored, legacyS
     },
 
     scoring: {
+      // ✅ Versioning
+      os_scoring_version: OS_SCORING_VERSION,
+
       // ✅ OS headline
       overall_score: osScored.brand_to_gtm_os_score,
       overall_max: 100,
@@ -540,6 +599,7 @@ function buildReport({ tier, clientName, clientEmail, answers, osScored, legacyS
 
       // ✅ Legacy kept (not headline)
       legacy: {
+        legacy_scoring_version: LEGACY_SCORING_VERSION,
         overall_score: legacyScored.total,
         overall_max: 25,
         band: legacyScored.band,
@@ -620,21 +680,33 @@ function buildExecTierUpsell() {
       {
         title: "Clarify positioning in one sentence",
         why: "Positioning clarity reduces sales friction and improves pricing power.",
-        how: ["Write a category POV + differentiation claim", "Validate with 3 customer calls", "Align homepage + pitch deck messaging"],
+        how: [
+          "Write a category POV + differentiation claim",
+          "Validate with 3 customer calls",
+          "Align homepage + pitch deck messaging",
+        ],
         expected_impact: "Improved consistency in sales conversations and competitive win rates.",
         effort: "low",
       },
       {
         title: "Quantify value with 2–3 proof points",
         why: "Economic proof reduces discounting and speeds deal cycles.",
-        how: ["Identify top 2 metrics customers care about", "Build 1-page ROI story template", "Instrument one customer case quickly"],
+        how: [
+          "Identify top 2 metrics customers care about",
+          "Build 1-page ROI story template",
+          "Instrument one customer case quickly",
+        ],
         expected_impact: "Higher close rate with fewer concessions.",
         effort: "medium",
       },
       {
         title: "Tighten pricing guardrails",
         why: "Discounting often signals weak packaging and unclear value anchors.",
-        how: ["Define discount thresholds", "Standardize approval workflow", "Improve tier naming and feature/value ladders"],
+        how: [
+          "Define discount thresholds",
+          "Standardize approval workflow",
+          "Improve tier naming and feature/value ladders",
+        ],
         expected_impact: "Better margin stability and improved deal discipline.",
         effort: "medium",
       },
@@ -689,7 +761,7 @@ function buildFullTierPlaceholder({ answers }) {
     appendix: {
       response_summary: Object.entries(answers).map(([question, answer]) => ({
         question,
-        answer: String(answer ?? ""),
+        answer: Array.isArray(answer) ? answer.join(", ") : String(answer ?? ""),
         notes: null,
       })),
     },
@@ -794,6 +866,68 @@ ${JSON.stringify(compactInput)}
 }
 
 /* =========================================================
+   Auth helper (x-vw-token OR Authorization: Bearer)
+========================================================= */
+
+function extractAuthToken(req) {
+  const headerToken = req.headers["x-vw-token"];
+  if (headerToken) return String(headerToken).trim();
+
+  const auth = req.headers["authorization"] || req.headers["Authorization"];
+  if (!auth) return null;
+
+  const s = String(auth).trim();
+  const m = s.match(/^Bearer\s+(.+)$/i);
+  if (m && m[1]) return m[1].trim();
+
+  return null;
+}
+
+/* =========================================================
+   Insufficient data guard (Option 2)
+========================================================= */
+
+const MIN_REQUIRED_FIELDS = 9;
+
+// Fields that actually drive OS scoring.
+const OS_REQUIRED_KEYS = [
+  "annual_revenue",
+  "acv",
+  "sales_cycle",
+  "close_rate",
+  "win_reason",
+  "lose_reason",
+  "consistency",
+  "roi_quantifiable",
+  "sales_lead_with",
+  "discount_frequency",
+  "pricing_tiers_clarity",
+  "gross_margin",
+  "acquisition_channels",
+  "marketing_measured_by",
+  "attribution_trusted",
+  "forecast_accuracy",
+  "cac_by_channel",
+];
+
+function countPresentRequired(osInputs) {
+  const present = [];
+  const missing = [];
+
+  for (const k of OS_REQUIRED_KEYS) {
+    const v = osInputs[k];
+    const isPresent = Array.isArray(v)
+      ? v.length > 0
+      : v !== null && v !== undefined && String(v).trim() !== "";
+
+    if (isPresent) present.push(k);
+    else missing.push(k);
+  }
+
+  return { presentCount: present.length, presentKeys: present, missingKeys: missing };
+}
+
+/* =========================================================
    Handler
 ========================================================= */
 
@@ -808,22 +942,22 @@ export default async function handler(req, res) {
     }
 
     // Auth
-    const token = req.headers["x-vw-token"];
+    const token = extractAuthToken(req);
     if (!token || token !== process.env.VW_TOKEN) {
       L.finish(401);
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const payload = req.body || {};
-    const answers = payload.answers;
+    const rawAnswers = payload.answers;
 
     // Validate answers
     if (
-      answers === undefined ||
-      answers === null ||
-      typeof answers !== "object" ||
-      Array.isArray(answers) ||
-      Object.keys(answers).length === 0
+      rawAnswers === undefined ||
+      rawAnswers === null ||
+      typeof rawAnswers !== "object" ||
+      Array.isArray(rawAnswers) ||
+      Object.keys(rawAnswers).length === 0
     ) {
       L.finish(400);
       return res
@@ -831,12 +965,15 @@ export default async function handler(req, res) {
         .json({ error: "Invalid payload: 'answers' must be a non-empty object." });
     }
 
+    // Defensive normalize answers (trim strings, ""->null, arrays cleaned)
+    const answers = normalizeIncomingAnswers(rawAnswers);
+
     // Tier
     let tier = payload.tier || "exec"; // "exec" | "audit"
     if (tier === "full") tier = "audit";
 
-    const clientEmail = payload.client_email || "";
-    const clientName = payload.client_name || "";
+    const clientEmail = cleanScalar(payload.client_email) || "";
+    const clientName = cleanScalar(payload.client_name) || "";
 
     // ---- Legacy scoring (kept) ----
     const tLegacy = L.mark();
@@ -844,7 +981,7 @@ export default async function handler(req, res) {
     const legacyScored = scoreLegacy(answers, config);
     L.step("scoreLegacy", tLegacy, { total: legacyScored.total, band: legacyScored.band });
 
-    // ---- OS scoring (headline) ----
+    // ---- OS scoring inputs ----
     const tOS = L.mark();
     const na = normalizeAnswers(answers);
 
@@ -874,6 +1011,125 @@ export default async function handler(req, res) {
       forecast_accuracy: na.forecast_accuracy,
     };
 
+    // ---- Insufficient data guard (Option 2) ----
+    const { presentCount, missingKeys } = countPresentRequired(osInputs);
+
+    if (presentCount < MIN_REQUIRED_FIELDS) {
+      const tRender = L.mark();
+      const content = renderInsufficientDataEmail({ clientName });
+      L.step("render_insufficient", tRender, { presentCount, missing: missingKeys.length });
+
+      const generatedAt = new Date().toISOString();
+
+      const report = {
+        schema_version: "1.0",
+        generated_at: generatedAt,
+        tier,
+        client: {
+          company_name: null,
+          contact_name: clientName || null,
+          contact_email: clientEmail || "",
+          website: null,
+        },
+        inputs: {
+          source: "honeybook",
+          raw_answers: answers,
+          normalized_answers: na,
+        },
+        scoring: {
+          os_scoring_version: OS_SCORING_VERSION,
+
+          insufficient_data: true,
+          required_min: MIN_REQUIRED_FIELDS,
+          present_required_count: presentCount,
+          missing_required_fields: missingKeys,
+
+          overall_score: null,
+          overall_max: 100,
+          band: "Insufficient data",
+          primary_constraint: null,
+          pillar_scores: [],
+
+          legacy: {
+            legacy_scoring_version: LEGACY_SCORING_VERSION,
+            overall_score: legacyScored.total,
+            overall_max: 25,
+            band: legacyScored.band,
+            primary_constraint: legacyScored.primaryConstraint,
+            pillar_scores: legacyScored.pillars,
+            flags: legacyScored.flags || [],
+          },
+        },
+        narrative: {
+          executive_summary: {
+            headline: "Insufficient data to score reliably",
+            summary_paragraph:
+              "We received your submission, but not enough inputs were provided to generate a reliable Brand-to-GTM OS score.",
+            key_observations: [],
+            what_to_do_next: [
+              "Resubmit with additional answers",
+              "Or reply to this email and I’ll ask 3–5 quick follow-ups",
+            ],
+          },
+          pillar_interpretations: [],
+        },
+        deliverables: {
+          email: { subject: content.subject, body_text: content.bodyText, body_html: null },
+          pdf: {
+            title: "Brand-to-GTM OS Executive Summary",
+            pdf_url: null,
+            html_url: null,
+            pages_estimate: 1,
+          },
+        },
+        disclaimer: {
+          ai_assisted: false,
+          limitations: ["This diagnostic requires a minimum set of inputs to produce a reliable score."],
+        },
+      };
+
+      const summary = {
+        score: null,
+        band: "Insufficient data",
+        primary_constraint: null,
+        primary_constraint_label: null,
+        insufficient_data: true,
+        present_required_count: presentCount,
+        required_min: MIN_REQUIRED_FIELDS,
+        missing_required_fields: missingKeys,
+      };
+
+      const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
+
+      L.finish(200);
+      return res.status(200).json({
+        report,
+        ...(includeReportJson ? { report_json: JSON.stringify(report) } : {}),
+
+        // Explicit OS fields
+        brand_to_gtm_os_score: null,
+        brand_to_gtm_os_band: "Insufficient data",
+        brand_to_gtm_os_pillar_scores: {},
+        brand_to_gtm_os_primary_constraint: null,
+        brand_to_gtm_os_primary_constraint_label: null,
+
+        // Zapier-friendly summary
+        summary,
+
+        // Backward compatible keys (now point to OS headline; null here)
+        tier,
+        overall_score: null,
+        band: "Insufficient data",
+        primary_constraint: null,
+
+        // Email fields
+        email_subject: content.subject,
+        email_body_text: content.bodyText,
+        client_email: clientEmail,
+      });
+    }
+
+    // ---- Compute OS score ----
     const osScored = computeBrandToGtmOsScore(osInputs);
     L.step("scoreOS", tOS, { total: osScored.brand_to_gtm_os_score, band: osScored.interpretation_band });
 
@@ -896,6 +1152,13 @@ export default async function handler(req, res) {
       legacyScored,
       content,
     });
+
+    // Add insufficient-data transparency fields (false here) for consistency
+    report.scoring.insufficient_data = false;
+    report.scoring.required_min = MIN_REQUIRED_FIELDS;
+    report.scoring.present_required_count = presentCount;
+    report.scoring.missing_required_fields = [];
+
     L.step("buildReport", tBuild);
 
     // Optional LLM enrichment (audit only)
@@ -928,18 +1191,35 @@ export default async function handler(req, res) {
       }
     }
 
+    const summary = {
+      score: osScored.brand_to_gtm_os_score,
+      band: osScored.interpretation_band,
+      primary_constraint: osScored.primary_constraint_key,
+      primary_constraint_label: prettyPillar(osScored.primary_constraint_key),
+      insufficient_data: false,
+      present_required_count: presentCount,
+      required_min: MIN_REQUIRED_FIELDS,
+      missing_required_fields: [],
+    };
+
+    const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
+
     L.finish(200);
 
     // OS-first top-level response
     return res.status(200).json({
       report,
-      report_json: JSON.stringify(report),
+      ...(includeReportJson ? { report_json: JSON.stringify(report) } : {}),
 
       // Explicit OS fields (new)
       brand_to_gtm_os_score: osScored.brand_to_gtm_os_score,
       brand_to_gtm_os_band: osScored.interpretation_band,
       brand_to_gtm_os_pillar_scores: osScored.pillar_scores,
       brand_to_gtm_os_primary_constraint: osScored.primary_constraint_key,
+      brand_to_gtm_os_primary_constraint_label: prettyPillar(osScored.primary_constraint_key),
+
+      // Zapier-friendly summary
+      summary,
 
       // Backward compatible keys (now point to OS headline)
       tier,
