@@ -549,7 +549,17 @@ Reply with a bit more detail (or resubmit the form) so I can produce an accurate
    Report Builder (OS-first; legacy kept but not headline)
 ========================================================= */
 
-function buildReport({ tier, clientName, clientEmail, answers, osScored, legacyScored, content }) {
+  function buildReport({
+    tier,
+    clientName,
+    clientEmail,
+    clientCompany,
+    clientWebsite,
+    answers,
+    osScored,
+    legacyScored,
+    content,
+}) {
   const generatedAt = new Date().toISOString();
   const na = normalizeAnswers(answers);
 
