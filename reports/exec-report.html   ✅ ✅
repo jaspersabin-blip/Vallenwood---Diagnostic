@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brand-to-GTM OS Executive Diagnostic</title>
+  <style>
+    :root {
+      --bg: #f9f6eb;
+      --paper: #fffdf8;
+      --ink: #464644;
+      --muted: #6c6a63;
+      --line: #dfd7c5;
+      --accent: #8aa677;
+      --accent-2: #e3c68f;
+      --pill-bg: #eef3e8;
+      --danger: #8d5a4b;
+      --warn: #9d7b45;
+      --good: #5f7755;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+
+    .report {
+      max-width: 980px;
+      margin: 24px auto 48px;
+      padding: 0 16px;
+    }
+
+    .page {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      min-height: 980px;
+      margin: 0 auto 18px;
+      padding: 40px 40px 48px;
+      box-shadow: 0 8px 28px rgba(70, 70, 68, 0.06);
+      position: relative;
+    }
+
+    .kicker {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+
+    h1 {
+      font-family: Dashiell, Georgia, "Times New Roman", serif;
+      font-size: 38px;
+      line-height: 1.02;
+      margin-bottom: 14px;
+      letter-spacing: -0.03em;
+      max-width: 760px;
+    }
+
+    h2 {
+      font-family: Dashiell, Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      line-height: 1.08;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-size: 16px;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+
+    .lede {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 760px;
+      margin-bottom: 22px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+      max-width: 720px;
+    }
+
+    .meta-card, .score-card, .box, .pillar-card, .action-card {
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 14px 14px 12px;
+      border-radius: 12px;
+    }
+
+    .meta-label, .eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .meta-value {
+      font-size: 18px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .hero-score {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-top: 18px;
+    }
+
+    .score-card.big {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(180deg, #fffdf8 0%, #f3efe4 100%);
+    }
+
+    .score-number {
+      font-size: 74px;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      font-weight: 800;
+    }
+
+    .score-band {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--pill-bg);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .constraint-box {
+      display: grid;
+      gap: 12px;
+    }
+
+    .constraint-name {
+      font-size: 23px;
+      line-height: 1.05;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .muted { color: var(--muted); }
+
+    .footer {
+      position: absolute;
+      bottom: 18px;
+      left: 40px;
+      right: 40px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 0.92fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .chart-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 14px;
+      min-height: 430px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .chart-note {
+      max-width: 220px;
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-swatch {
+      width: 18px;
+      height: 0;
+      border-top: 3px solid var(--accent);
+      border-radius: 999px;
+    }
+
+    .legend-swatch.target {
+      border-top-color: var(--accent-2);
+      border-top-style: dashed;
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      height: 340px;
+      margin-top: 4px;
+    }
+
+    .score-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 1fr 70px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bar {
+      height: 10px;
+      background: #eee7da;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+      border-radius: 999px;
+    }
+
+    .diagnosis-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .constraint-stack {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+    }
+
+    li { margin-bottom: 6px; }
+
+    .actions {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .action-card h4 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .cta {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #fffdf8 0%, #f3efe4 100%);
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+    }
+
+    .cta strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .pillar-score {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .page {
+        min-height: auto;
+        padding: 28px 20px 52px;
+      }
+
+      .hero-score,
+      .two-col,
+      .diagnosis-grid,
+      .pillars,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        left: 20px;
+        right: 20px;
+      }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .report { max-width: none; margin: 0; padding: 0; }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        border: none;
+        page-break-after: always;
+      }
+      .page:last-child { page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report">
+    <section class="page">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:14px;">
+        <div class="kicker" style="margin-bottom:0;">Vallenwood Consulting</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <div aria-hidden="true" style="width:16px;height:22px;position:relative;">
+            <span style="position:absolute;left:0;top:0;width:8px;height:22px;background:#464644;clip-path:polygon(0 0, 100% 0, 72% 100%, 0 18%);"></span>
+            <span style="position:absolute;right:0;top:0;width:8px;height:18px;background:#8AA677;clip-path:polygon(28% 0, 100% 0, 42% 100%, 0 30%);"></span>
+          </div>
+          <div style="display:flex;flex-direction:column;line-height:1;">
+            <span style="font-family:Dashiell, Georgia, 'Times New Roman', serif; font-size:22px; font-weight:700; color:#464644; letter-spacing:-0.015em;">Vallenwood</span>
+            <span style="font-size:9px; letter-spacing:0.22em; text-transform:uppercase; color:#464644; font-weight:700; margin-top:4px;">Consulting LLC</span>
+          </div>
+        </div>
+      </div>
+      <h1>Brand-to-GTM Operating System Executive Diagnostic</h1>
+      <p class="lede">
+        A strategic diagnostic of the operating system driving positioning clarity, pricing power, go-to-market efficiency, and growth execution.
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="meta-label">Company</div>
+          <div class="meta-value" data-field="company_name"></div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Prepared For</div>
+          <div class="meta-value" data-field="contact_name"></div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Website</div>
+          <div class="meta-value" data-field="website"></div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Date</div>
+          <div class="meta-value" data-field="report_date"></div>
+        </div>
+      </div>
+
+      <div class="hero-score">
+        <div class="score-card big">
+          <div>
+            <div class="eyebrow">OS Score</div>
+            <div class="score-number" data-field="overall_score"></div>
+            <div class="muted">out of 100</div>
+          </div>
+          <div class="score-band" data-field="score_band"></div>
+        </div>
+
+        <div class="constraint-box">
+          <div class="box">
+            <div class="eyebrow">Primary Constraint</div>
+            <div class="constraint-name" data-field="primary_constraint_label"></div>
+            <p class="muted" data-field="primary_constraint_why_it_matters"></p>
+          </div>
+
+          <div class="box">
+            <div class="eyebrow">Executive Readout</div>
+            <p data-field="executive_summary_paragraph"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span>Brand-to-GTM Operating System</span>
+        <span>Page 1</span>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="kicker">System Scorecard</div>
+      <h2>Brand-to-GTM Operating System Scorecard</h2>
+
+      <div class="two-col">
+        <div class="chart-wrap">
+          <div class="chart-header">
+            <div>
+              <div class="eyebrow">Spider Chart</div>
+              <div style="font-family:Dashiell, Georgia, 'Times New Roman', serif; font-size:18px; letter-spacing:-0.02em; color:var(--ink);">Current system profile vs. target operating profile</div>
+            </div>
+            <div class="chart-note">A healthy operating system is not perfectly symmetrical. The goal is a strong, balanced shape with no severe structural weak point.</div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="osRadarChart"></canvas>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch"></span>Current operating profile</span>
+            <span class="legend-item"><span class="legend-swatch target"></span>Target operating profile</span>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="eyebrow">Pillar Scores</div>
+          <div class="score-list">
+            <div>
+              <div class="score-row"><strong>Positioning &amp; Category</strong><strong data-field="positioning_score_label"></strong></div>
+              <div class="bar"><span id="bar-positioning"></span></div>
+            </div>
+            <div>
+              <div class="score-row"><strong>Value Architecture</strong><strong data-field="value_architecture_score_label"></strong></div>
+              <div class="bar"><span id="bar-value_architecture"></span></div>
+            </div>
+            <div>
+              <div class="score-row"><strong>Pricing &amp; Packaging</strong><strong data-field="pricing_packaging_score_label"></strong></div>
+              <div class="bar"><span id="bar-pricing_packaging"></span></div>
+            </div>
+            <div>
+              <div class="score-row"><strong>GTM Focus</strong><strong data-field="gtm_focus_score_label"></strong></div>
+              <div class="bar"><span id="bar-gtm_focus"></span></div>
+            </div>
+            <div>
+              <div class="score-row"><strong>Measurement</strong><strong data-field="measurement_score_label"></strong></div>
+              <div class="bar"><span id="bar-measurement"></span></div>
+            </div>
+          </div>
+
+          <p class="muted" style="margin-top:18px;">
+            The Brand-to-GTM Operating System evaluates the structural health of five connected pillars that determine whether the business can defend value, scale efficiently, and convert market attention into growth.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span>Brand-to-GTM Operating System</span>
+        <span>Page 2</span>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="kicker">Diagnosis</div>
+      <h2>System Diagnosis and Strategic Implications</h2>
+
+      <div class="box">
+        <div class="eyebrow">Headline Diagnosis</div>
+        <p data-field="executive_headline"></p>
+      </div>
+
+      <div class="constraint-stack">
+        <div class="box">
+          <div class="eyebrow">Primary Constraint</div>
+          <div style="font-family:Dashiell, Georgia, 'Times New Roman', serif; font-size:20px; line-height:1.05; margin-bottom:8px;" data-field="primary_constraint_label"></div>
+          <p class="muted" data-field="primary_constraint_interpretation"></p>
+        </div>
+
+        <div class="box">
+          <div class="eyebrow">Hidden System Constraint</div>
+          <div style="font-family:Dashiell, Georgia, 'Times New Roman', serif; font-size:20px; line-height:1.05; margin-bottom:8px;" data-field="secondary_constraint_label"></div>
+          <p class="muted" data-field="secondary_constraint_explanation"></p>
+        </div>
+      </div>
+
+      <div class="diagnosis-grid">
+        <div class="box">
+          <div class="eyebrow">What This Likely Means</div>
+          <ul id="diagnosis-implications"></ul>
+        </div>
+
+        <div class="box">
+          <div class="eyebrow">Observed Risks</div>
+          <ul id="observed-risks"></ul>
+        </div>
+      </div>
+
+      <div class="pillars">
+        <div class="pillar-card">
+          <div class="eyebrow">Lowest-Scoring Pillar</div>
+          <div class="pillar-score" data-field="primary_constraint_score_label"></div>
+          <strong data-field="primary_constraint_label"></strong>
+          <p class="muted" style="margin-top:10px;" data-field="primary_constraint_interpretation"></p>
+        </div>
+        <div class="pillar-card">
+          <div class="eyebrow">Most Stable Pillar</div>
+          <div class="pillar-score" data-field="strongest_pillar_score_label"></div>
+          <strong data-field="strongest_pillar_label"></strong>
+          <p class="muted" style="margin-top:10px;">This pillar appears to be contributing the most structural stability to the current operating system.</p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span>Brand-to-GTM Operating System</span>
+        <span>Page 3</span>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="kicker">Action Plan</div>
+      <h2>30-Day Strategic Actions</h2>
+
+      <div class="actions" id="actions-list"></div>
+
+      <div class="cta">
+        <strong>Included next step: 30-minute diagnostic review</strong>
+        <p>
+          Your executive diagnostic includes a 30-minute review session to walk through the findings, validate the primary constraint, and identify the highest-impact next moves. The goal is to leave with a tighter strategic narrative and a clear first set of actions.
+        </p>
+      </div>
+
+      <div class="footer">
+        <span>Brand-to-GTM Operating System</span>
+        <span>Page 4</span>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const DEFAULT_REPORT_DATA = {
+      company_name: 'Birthing Days',
+      contact_name: 'Kim Sabin',
+      website: 'www.birthingdays.com',
+      report_date: 'March 2026',
+      overall_score: 62,
+      score_band: 'Structural GTM misalignment',
+      primary_constraint_label: 'Positioning & Category',
+      primary_constraint_why_it_matters: 'This pillar most constrains performance across brand clarity, pricing power, and go-to-market execution.',
+      executive_summary_paragraph: 'This diagnostic indicates structural GTM misalignment driven primarily by positioning weakness. The most immediate opportunity is to clarify differentiation and value communication so growth can be supported by stronger pricing power and commercial consistency.',
+      executive_headline: 'Structural GTM misalignment: primary constraint is Positioning & Category.',
+      diagnosis_implications: [
+        'Differentiation may be insufficient to sustain pricing power in competitive situations.',
+        'Messaging inconsistency can create friction in sales conversations and slow growth efficiency.',
+        'Weak value articulation often forces the business to compete on relationships or price rather than strategic fit.'
+      ],
+      risks: [
+        'Pricing pressure indicates weak value anchoring.',
+        'Growth may remain stalled if positioning clarity is not improved.',
+        'Unclear channel economics can reduce confidence in go-to-market decisions.'
+      ],
+      pillar_scores: {
+        positioning: 12,
+        value_architecture: 11,
+        pricing_packaging: 13,
+        gtm_focus: 14,
+        measurement: 12
+      },
+      primary_constraint_score: 12,
+      primary_constraint_interpretation: 'The current system suggests that buyers may not be receiving a sharp enough category signal or a differentiated reason to choose this offer.',
+      strongest_pillar_label: 'GTM Focus',
+      strongest_pillar_score: 14,
+      secondary_constraint_label: 'Measurement',
+      secondary_constraint_explanation: 'Once the primary positioning issue is clarified, measurement discipline will likely become the next limiting factor. Better messaging often increases activity quickly; without stronger measurement, the company can create more motion without improving commercial efficiency.',
+      target_pillar_scores: {
+        positioning: 17,
+        value_architecture: 16,
+        pricing_packaging: 16,
+        gtm_focus: 17,
+        measurement: 16
+      },
+      top_moves_30_days: [
+        {
+          title: 'Clarify positioning in one sentence',
+          why: 'Positioning clarity reduces sales friction and strengthens pricing power.',
+          how: [
+            'Define a category POV and differentiation claim.',
+            'Validate the message with three customer conversations.',
+            'Align the website and pitch narrative to the updated positioning.'
+          ]
+        },
+        {
+          title: 'Translate value into measurable outcomes',
+          why: 'Economic proof makes value easier to defend in the sales process.',
+          how: [
+            'Identify the top outcomes customers care about most.',
+            'Turn those outcomes into simple proof statements.',
+            'Use those proof statements in proposals and discovery calls.'
+          ]
+        },
+        {
+          title: 'Tighten pricing and packaging logic',
+          why: 'Clear packaging improves buyer confidence and reduces unnecessary pricing pressure.',
+          how: [
+            'Review current packages for overlap or confusion.',
+            'Simplify offer tiers around buyer needs.',
+            'Clarify the value progression between packages.'
+          ]
+        }
+      ]
+    };
+
+    function safeText(value, fallback = '—') {
+      if (value === null || value === undefined || value === '') return fallback;
+      return String(value);
+    }
+
+    function normalizeData(input) {
+      const data = structuredClone(DEFAULT_REPORT_DATA);
+      const merged = Object.assign(data, input || {});
+      merged.pillar_scores = Object.assign({}, DEFAULT_REPORT_DATA.pillar_scores, (input && input.pillar_scores) || {});
+      merged.target_pillar_scores = Object.assign({}, DEFAULT_REPORT_DATA.target_pillar_scores, (input && input.target_pillar_scores) || {});
+      merged.top_moves_30_days = Array.isArray(input && input.top_moves_30_days) && input.top_moves_30_days.length
+        ? input.top_moves_30_days
+        : DEFAULT_REPORT_DATA.top_moves_30_days;
+      merged.diagnosis_implications = Array.isArray(input && input.diagnosis_implications) && input.diagnosis_implications.length
+        ? input.diagnosis_implications
+        : DEFAULT_REPORT_DATA.diagnosis_implications;
+      merged.risks = Array.isArray(input && input.risks) && input.risks.length
+        ? input.risks
+        : DEFAULT_REPORT_DATA.risks;
+
+      const sortedPillars = Object.entries(merged.pillar_scores)
+        .map(([key, score]) => ({ key, score: Number(score || 0) }))
+        .sort((a, b) => a.score - b.score);
+
+      if (!merged.secondary_constraint_label && sortedPillars[1]) {
+        const secondaryMap = {
+          positioning: 'Positioning & Category',
+          value_architecture: 'Value Architecture',
+          pricing_packaging: 'Pricing & Packaging',
+          gtm_focus: 'GTM Focus',
+          measurement: 'Measurement'
+        };
+        merged.secondary_constraint_label = secondaryMap[sortedPillars[1].key] || sortedPillars[1].key;
+      }
+
+      if (!merged.secondary_constraint_explanation && merged.secondary_constraint_label) {
+        merged.secondary_constraint_explanation = `Once the primary constraint is improved, ${merged.secondary_constraint_label} is likely to become the next limiting factor in the operating system. This is a normal progression in systems where one fix increases commercial pressure on the next-weakest pillar.`;
+      }
+
+      return merged;
+    }
+
+    function setField(name, value) {
+      document.querySelectorAll(`[data-field="${name}"]`).forEach((el) => {
+        el.textContent = safeText(value);
+      });
+    }
+
+    function fillList(elementId, items) {
+      const list = document.getElementById(elementId);
+      if (!list) return;
+      list.innerHTML = '';
+      (items || []).forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = safeText(item);
+        list.appendChild(li);
+      });
+    }
+
+    function buildActions(actions) {
+      const wrap = document.getElementById('actions-list');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      (actions || []).forEach((move) => {
+        const card = document.createElement('div');
+        card.className = 'action-card';
+
+        const title = document.createElement('h4');
+        title.textContent = safeText(move.title);
+
+        const why = document.createElement('p');
+        why.innerHTML = `<strong>Why it matters:</strong> ${safeText(move.why)}`;
+
+        const ul = document.createElement('ul');
+        (move.how || []).forEach((step) => {
+          const li = document.createElement('li');
+          li.textContent = safeText(step);
+          ul.appendChild(li);
+        });
+
+        card.appendChild(title);
+        card.appendChild(why);
+        card.appendChild(ul);
+        wrap.appendChild(card);
+      });
+    }
+
+    function renderBars(scores) {
+      Object.entries(scores).forEach(([key, value]) => {
+        const bar = document.getElementById(`bar-${key}`);
+        if (bar) bar.style.width = `${Math.max(0, Math.min(100, (Number(value) / 20) * 100))}%`;
+      });
+    }
+
+    function renderChart(scores, targetScores) {
+      const ctx = document.getElementById('osRadarChart');
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: [
+            'Positioning',
+            'Value Architecture',
+            'Pricing & Packaging',
+            'GTM Focus',
+            'Measurement'
+          ],
+          datasets: [
+            {
+              label: 'Current operating profile',
+              data: [
+                Number(scores.positioning || 0),
+                Number(scores.value_architecture || 0),
+                Number(scores.pricing_packaging || 0),
+                Number(scores.gtm_focus || 0),
+                Number(scores.measurement || 0)
+              ],
+              fill: true,
+              backgroundColor: 'rgba(138,166,119,0.16)',
+              borderColor: 'rgba(138,166,119,1)',
+              pointBackgroundColor: 'rgba(138,166,119,1)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgba(138,166,119,1)',
+              borderWidth: 2
+            },
+            {
+              label: 'Target operating profile',
+              data: [
+                Number(targetScores.positioning || 0),
+                Number(targetScores.value_architecture || 0),
+                Number(targetScores.pricing_packaging || 0),
+                Number(targetScores.gtm_focus || 0),
+                Number(targetScores.measurement || 0)
+              ],
+              fill: false,
+              backgroundColor: 'rgba(227,198,143,0)',
+              borderColor: 'rgba(227,198,143,0.95)',
+              pointBackgroundColor: 'rgba(227,198,143,1)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgba(227,198,143,1)',
+              borderWidth: 2,
+              borderDash: [6, 5]
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            r: {
+              min: 0,
+              max: 20,
+              ticks: {
+                stepSize: 5,
+                backdropColor: 'transparent',
+                color: '#6b6a66'
+              },
+              angleLines: { color: '#d9d2c3' },
+              grid: { color: '#d9d2c3' },
+              pointLabels: {
+                color: '#1f1f1c',
+                font: { size: 12, family: 'Inter, Arial, sans-serif' }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function runBasicAssertions(data) {
+      console.assert(typeof data.overall_score === 'number', 'overall_score should be a number');
+      console.assert(data.pillar_scores && typeof data.pillar_scores === 'object', 'pillar_scores should exist');
+      console.assert(data.target_pillar_scores && typeof data.target_pillar_scores === 'object', 'target_pillar_scores should exist');
+      console.assert(Array.isArray(data.top_moves_30_days), 'top_moves_30_days should be an array');
+      console.assert(Array.isArray(data.diagnosis_implications), 'diagnosis_implications should be an array');
+      console.assert(Array.isArray(data.risks), 'risks should be an array');
+    }
+
+    function init() {
+      const reportData = normalizeData(window.REPORT_DATA || {});
+      runBasicAssertions(reportData);
+
+      setField('company_name', reportData.company_name);
+      setField('contact_name', reportData.contact_name);
+      setField('website', reportData.website);
+      setField('report_date', reportData.report_date);
+      setField('overall_score', reportData.overall_score);
+      setField('score_band', reportData.score_band);
+      setField('primary_constraint_label', reportData.primary_constraint_label);
+      setField('primary_constraint_why_it_matters', reportData.primary_constraint_why_it_matters);
+      setField('executive_summary_paragraph', reportData.executive_summary_paragraph);
+      setField('executive_headline', reportData.executive_headline);
+      setField('primary_constraint_score_label', `${safeText(reportData.primary_constraint_score)} / 20`);
+      setField('primary_constraint_interpretation', reportData.primary_constraint_interpretation);
+      setField('strongest_pillar_label', reportData.strongest_pillar_label);
+      setField('strongest_pillar_score_label', `${safeText(reportData.strongest_pillar_score)} / 20`);
+      setField('secondary_constraint_label', reportData.secondary_constraint_label);
+      setField('secondary_constraint_explanation', reportData.secondary_constraint_explanation);
+
+      setField('positioning_score_label', `${safeText(reportData.pillar_scores.positioning)} / 20`);
+      setField('value_architecture_score_label', `${safeText(reportData.pillar_scores.value_architecture)} / 20`);
+      setField('pricing_packaging_score_label', `${safeText(reportData.pillar_scores.pricing_packaging)} / 20`);
+      setField('gtm_focus_score_label', `${safeText(reportData.pillar_scores.gtm_focus)} / 20`);
+      setField('measurement_score_label', `${safeText(reportData.pillar_scores.measurement)} / 20`);
+
+      fillList('diagnosis-implications', reportData.diagnosis_implications);
+      fillList('observed-risks', reportData.risks);
+      buildActions(reportData.top_moves_30_days);
+      renderBars(reportData.pillar_scores);
+      renderChart(reportData.pillar_scores, reportData.target_pillar_scores);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
