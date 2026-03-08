@@ -940,6 +940,110 @@ function countPresentRequired(osInputs) {
 /* =========================================================
    Handler
 ========================================================= */
+function getBaseUrl(req) {
+  if (process.env.APP_BASE_URL) {
+    return process.env.APP_BASE_URL.replace(/\/$/, "");
+  }
+
+  const proto =
+    req.headers["x-forwarded-proto"] ||
+    (req.headers.host && req.headers.host.includes("localhost") ? "http" : "https");
+
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  return `${proto}://${host}`;
+}
+
+function buildExecReportData(report) {
+  const pillarArray = Array.isArray(report?.scoring?.pillar_scores)
+    ? report.scoring.pillar_scores
+    : [];
+
+  const pillarScores = {
+    positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
+    value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+    pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+    gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
+    measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
+  };
+
+  const sorted = [...pillarArray].sort((a, b) => a.score - b.score);
+  const strongest = [...pillarArray].sort((a, b) => b.score - a.score)[0] || null;
+  const secondary = sorted[1] || null;
+
+  const targetPillarScores = {
+    positioning: Math.min((pillarScores.positioning || 0) + 4, 20),
+    value_architecture: Math.min((pillarScores.value_architecture || 0) + 4, 20),
+    pricing_packaging: Math.min((pillarScores.pricing_packaging || 0) + 3, 20),
+    gtm_focus: Math.min((pillarScores.gtm_focus || 0) + 3, 20),
+    measurement: Math.min((pillarScores.measurement || 0) + 4, 20),
+  };
+
+  const secondaryExplanation = secondary
+    ? `Once the primary constraint is improved, ${secondary.label} is likely to become the next limiting factor in the operating system. This is a normal progression in systems where one fix increases pressure on the next-weakest pillar.`
+    : "";
+
+  return {
+    company_name: report?.client?.company_name || "Company",
+    contact_name: report?.client?.contact_name || "Client",
+    website: report?.client?.website || "",
+    report_date: report?.generated_at
+      ? new Date(report.generated_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+        })
+      : "",
+
+    overall_score: report?.scoring?.overall_score ?? 0,
+    score_band: report?.scoring?.band || "",
+
+    primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
+    primary_constraint_why_it_matters:
+      report?.scoring?.primary_constraint?.why_it_matters || "",
+
+    executive_summary_paragraph:
+      report?.narrative?.executive_summary?.summary_paragraph || "",
+    executive_headline:
+      report?.narrative?.executive_summary?.headline || "",
+
+    diagnosis_implications:
+      report?.scoring?.primary_constraint?.downstream_impacts?.slice(0, 3) || [],
+
+    risks:
+      report?.scoring?.legacy?.flags?.slice(0, 3) ||
+      report?.narrative?.executive_summary?.key_observations?.slice(0, 3) ||
+      [],
+
+    pillar_scores: pillarScores,
+    target_pillar_scores: targetPillarScores,
+
+    primary_constraint_score:
+      pillarArray.find((p) => p.key === report?.scoring?.primary_constraint?.key)?.score ?? 0,
+
+    primary_constraint_interpretation:
+      report?.narrative?.pillar_interpretations?.[0]?.interpretation || "",
+
+    strongest_pillar_label: strongest?.label || "",
+    strongest_pillar_score: strongest?.score ?? 0,
+
+    secondary_constraint_label: secondary?.label || "",
+    secondary_constraint_explanation: secondaryExplanation,
+
+    top_moves_30_days:
+      report?.exec_tier?.top_moves_30_days?.slice(0, 3).map((m) => ({
+        title: m.title,
+        why: m.why,
+        how: Array.isArray(m.how) ? m.how.slice(0, 3) : [],
+      })) || [],
+  };
+}
+
+function buildExecReportUrl(req, report) {
+  const baseUrl = getBaseUrl(req);
+  const reportData = buildExecReportData(report);
+  const payload = Buffer.from(JSON.stringify(reportData), "utf8").toString("base64url");
+
+  return `${baseUrl}/api/report?tier=exec&payload=${payload}`;
+}
 
 export default async function handler(req, res) {
   const L = createDiagLogger(req);
@@ -1115,6 +1219,7 @@ export default async function handler(req, res) {
 
       L.finish(200);
       return res.status(200).json({
+        debug_report_wiring: "v2",
         report,
         ...(includeReportJson ? { report_json: JSON.stringify(report) } : {}),
 
@@ -1138,12 +1243,18 @@ export default async function handler(req, res) {
         email_subject: content.subject,
         email_body_text: content.bodyText,
         client_email: clientEmail,
+
+        // Hosted report URL
+        exec_report_url: null,
       });
     }
 
     // ---- Compute OS score ----
     const osScored = computeBrandToGtmOsScore(osInputs);
-    L.step("scoreOS", tOS, { total: osScored.brand_to_gtm_os_score, band: osScored.interpretation_band });
+    L.step("scoreOS", tOS, {
+      total: osScored.brand_to_gtm_os_score,
+      band: osScored.interpretation_band,
+    });
 
     // Email content (OS-first)
     const tRender = L.mark();
@@ -1217,6 +1328,7 @@ export default async function handler(req, res) {
     };
 
     const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
+    const execReportUrl = tier === "exec" ? buildExecReportUrl(req, report) : null;
 
     L.finish(200);
 
@@ -1245,6 +1357,9 @@ export default async function handler(req, res) {
       email_subject: content.subject,
       email_body_text: content.bodyText,
       client_email: clientEmail,
+
+      // Hosted report URL
+      exec_report_url: execReportUrl,
     });
   } catch (err) {
     L.error("Unhandled error", { message: err?.message, name: err?.name });

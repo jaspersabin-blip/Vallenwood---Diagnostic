@@ -5,7 +5,7 @@ function decodePayload(payload) {
   try {
     const json = Buffer.from(payload, "base64url").toString("utf8");
     return JSON.parse(json);
-  } catch {
+  } catch (err) {
     return null;
   }
 }
@@ -37,15 +37,19 @@ export default async function handler(req, res) {
 
     const html = fs.readFileSync(templatePath, "utf8");
 
-    const injected = html.replace(
-      '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>',
-      `<script>window.REPORT_DATA = ${JSON.stringify(reportData)};</script>\n  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>`
-    );
+    const injection = `<script>window.REPORT_DATA = ${JSON.stringify(reportData)};</script>`;
+
+    let injected;
+    if (html.includes("</head>")) {
+      injected = html.replace("</head>", `  ${injection}\n</head>`);
+    } else {
+      injected = `${injection}\n${html}`;
+    }
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(injected);
   } catch (err) {
     console.error("[report] Unhandled error:", err);
-    return res.status(500).send("Server error");
+    return res.status(500).send(`Server error: ${err.message}`);
   }
 }
