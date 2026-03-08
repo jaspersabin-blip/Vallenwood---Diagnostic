@@ -1,0 +1,26 @@
+{
+  "tier":"exec",
+  "client_name":"Kim Sabin",
+  "client_email":"birhtingdays.doula@gmail.com",
+  "client_company":"Birthing Days",
+  "client_website":"www.birthingdays.com",
+  "answers":{
+    "Annual Revenue":"Under $5M",
+    "Average Contract Value (ACV)":"Under $10K",
+    "Average Sales Cycle Length":"Under 1 month",
+    "Close Rate (%)":"40%+",
+    "Why do you most often win deals?":"Strong relationships",
+    "Why do you most often lose deals?":"Price",
+    "Do customers describe your company consistently?":"Yes — very consistent",
+    "Can you quantify ROI for most customers?":"Yes — documented & repeatable",
+    "Sales conversations primarily lead with:":"Business outcomes",
+    "How often are discounts required to close deals?":"Rarely (<10%)",
+    "Do customers clearly understand your pricing tiers?":"Yes — very clear",
+    "What is your gross margin (%)?":"Under 50%",
+    "What are your primary acquisition channels (select up to 3)":"Partnerships,Content",
+    "Do you know CAC by channel?":"No",
+    "Marketing is measured primarily by:":"Leads",
+    "Is attribution trusted internally?":"Yes",
+    "Are revenue forecasts accurate within 10%":"Yes"
+  }
+}

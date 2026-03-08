@@ -11,6 +11,7 @@
 
 import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
+import { makeReportId, saveReport } from "../lib/reportStore.js";
 
 /* =========================================================
    Helpers
@@ -549,7 +550,7 @@ Reply with a bit more detail (or resubmit the form) so I can produce an accurate
    Report Builder (OS-first; legacy kept but not headline)
 ========================================================= */
 
-  function buildReport({
+function buildReport({
     tier,
     clientName,
     clientEmail,
@@ -1037,12 +1038,14 @@ function buildExecReportData(report) {
   };
 }
 
-function buildExecReportUrl(req, report) {
+async function buildExecReportUrl(req, report) {
   const baseUrl = getBaseUrl(req);
   const reportData = buildExecReportData(report);
-  const payload = Buffer.from(JSON.stringify(reportData), "utf8").toString("base64url");
+  const reportId = makeReportId();
 
-  return `${baseUrl}/api/report?tier=exec&payload=${payload}`;
+  await saveReport(reportId, reportData);
+
+  return `${baseUrl}/api/report?id=${reportId}`;
 }
 
 export default async function handler(req, res) {
@@ -1219,7 +1222,6 @@ export default async function handler(req, res) {
 
       L.finish(200);
       return res.status(200).json({
-        debug_report_wiring: "v2",
         report,
         ...(includeReportJson ? { report_json: JSON.stringify(report) } : {}),
 
@@ -1328,7 +1330,7 @@ export default async function handler(req, res) {
     };
 
     const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
-    const execReportUrl = tier === "exec" ? buildExecReportUrl(req, report) : null;
+    const execReportUrl = tier === "exec" ? await buildExecReportUrl(req, report) : null;
 
     L.finish(200);
 
