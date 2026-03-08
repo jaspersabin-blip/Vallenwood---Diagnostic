@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Brand-to-GTM OS Strategic Audit</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background: #f9f6eb;
+      color: #464644;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px 64px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 36px;
+      line-height: 1.1;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    p {
+      line-height: 1.6;
+      margin: 0 0 12px;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 12px;
+      color: #8aa677;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .score {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #6b6b68;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .pillars li,
+    .roadmap li,
+    .list li {
+      margin-bottom: 8px;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 0;
+    }
+
+    .swot {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .swot .box {
+      background: #f9f6eb;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .empty {
+      color: #8a8a86;
+      font-style: italic;
+    }
+
+    @media (max-width: 760px) {
+      .grid,
+      .swot {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="eyebrow">Vallenwood Consulting</div>
+      <h1>Brand-to-GTM OS Strategic Audit</h1>
+      <p id="company" class="muted"></p>
+      <p id="date" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h2>Executive Overview</h2>
+      <div id="score" class="score"></div>
+      <p id="constraint"></p>
+      <p id="why"></p>
+      <p id="summary"></p>
+    </div>
+
+    <div class="card">
+      <h2>Pillar Scores</h2>
+      <ul id="pillars" class="pillars"></ul>
+    </div>
+
+    <div class="card">
+      <h2>SWOT</h2>
+      <div class="swot">
+        <div class="box">
+          <h3>Strengths</h3>
+          <ul id="swot-strengths" class="list"></ul>
+        </div>
+        <div class="box">
+          <h3>Weaknesses</h3>
+          <ul id="swot-weaknesses" class="list"></ul>
+        </div>
+        <div class="box">
+          <h3>Opportunities</h3>
+          <ul id="swot-opportunities" class="list"></ul>
+        </div>
+        <div class="box">
+          <h3>Threats</h3>
+          <ul id="swot-threats" class="list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Roadmap</h2>
+      <div class="grid">
+        <div>
+          <h3>North Star</h3>
+          <p id="north-star"></p>
+        </div>
+        <div>
+          <h3>Principles</h3>
+          <ul id="principles" class="roadmap"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const d = window.REPORT_DATA || {};
+
+    function setText(id, value, fallback = "") {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value || fallback;
+    }
+
+    function fillList(id, items, field = null) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = "";
+
+      if (!items || !items.length) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = "No additional detail available yet.";
+        el.appendChild(li);
+        return;
+      }
+
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        if (field && item && typeof item === "object") {
+          li.textContent = item[field] || "";
+        } else if (typeof item === "string") {
+          li.textContent = item;
+        } else if (item && typeof item === "object") {
+          li.textContent = item.point || JSON.stringify(item);
+        } else {
+          li.textContent = String(item);
+        }
+        el.appendChild(li);
+      });
+    }
+
+    setText("company", d.company_name || "");
+    setText("date", d.report_date ? `Report Date: ${d.report_date}` : "");
+    setText("score", `OS Score: ${d.overall_score || 0} / 100 — ${d.score_band || ""}`);
+    setText("constraint", `Primary Constraint: ${d.primary_constraint_label || ""}`);
+    setText("why", d.primary_constraint_why_it_matters || "");
+    setText("summary", d.executive_summary_paragraph || "");
+
+    const pillarList = document.getElementById("pillars");
+    const pillars = d.pillar_scores || {};
+    pillarList.innerHTML = "";
+
+    Object.entries(pillars).forEach(([key, value]) => {
+      const li = document.createElement("li");
+      const label = key
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+      li.textContent = `${label}: ${value}/20`;
+      pillarList.appendChild(li);
+    });
+
+    fillList("swot-strengths", d.swot?.strengths || [], "point");
+    fillList("swot-weaknesses", d.swot?.weaknesses || [], "point");
+    fillList("swot-opportunities", d.swot?.opportunities || [], "point");
+    fillList("swot-threats", d.swot?.threats || [], "point");
+
+    setText("north-star", d.roadmap?.north_star || "No roadmap narrative available yet.");
+    fillList("principles", d.roadmap?.principles || []);
+  </script>
+</body>
+</html>
