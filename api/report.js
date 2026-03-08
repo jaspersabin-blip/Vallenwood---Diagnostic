@@ -1,14 +1,6 @@
 import fs from "fs";
 import path from "path";
-
-function decodePayload(payload) {
-  try {
-    const json = Buffer.from(payload, "base64url").toString("utf8");
-    return JSON.parse(json);
-  } catch (err) {
-    return null;
-  }
-}
+import { getReport } from "../lib/reportStore.js";
 
 export default async function handler(req, res) {
   try {
@@ -16,35 +8,34 @@ export default async function handler(req, res) {
       return res.status(405).send("GET only");
     }
 
-    const tier = String(req.query.tier || "exec").toLowerCase();
-    const payload = req.query.payload;
+    const reportId = String(req.query.id || "").trim();
+    const requestedTier = String(req.query.tier || "").trim().toLowerCase();
 
-    if (!payload || typeof payload !== "string") {
-      return res.status(400).send("Missing payload");
+    if (!reportId) {
+      return res.status(400).send("Missing report id");
     }
 
-    const reportData = decodePayload(payload);
-    if (!reportData) {
-      return res.status(400).send("Invalid payload");
+    const stored = await getReport(reportId);
+    if (!stored) {
+      return res.status(404).send("Report not found");
     }
+
+    const tier = requestedTier || stored.tier || "exec";
+    const reportData = stored.reportData || stored;
 
     let templatePath;
-    if (tier === "exec") {
-      templatePath = path.join(process.cwd(), "reports", "exec-report.html");
+    if (tier === "audit") {
+      templatePath = path.join(process.cwd(), "reports", "audit-report.html");
     } else {
-      return res.status(400).send("Unsupported tier");
+      templatePath = path.join(process.cwd(), "reports", "exec-report.html");
     }
 
     const html = fs.readFileSync(templatePath, "utf8");
-
     const injection = `<script>window.REPORT_DATA = ${JSON.stringify(reportData)};</script>`;
 
-    let injected;
-    if (html.includes("</head>")) {
-      injected = html.replace("</head>", `  ${injection}\n</head>`);
-    } else {
-      injected = `${injection}\n${html}`;
-    }
+    const injected = html.includes("</head>")
+      ? html.replace("</head>", `  ${injection}\n</head>`)
+      : `${injection}\n${html}`;
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(injected);

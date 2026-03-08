@@ -1038,14 +1038,60 @@ function buildExecReportData(report) {
   };
 }
 
-async function buildExecReportUrl(req, report) {
+function buildAuditReportData(report) {
+  const pillarArray = Array.isArray(report?.scoring?.pillar_scores)
+    ? report.scoring.pillar_scores
+    : [];
+
+  return {
+    company_name: report?.client?.company_name || "Company",
+    contact_name: report?.client?.contact_name || "Client",
+    website: report?.client?.website || "",
+    report_date: report?.generated_at
+      ? new Date(report.generated_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+        })
+      : "",
+
+    overall_score: report?.scoring?.overall_score ?? 0,
+    score_band: report?.scoring?.band || "",
+
+    primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
+    primary_constraint_why_it_matters:
+      report?.scoring?.primary_constraint?.why_it_matters || "",
+
+    executive_summary_paragraph:
+      report?.narrative?.executive_summary?.summary_paragraph || "",
+    executive_headline:
+      report?.narrative?.executive_summary?.headline || "",
+
+    pillar_scores: {
+      positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
+      value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+      pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+      gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
+      measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
+    },
+
+    swot: report?.full_tier?.swot || null,
+    competitive_context: report?.full_tier?.competitive_context || null,
+    pricing_packaging_audit: report?.full_tier?.pricing_packaging_audit || null,
+    roadmap: report?.full_tier?.roadmap || null,
+    first_sprint_plan: report?.full_tier?.first_sprint_plan || null,
+  };
+}
+
+async function buildReportUrl(req, report, tier) {
   const baseUrl = getBaseUrl(req);
-  const reportData = buildExecReportData(report);
   const reportId = makeReportId();
 
-  await saveReport(reportId, reportData);
+  const reportData =
+    tier === "audit" ? buildAuditReportData(report) : buildExecReportData(report);
 
-  return `${baseUrl}/api/report?id=${reportId}`;
+  await saveReport(reportId, { tier, reportData });
+
+  return `${baseUrl}/api/report?id=${reportId}&tier=${tier}`;
 }
 
 export default async function handler(req, res) {
@@ -1248,6 +1294,7 @@ export default async function handler(req, res) {
 
         // Hosted report URL
         exec_report_url: null,
+        audit_report_url: null,
       });
     }
 
@@ -1330,7 +1377,8 @@ export default async function handler(req, res) {
     };
 
     const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
-    const execReportUrl = tier === "exec" ? await buildExecReportUrl(req, report) : null;
+    const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
+    const auditReportUrl = tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
 
     L.finish(200);
 
@@ -1361,7 +1409,9 @@ export default async function handler(req, res) {
       client_email: clientEmail,
 
       // Hosted report URL
+            // Hosted report URL
       exec_report_url: execReportUrl,
+      audit_report_url: auditReportUrl,
     });
   } catch (err) {
     L.error("Unhandled error", { message: err?.message, name: err?.name });
