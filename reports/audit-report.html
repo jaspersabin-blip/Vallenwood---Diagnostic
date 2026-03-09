@@ -537,6 +537,10 @@
       });
     }
 
+    function chooseList(items, fallback) {
+      return Array.isArray(items) && items.length > 0 ? items : fallback;
+    }
+
     setText("company-name", d.company_name);
     setText("report-date", d.report_date);
     setText("primary-constraint-top", d.primary_constraint_label);
@@ -590,44 +594,63 @@
     fillList("swot-opportunities", d.swot?.opportunities || [], "point");
     fillList("swot-threats", d.swot?.threats || [], "point");
     fillList("roadmap-principles", d.roadmap?.principles || []);
-    fillList("most-compared-to", d.competitive_context?.most_compared_to || []);
-    fillList("pricing-current-state", d.pricing_packaging_audit?.current_state_signals || []);
-    fillList("pricing-first-fixes", d.pricing_packaging_audit?.first_fixes || []);
+    fillList(
+      "most-compared-to",
+      chooseList(d.competitive_context?.most_compared_to, [
+        "No direct comparison set captured in intake.",
+        "Use the review session to identify who prospects benchmark against most often."
+      ])
+    );
+    fillList(
+      "pricing-current-state",
+      chooseList(d.pricing_packaging_audit?.current_state_signals, [
+        "Current pricing-state signals were not fully captured in intake.",
+        "Use the audit review to confirm discounting patterns, packaging friction, and pricing comprehension."
+      ])
+    );
+    fillList(
+      "pricing-first-fixes",
+      chooseList(d.pricing_packaging_audit?.first_fixes, [
+        "Clarify pricing tiers and buyer-facing packaging structure.",
+        "Identify where value articulation is breaking down before pricing objections appear.",
+        "Define the first packaging or pricing test worth running."
+      ])
+    );
 
     fillList(
       "thirty-day-list",
-      d.roadmap?.thirty_day || [
+      chooseList(d.roadmap?.thirty_day, [
         "Confirm the primary constraint through live review and internal evidence.",
         "Sharpen the core positioning and value articulation used in active deals.",
         "Identify 1–2 immediate friction points suppressing win rate or pricing power."
-      ]
+      ])
     );
 
     fillList(
       "sixty-day-list",
-      d.roadmap?.ninety_day || [
+      chooseList(d.roadmap?.ninety_day, [
         "Translate the agreed strategy into messaging, packaging, and team adoption.",
         "Standardize the highest-value changes across sales and marketing workflows.",
         "Instrument the leading indicators that show whether the new system is working."
-      ]
+      ])
     );
 
     fillList(
       "ninety-day-list",
-      d.roadmap?.six_to_twelve_month || [
+      chooseList(d.roadmap?.six_to_twelve_month, [
         "Scale the strongest changes into a repeatable GTM operating rhythm.",
         "Tighten prioritization, measurement, and pricing discipline.",
         "Pressure-test whether the next constraint is emerging elsewhere in the system."
-      ]
+      ])
     );
 
     fillList(
       "validate-live-list",
-      d.pricing_packaging_audit?.what_to_validate || [
+      chooseList(d.pricing_packaging_audit?.what_to_validate, [
         "Whether the primary constraint is fully visible in active pipeline behavior.",
         "Whether current pricing and packaging reflect real buyer value perception.",
         "Whether internal teams are aligned on category, narrative, and proof points."
-      ]
+      ])
     );
 
     fillList(
