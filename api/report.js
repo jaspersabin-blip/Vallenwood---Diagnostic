@@ -26,6 +26,8 @@ export default async function handler(req, res) {
     let templatePath;
     if (tier === "audit") {
       templatePath = path.join(process.cwd(), "reports", "audit-report.html");
+    } else if (tier === "hidden") {
+      templatePath = path.join(process.cwd(), "reports", "hidden-report.html");
     } else {
       templatePath = path.join(process.cwd(), "reports", "exec-report.html");
     }

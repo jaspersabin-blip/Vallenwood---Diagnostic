@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Client Diagnostic Briefing</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background: #f7f4ea;
+      color: #2f2f2f;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 40px 24px 64px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    h1 { margin: 0 0 8px; font-size: 34px; }
+    h2 { margin: 0 0 14px; font-size: 22px; }
+    h3 { margin: 0 0 10px; font-size: 17px; }
+    p, li { line-height: 1.55; }
+    .muted { color: #6e6e6a; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    ul { margin: 0; padding-left: 20px; }
+    .empty { color: #8d8d88; font-style: italic; }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Client Diagnostic Briefing</h1>
+      <p id="company" class="muted"></p>
+      <p id="date" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h2>Diagnostic Snapshot</h2>
+      <ul id="snapshot"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Scoring Overview</h2>
+      <p id="score"></p>
+      <p id="primary"></p>
+      <ul id="ranked"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Signal Analysis</h2>
+      <div class="grid">
+        <div>
+          <h3>Strength Signals</h3>
+          <ul id="strengths"></ul>
+        </div>
+        <div>
+          <h3>Constraint Signals</h3>
+          <ul id="constraints"></ul>
+        </div>
+        <div>
+          <h3>Risk Signals</h3>
+          <ul id="risks"></ul>
+        </div>
+        <div>
+          <h3>Opportunity Signals</h3>
+          <ul id="opportunities"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Interpretation</h2>
+      <p id="readout"></p>
+      <h3>Root Cause Hypotheses</h3>
+      <ul id="hypotheses"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Call Briefing</h2>
+      <p id="opening"></p>
+      <h3>Top Questions to Ask</h3>
+      <ul id="questions"></ul>
+      <h3>Areas to Validate Live</h3>
+      <ul id="validate"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Consulting Opportunity</h2>
+      <p id="engagement"></p>
+      <p id="upsell"></p>
+      <ul id="needs"></ul>
+    </div>
+  </div>
+
+  <script>
+    const d = window.REPORT_DATA || {};
+
+    function fillList(id, items, formatter) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = "";
+
+      if (!items || !items.length) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = "No detail available yet.";
+        el.appendChild(li);
+        return;
+      }
+
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = formatter ? formatter(item) : String(item);
+        el.appendChild(li);
+      });
+    }
+
+    document.getElementById("company").textContent = d.company_name || "";
+    document.getElementById("date").textContent = d.report_date ? `Report Date: ${d.report_date}` : "";
+
+    const snapshot = d.diagnostic_snapshot || {};
+    fillList("snapshot", Object.entries(snapshot), ([k, v]) => {
+      const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+      const value = Array.isArray(v) ? v.join(", ") : v;
+      return `${label}: ${value ?? ""}`;
+    });
+
+    const scoring = d.scoring || {};
+    document.getElementById("score").textContent =
+      `OS Score: ${scoring.overall_score || 0} / 100 — ${scoring.score_band || ""}`;
+    document.getElementById("primary").textContent =
+      scoring.primary_constraint
+        ? `Primary Constraint: ${scoring.primary_constraint.label} (${scoring.primary_constraint.score}/20)`
+        : "Primary Constraint: Not available";
+
+    fillList("ranked", scoring.pillar_ranked || [], (p) => `${p.label}: ${p.score}/20`);
+
+    const signals = d.signal_analysis || {};
+    fillList("strengths", signals.strength_signals || []);
+    fillList("constraints", signals.constraint_signals || []);
+    fillList("risks", signals.risk_signals || []);
+    fillList("opportunities", signals.opportunity_signals || []);
+
+    const interpretation = d.interpretation || {};
+    document.getElementById("readout").textContent = interpretation.executive_readout || "";
+    fillList("hypotheses", interpretation.root_cause_hypotheses || []);
+
+    const briefing = d.call_briefing || {};
+    document.getElementById("opening").textContent = briefing.opening_summary || "";
+    fillList("questions", briefing.top_questions_to_ask || []);
+    fillList("validate", briefing.areas_to_validate_live || []);
+
+    const opp = d.consulting_opportunity || {};
+    document.getElementById("engagement").textContent =
+      opp.priority_engagement_angle ? `Priority Engagement Angle: ${opp.priority_engagement_angle}` : "";
+    document.getElementById("upsell").textContent =
+      opp.upsell_readiness ? `Upsell Readiness: ${opp.upsell_readiness}` : "";
+    fillList("needs", opp.likely_needs || []);
+  </script>
+</body>
+</html>

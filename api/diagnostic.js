@@ -1082,12 +1082,157 @@ function buildAuditReportData(report) {
   };
 }
 
+function buildHiddenReportData(report) {
+  const pillarArray = Array.isArray(report?.scoring?.pillar_scores)
+    ? report.scoring.pillar_scores
+    : [];
+
+  const ranked = [...pillarArray].sort((a, b) => a.score - b.score);
+
+  const pillarScores = {};
+  pillarArray.forEach((p) => {
+    pillarScores[p.key] = p.score;
+  });
+
+  const primary = ranked[0] || null;
+
+  const snapshot = {
+    annual_revenue: report?.inputs?.normalized_answers?.annual_revenue || null,
+    acv: report?.inputs?.normalized_answers?.acv || null,
+    sales_cycle: report?.inputs?.normalized_answers?.sales_cycle || null,
+    close_rate: report?.inputs?.normalized_answers?.close_rate || null,
+    primary_channels:
+      report?.inputs?.normalized_answers?.acquisition_channels?.split(",") || [],
+    measurement_model: report?.inputs?.normalized_answers?.marketing_measured_by || null,
+  };
+
+  const winReason = report?.inputs?.normalized_answers?.win_reason;
+  const loseReason = report?.inputs?.normalized_answers?.lose_reason;
+  const discounting = report?.inputs?.normalized_answers?.discounting;
+
+  const signals = {
+    strength_signals: [],
+    constraint_signals: [],
+    risk_signals: [],
+    opportunity_signals: [],
+    contradictions: [],
+  };
+
+  if (winReason === "Strong relationships") {
+    signals.constraint_signals.push(
+      "Sales wins rely heavily on relationships rather than structured value articulation."
+    );
+  }
+
+  if (loseReason === "Price") {
+    signals.constraint_signals.push(
+      "Price-based losses suggest value articulation or packaging weakness."
+    );
+  }
+
+  if (discounting && discounting.includes("Rarely")) {
+    signals.opportunity_signals.push(
+      "Low discounting frequency suggests some pricing power already exists."
+    );
+  }
+
+  if (pillarScores.measurement >= 17) {
+    signals.strength_signals.push(
+      "Measurement maturity appears relatively strong compared to other pillars."
+    );
+  }
+
+  if (pillarScores.value_architecture < 14) {
+    signals.risk_signals.push(
+      "Weak value architecture may create downstream pressure on pricing and positioning."
+    );
+  }
+
+  if (winReason === "Strong relationships" && loseReason === "Price") {
+    signals.contradictions.push(
+      "Relationship-driven wins combined with price-based losses indicate value may not be clearly quantified in competitive deals."
+    );
+  }
+
+  return {
+    company_name: report?.client?.company_name || "Company",
+    contact_name: report?.client?.contact_name || "Client",
+    report_date: report?.generated_at
+      ? new Date(report.generated_at).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+        })
+      : "",
+
+    diagnostic_snapshot: snapshot,
+
+    scoring: {
+      overall_score: report?.scoring?.overall_score || 0,
+      score_band: report?.scoring?.band || "",
+      pillar_scores: pillarScores,
+      pillar_ranked: ranked.map((p) => ({
+        key: p.key,
+        label: p.label,
+        score: p.score,
+      })),
+      primary_constraint: primary
+        ? {
+            key: primary.key,
+            label: primary.label,
+            score: primary.score,
+          }
+        : null,
+    },
+
+    signal_analysis: signals,
+
+    interpretation: {
+      executive_readout:
+        "Initial diagnostic suggests the primary leverage point lies in improving value articulation and packaging clarity.",
+      root_cause_hypotheses: [
+        "Customer outcomes may not be consistently quantified during sales conversations.",
+        "Packaging and tier structure may not anchor value clearly enough."
+      ],
+    },
+
+    call_briefing: {
+      opening_summary:
+        "Begin the conversation by confirming how prospects evaluate ROI and what typically triggers price objections.",
+      top_questions_to_ask: [
+        "How do prospects typically evaluate ROI before purchasing?",
+        "Where in the sales process do pricing objections appear?",
+        "What proof points most often move deals forward?"
+      ],
+      areas_to_validate_live: [
+        "Whether pricing tiers reflect actual customer value segments",
+        "Whether sales messaging consistently leads with outcomes"
+      ]
+    },
+
+    consulting_opportunity: {
+      likely_needs: [
+        "Value architecture refinement",
+        "Pricing and packaging strategy",
+        "Messaging system alignment"
+      ],
+      priority_engagement_angle: "Value Architecture Sprint",
+      upsell_readiness: "Moderate to High"
+    }
+  };
+}
+
 async function buildReportUrl(req, report, tier) {
   const baseUrl = getBaseUrl(req);
   const reportId = makeReportId();
 
-  const reportData =
-    tier === "audit" ? buildAuditReportData(report) : buildExecReportData(report);
+  let reportData;
+  if (tier === "audit") {
+    reportData = buildAuditReportData(report);
+  } else if (tier === "hidden") {
+    reportData = buildHiddenReportData(report);
+  } else {
+    reportData = buildExecReportData(report);
+  }
 
   await saveReport(reportId, { tier, reportData });
 
@@ -1295,6 +1440,7 @@ export default async function handler(req, res) {
         // Hosted report URL
         exec_report_url: null,
         audit_report_url: null,
+        hidden_report_url: null,
       });
     }
 
@@ -1379,6 +1525,7 @@ export default async function handler(req, res) {
     const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
     const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
     const auditReportUrl = tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
+    const hiddenReportUrl = tier === "hidden" ? await buildReportUrl(req, report, "hidden") : null;
 
     L.finish(200);
 
@@ -1409,9 +1556,9 @@ export default async function handler(req, res) {
       client_email: clientEmail,
 
       // Hosted report URL
-            // Hosted report URL
       exec_report_url: execReportUrl,
       audit_report_url: auditReportUrl,
+      hidden_report_url: hiddenReportUrl,
     });
   } catch (err) {
     L.error("Unhandled error", { message: err?.message, name: err?.name });
