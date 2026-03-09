@@ -13,7 +13,6 @@
       --line: #e6dfcf;
       --accent: #8aa677;
       --accent-dark: #6f875f;
-      --accent-soft: rgba(138, 166, 119, 0.18);
       --warning: #c67b5c;
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
       --radius: 18px;
@@ -122,7 +121,7 @@
 
     .chart-wrap {
       display: grid;
-      grid-template-columns: 320px 1fr;
+      grid-template-columns: 360px 1fr;
       gap: 22px;
       align-items: center;
     }
@@ -211,6 +210,12 @@
       padding: 18px;
     }
 
+    .swot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
     ul {
       margin: 0;
       padding-left: 20px;
@@ -221,10 +226,61 @@
       line-height: 1.5;
     }
 
-    .swot-grid {
+    .roadmap-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
+    }
+
+    .phase-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      background: #fff;
+    }
+
+    .phase-kicker {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+
+    .cta {
+      background:
+        radial-gradient(circle at bottom left, rgba(138, 166, 119, 0.16), transparent 28%),
+        linear-gradient(135deg, #fbfaf6, #ffffff);
+      border: 1px solid var(--line);
+    }
+
+    .cta-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .cta-text {
+      max-width: 720px;
+    }
+
+    .cta-button {
+      display: inline-block;
+      text-decoration: none;
+      background: var(--accent-dark);
+      color: white;
+      font-weight: 700;
+      padding: 14px 20px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .footer-note {
+      font-size: 13px;
+      color: var(--muted);
     }
 
     .radar text {
@@ -243,7 +299,8 @@
       .grid-2,
       .section-grid,
       .chart-wrap,
-      .swot-grid {
+      .swot-grid,
+      .roadmap-grid {
         grid-template-columns: 1fr;
       }
 
@@ -295,7 +352,7 @@
         <h2>OS Alignment Score</h2>
         <div class="chart-wrap">
           <div class="chart-box">
-            <svg class="radar" id="radar-chart" width="300" height="300" viewBox="0 0 300 300">
+            <svg class="radar" id="radar-chart" width="340" height="340" viewBox="0 0 340 340">
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
               <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
@@ -353,7 +410,7 @@
       </div>
 
       <div class="card">
-        <h2>Roadmap</h2>
+        <h2>Roadmap Foundation</h2>
         <div class="box-soft" style="margin-bottom:14px;">
           <h3>North Star</h3>
           <p id="roadmap-north-star"></p>
@@ -361,6 +418,27 @@
         <div class="box-soft">
           <h3>Principles</h3>
           <ul id="roadmap-principles"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>30 / 60 / 90-Day Action Outline</h2>
+      <div class="roadmap-grid">
+        <div class="phase-card">
+          <div class="phase-kicker">30 Days</div>
+          <h3>Clarify the constraint</h3>
+          <ul id="thirty-day-list"></ul>
+        </div>
+        <div class="phase-card">
+          <div class="phase-kicker">60 Days</div>
+          <h3>Operationalize the fix</h3>
+          <ul id="sixty-day-list"></ul>
+        </div>
+        <div class="phase-card">
+          <div class="phase-kicker">90 Days</div>
+          <h3>Scale the new system</h3>
+          <ul id="ninety-day-list"></ul>
         </div>
       </div>
     </section>
@@ -383,6 +461,41 @@
           <h3 style="margin-top:14px;">First Fixes</h3>
           <ul id="pricing-first-fixes"></ul>
         </div>
+      </div>
+    </section>
+
+    <section class="section-grid">
+      <div class="card">
+        <h2>Validate Live in the Review Session</h2>
+        <div class="box-soft">
+          <ul id="validate-live-list"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>What the Review Should Resolve</h2>
+        <div class="box-soft">
+          <ul id="review-outcomes-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card cta">
+      <div class="cta-box">
+        <div class="cta-text">
+          <h2 style="margin-bottom:10px;">Schedule your 60-minute strategic review</h2>
+          <p>
+            This audit is designed to surface the system constraint most likely to be suppressing growth,
+            pricing power, and go-to-market efficiency. The next step is a 60-minute review session to
+            validate the diagnosis, challenge assumptions, and align on the highest-leverage actions.
+          </p>
+          <p class="footer-note" style="margin-top:10px;">
+            The review session is where this audit becomes an action plan.
+          </p>
+        </div>
+        <a class="cta-button" href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%2060-Minute%20Strategic%20Review">
+          Schedule 60-Min Review
+        </a>
       </div>
     </section>
   </div>
@@ -437,7 +550,13 @@
     setText("category", d.competitive_context?.category || "Not specified");
 
     const pillarScores = d.pillar_scores || {};
-    const targetScores = d.target_pillar_scores || {};
+    const targetScores = d.target_pillar_scores || {
+      positioning: 16,
+      value_architecture: 15,
+      pricing_packaging: 16,
+      gtm_focus: 17,
+      measurement: 17
+    };
 
     const pillarOrder = [
       ["positioning", "Positioning & Category"],
@@ -475,6 +594,51 @@
     fillList("pricing-current-state", d.pricing_packaging_audit?.current_state_signals || []);
     fillList("pricing-first-fixes", d.pricing_packaging_audit?.first_fixes || []);
 
+    fillList(
+      "thirty-day-list",
+      d.roadmap?.thirty_day || [
+        "Confirm the primary constraint through live review and internal evidence.",
+        "Sharpen the core positioning and value articulation used in active deals.",
+        "Identify 1–2 immediate friction points suppressing win rate or pricing power."
+      ]
+    );
+
+    fillList(
+      "sixty-day-list",
+      d.roadmap?.ninety_day || [
+        "Translate the agreed strategy into messaging, packaging, and team adoption.",
+        "Standardize the highest-value changes across sales and marketing workflows.",
+        "Instrument the leading indicators that show whether the new system is working."
+      ]
+    );
+
+    fillList(
+      "ninety-day-list",
+      d.roadmap?.six_to_twelve_month || [
+        "Scale the strongest changes into a repeatable GTM operating rhythm.",
+        "Tighten prioritization, measurement, and pricing discipline.",
+        "Pressure-test whether the next constraint is emerging elsewhere in the system."
+      ]
+    );
+
+    fillList(
+      "validate-live-list",
+      d.pricing_packaging_audit?.what_to_validate || [
+        "Whether the primary constraint is fully visible in active pipeline behavior.",
+        "Whether current pricing and packaging reflect real buyer value perception.",
+        "Whether internal teams are aligned on category, narrative, and proof points."
+      ]
+    );
+
+    fillList(
+      "review-outcomes-list",
+      [
+        "Validate or refine the primary constraint diagnosis.",
+        "Agree on the highest-leverage 30-day actions.",
+        "Decide whether deeper strategic intervention is warranted across pricing, positioning, or GTM design."
+      ]
+    );
+
     function renderRadarChart() {
       const grid = document.getElementById("radar-grid");
       const axes = document.getElementById("radar-axes");
@@ -488,9 +652,9 @@
       labels.innerHTML = "";
       pointsGroup.innerHTML = "";
 
-      const cx = 150;
-      const cy = 150;
-      const radius = 100;
+      const cx = 170;
+      const cy = 170;
+      const radius = 92;
 
       const data = [
         { key: "positioning", label: "Positioning", value: Number(pillarScores.positioning || 0) },
@@ -538,7 +702,7 @@
         line.setAttribute("stroke-width", "1.2");
         axes.appendChild(line);
 
-        const labelPoint = pointFor(i, 24, 20);
+        const labelPoint = pointFor(i, 23, 20);
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", labelPoint.x);
         text.setAttribute("y", labelPoint.y);
