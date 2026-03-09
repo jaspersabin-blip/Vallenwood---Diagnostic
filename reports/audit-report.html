@@ -5,178 +5,398 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Brand-to-GTM OS Strategic Audit</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      background: #f9f6eb;
-      color: #464644;
+    :root {
+      --bg: #f7f4ea;
+      --card: #ffffff;
+      --text: #2f2f2f;
+      --muted: #6f6f69;
+      --line: #e6dfcf;
+      --accent: #8aa677;
+      --accent-dark: #6f875f;
+      --accent-soft: rgba(138, 166, 119, 0.18);
+      --warning: #c67b5c;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      --radius: 18px;
     }
 
-    .wrap {
-      max-width: 960px;
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 40px 24px 64px;
+      padding: 36px 20px 64px;
     }
 
     .card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .hero {
+      padding: 36px 32px;
+      background:
+        radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
+        linear-gradient(135deg, #ffffff, #fbfaf6);
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: 10px;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 36px;
-      line-height: 1.1;
+      margin: 0 0 10px;
+      font-size: 38px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
     }
 
     h2 {
       margin: 0 0 16px;
-      font-size: 22px;
+      font-size: 24px;
+      line-height: 1.15;
     }
 
     h3 {
       margin: 0 0 10px;
-      font-size: 18px;
+      font-size: 17px;
+      line-height: 1.2;
     }
 
     p {
-      line-height: 1.6;
       margin: 0 0 12px;
+      color: var(--text);
+      line-height: 1.6;
     }
 
-    .eyebrow {
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+    .muted { color: var(--muted); }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .meta-box {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.75);
+    }
+
+    .meta-label {
       font-size: 12px;
-      color: #8aa677;
-      margin-bottom: 10px;
       font-weight: 700;
-    }
-
-    .score {
-      font-size: 28px;
-      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
       margin-bottom: 8px;
     }
 
-    .muted {
-      color: #6b6b68;
+    .meta-value {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
     }
 
-    .grid {
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+    }
+
+    .chart-wrap {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .chart-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .score-summary .big-score {
+      font-size: 46px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .score-summary .score-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .constraint-box {
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--warning);
+      border-radius: 14px;
+      padding: 18px 18px 16px;
+      background: #fffdfa;
+    }
+
+    .pillars {
+      display: grid;
+      gap: 14px;
+    }
+
+    .pillar-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .pillar-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .pillar-label {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .pillar-score {
+      font-size: 14px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .bar {
+      width: 100%;
+      height: 12px;
+      background: #eee7d9;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+      border-radius: 999px;
+    }
+
+    .section-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 20px;
     }
 
-    .pillars li,
-    .roadmap li,
-    .list li {
-      margin-bottom: 8px;
+    .box-soft {
+      background: #fbfaf6;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
     }
 
     ul {
-      padding-left: 20px;
       margin: 0;
+      padding-left: 20px;
     }
 
-    .swot {
+    li {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .swot-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
 
-    .swot .box {
-      background: #f9f6eb;
-      border-radius: 12px;
-      padding: 16px;
+    .radar text {
+      font-size: 11px;
+      fill: var(--muted);
+      font-weight: 600;
     }
 
     .empty {
-      color: #8a8a86;
+      color: var(--muted);
       font-style: italic;
     }
 
-    @media (max-width: 760px) {
-      .grid,
-      .swot {
+    @media (max-width: 900px) {
+      .hero-meta,
+      .grid-2,
+      .section-grid,
+      .chart-wrap,
+      .swot-grid {
         grid-template-columns: 1fr;
+      }
+
+      .chart-box {
+        justify-content: flex-start;
+      }
+
+      h1 { font-size: 32px; }
+
+      .page {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .card,
+      .hero {
+        padding: 22px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
+  <div class="page">
+    <section class="card hero">
       <div class="eyebrow">Vallenwood Consulting</div>
       <h1>Brand-to-GTM OS Strategic Audit</h1>
-      <p id="company" class="muted"></p>
-      <p id="date" class="muted"></p>
-    </div>
+      <p class="muted">
+        A deeper strategic read on the operating constraints shaping positioning, pricing power, and go-to-market performance.
+      </p>
 
-    <div class="card">
-      <h2>Executive Overview</h2>
-      <div id="score" class="score"></div>
-      <p id="constraint"></p>
-      <p id="why"></p>
-      <p id="summary"></p>
-    </div>
-
-    <div class="card">
-      <h2>Pillar Scores</h2>
-      <ul id="pillars" class="pillars"></ul>
-    </div>
-
-    <div class="card">
-      <h2>SWOT</h2>
-      <div class="swot">
-        <div class="box">
-          <h3>Strengths</h3>
-          <ul id="swot-strengths" class="list"></ul>
+      <div class="hero-meta">
+        <div class="meta-box">
+          <div class="meta-label">Company</div>
+          <div class="meta-value" id="company-name">Company</div>
         </div>
-        <div class="box">
-          <h3>Weaknesses</h3>
-          <ul id="swot-weaknesses" class="list"></ul>
+        <div class="meta-box">
+          <div class="meta-label">Report Date</div>
+          <div class="meta-value" id="report-date">—</div>
         </div>
-        <div class="box">
-          <h3>Opportunities</h3>
-          <ul id="swot-opportunities" class="list"></ul>
-        </div>
-        <div class="box">
-          <h3>Threats</h3>
-          <ul id="swot-threats" class="list"></ul>
+        <div class="meta-box">
+          <div class="meta-label">Primary Constraint</div>
+          <div class="meta-value" id="primary-constraint-top">—</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>Roadmap</h2>
-      <div class="grid">
-        <div>
+    <section class="grid-2">
+      <div class="card">
+        <h2>OS Alignment Score</h2>
+        <div class="chart-wrap">
+          <div class="chart-box">
+            <svg class="radar" id="radar-chart" width="300" height="300" viewBox="0 0 300 300">
+              <g id="radar-grid"></g>
+              <g id="radar-axes"></g>
+              <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
+              <polygon id="radar-area" fill="rgba(138,166,119,0.22)" stroke="#6f875f" stroke-width="3"></polygon>
+              <g id="radar-points"></g>
+              <g id="radar-labels"></g>
+            </svg>
+          </div>
+
+          <div class="score-summary">
+            <div class="big-score" id="overall-score">0</div>
+            <div class="score-label">out of 100</div>
+            <h3 id="score-band" style="font-size:28px; margin-bottom:10px;">—</h3>
+            <p id="executive-headline" class="muted"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Primary Constraint</h2>
+        <div class="constraint-box">
+          <h3 id="primary-constraint-label">—</h3>
+          <p id="primary-constraint-why"></p>
+          <p id="summary-paragraph" class="muted"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5-Pillar Breakdown</h2>
+      <div class="pillars" id="pillar-list"></div>
+    </section>
+
+    <section class="section-grid">
+      <div class="card">
+        <h2>Strategic SWOT</h2>
+        <div class="swot-grid">
+          <div class="box-soft">
+            <h3>Strengths</h3>
+            <ul id="swot-strengths"></ul>
+          </div>
+          <div class="box-soft">
+            <h3>Weaknesses</h3>
+            <ul id="swot-weaknesses"></ul>
+          </div>
+          <div class="box-soft">
+            <h3>Opportunities</h3>
+            <ul id="swot-opportunities"></ul>
+          </div>
+          <div class="box-soft">
+            <h3>Threats</h3>
+            <ul id="swot-threats"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Roadmap</h2>
+        <div class="box-soft" style="margin-bottom:14px;">
           <h3>North Star</h3>
-          <p id="north-star"></p>
+          <p id="roadmap-north-star"></p>
         </div>
-        <div>
+        <div class="box-soft">
           <h3>Principles</h3>
-          <ul id="principles" class="roadmap"></ul>
+          <ul id="roadmap-principles"></ul>
         </div>
       </div>
-    </div>
+    </section>
+
+    <section class="section-grid">
+      <div class="card">
+        <h2>Competitive Context</h2>
+        <div class="box-soft">
+          <p><strong>Category:</strong> <span id="category"></span></p>
+          <h3 style="margin-top:14px;">Most Compared To</h3>
+          <ul id="most-compared-to"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Pricing & Packaging Audit</h2>
+        <div class="box-soft">
+          <h3>Current State Signals</h3>
+          <ul id="pricing-current-state"></ul>
+          <h3 style="margin-top:14px;">First Fixes</h3>
+          <ul id="pricing-first-fixes"></ul>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
     const d = window.REPORT_DATA || {};
 
-    function setText(id, value, fallback = "") {
+    function setText(id, value, fallback = "—") {
       const el = document.getElementById(id);
       if (!el) return;
       el.textContent = value || fallback;
     }
 
-    function fillList(id, items, field = null) {
+    function fillList(id, items, field = null, fallback = "No detail available yet.") {
       const el = document.getElementById(id);
       if (!el) return;
       el.innerHTML = "";
@@ -184,7 +404,7 @@
       if (!items || !items.length) {
         const li = document.createElement("li");
         li.className = "empty";
-        li.textContent = "No additional detail available yet.";
+        li.textContent = fallback;
         el.appendChild(li);
         return;
       }
@@ -204,33 +424,160 @@
       });
     }
 
-    setText("company", d.company_name || "");
-    setText("date", d.report_date ? `Report Date: ${d.report_date}` : "");
-    setText("score", `OS Score: ${d.overall_score || 0} / 100 — ${d.score_band || ""}`);
-    setText("constraint", `Primary Constraint: ${d.primary_constraint_label || ""}`);
-    setText("why", d.primary_constraint_why_it_matters || "");
-    setText("summary", d.executive_summary_paragraph || "");
+    setText("company-name", d.company_name);
+    setText("report-date", d.report_date);
+    setText("primary-constraint-top", d.primary_constraint_label);
+    setText("overall-score", d.overall_score || 0);
+    setText("score-band", d.score_band);
+    setText("executive-headline", d.executive_headline, "");
+    setText("primary-constraint-label", d.primary_constraint_label);
+    setText("primary-constraint-why", d.primary_constraint_why_it_matters, "");
+    setText("summary-paragraph", d.executive_summary_paragraph, "");
+    setText("roadmap-north-star", d.roadmap?.north_star || "No roadmap narrative available yet.");
+    setText("category", d.competitive_context?.category || "Not specified");
 
-    const pillarList = document.getElementById("pillars");
-    const pillars = d.pillar_scores || {};
+    const pillarScores = d.pillar_scores || {};
+    const targetScores = d.target_pillar_scores || {};
+
+    const pillarOrder = [
+      ["positioning", "Positioning & Category"],
+      ["value_architecture", "Value Architecture"],
+      ["pricing_packaging", "Pricing & Packaging"],
+      ["gtm_focus", "GTM Focus"],
+      ["measurement", "Measurement"]
+    ];
+
+    const pillarList = document.getElementById("pillar-list");
     pillarList.innerHTML = "";
-
-    Object.entries(pillars).forEach(([key, value]) => {
-      const li = document.createElement("li");
-      const label = key
-        .replaceAll("_", " ")
-        .replace(/\b\w/g, c => c.toUpperCase());
-      li.textContent = `${label}: ${value}/20`;
-      pillarList.appendChild(li);
+    pillarOrder.forEach(([key, label]) => {
+      const scoreVal = Number(pillarScores[key] || 0);
+      const targetVal = Number(targetScores[key] || 0);
+      const row = document.createElement("div");
+      row.className = "pillar-row";
+      row.innerHTML = `
+        <div class="pillar-top">
+          <div class="pillar-label">${label}</div>
+          <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
+        </div>
+      `;
+      pillarList.appendChild(row);
     });
 
     fillList("swot-strengths", d.swot?.strengths || [], "point");
     fillList("swot-weaknesses", d.swot?.weaknesses || [], "point");
     fillList("swot-opportunities", d.swot?.opportunities || [], "point");
     fillList("swot-threats", d.swot?.threats || [], "point");
+    fillList("roadmap-principles", d.roadmap?.principles || []);
+    fillList("most-compared-to", d.competitive_context?.most_compared_to || []);
+    fillList("pricing-current-state", d.pricing_packaging_audit?.current_state_signals || []);
+    fillList("pricing-first-fixes", d.pricing_packaging_audit?.first_fixes || []);
 
-    setText("north-star", d.roadmap?.north_star || "No roadmap narrative available yet.");
-    fillList("principles", d.roadmap?.principles || []);
+    function renderRadarChart() {
+      const grid = document.getElementById("radar-grid");
+      const axes = document.getElementById("radar-axes");
+      const labels = document.getElementById("radar-labels");
+      const targetArea = document.getElementById("radar-target-area");
+      const area = document.getElementById("radar-area");
+      const pointsGroup = document.getElementById("radar-points");
+
+      grid.innerHTML = "";
+      axes.innerHTML = "";
+      labels.innerHTML = "";
+      pointsGroup.innerHTML = "";
+
+      const cx = 150;
+      const cy = 150;
+      const radius = 100;
+
+      const data = [
+        { key: "positioning", label: "Positioning", value: Number(pillarScores.positioning || 0) },
+        { key: "value_architecture", label: "Value Architecture", value: Number(pillarScores.value_architecture || 0) },
+        { key: "pricing_packaging", label: "Pricing & Packaging", value: Number(pillarScores.pricing_packaging || 0) },
+        { key: "gtm_focus", label: "GTM Focus", value: Number(pillarScores.gtm_focus || 0) },
+        { key: "measurement", label: "Measurement", value: Number(pillarScores.measurement || 0) }
+      ];
+
+      const levels = 4;
+      const totalAxes = data.length;
+
+      function pointFor(index, value, max = 20) {
+        const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
+        const r = (value / max) * radius;
+        return {
+          x: cx + Math.cos(angle) * r,
+          y: cy + Math.sin(angle) * r
+        };
+      }
+
+      for (let level = 1; level <= levels; level++) {
+        const r = (radius / levels) * level;
+        const pts = data.map((_, i) => {
+          const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
+          return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
+        }).join(" ");
+
+        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        poly.setAttribute("points", pts);
+        poly.setAttribute("fill", "none");
+        poly.setAttribute("stroke", "#e6dfcf");
+        poly.setAttribute("stroke-width", "1");
+        grid.appendChild(poly);
+      }
+
+      data.forEach((item, i) => {
+        const outer = pointFor(i, 20, 20);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", cx);
+        line.setAttribute("y1", cy);
+        line.setAttribute("x2", outer.x);
+        line.setAttribute("y2", outer.y);
+        line.setAttribute("stroke", "#ddd4c3");
+        line.setAttribute("stroke-width", "1.2");
+        axes.appendChild(line);
+
+        const labelPoint = pointFor(i, 24, 20);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", labelPoint.x);
+        text.setAttribute("y", labelPoint.y);
+        text.setAttribute(
+          "text-anchor",
+          Math.abs(labelPoint.x - cx) < 8 ? "middle" : (labelPoint.x < cx ? "end" : "start")
+        );
+        text.setAttribute("dominant-baseline", "middle");
+        text.textContent = item.label;
+        labels.appendChild(text);
+      });
+
+      const targetPolygonPoints = data.map((item, i) => {
+        const targetVal = Number(targetScores[item.key] || 0);
+        const p = pointFor(i, targetVal, 20);
+        return `${p.x},${p.y}`;
+      }).join(" ");
+
+      targetArea.setAttribute("points", targetPolygonPoints);
+
+      const polygonPoints = data.map((item, i) => {
+        const p = pointFor(i, item.value, 20);
+        return `${p.x},${p.y}`;
+      }).join(" ");
+
+      area.setAttribute("points", polygonPoints);
+
+      data.forEach((item, i) => {
+        const p = pointFor(i, item.value, 20);
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", p.x);
+        circle.setAttribute("cy", p.y);
+        circle.setAttribute("r", "4.5");
+        circle.setAttribute("fill", "#6f875f");
+        pointsGroup.appendChild(circle);
+      });
+    }
+
+    renderRadarChart();
   </script>
 </body>
 </html>

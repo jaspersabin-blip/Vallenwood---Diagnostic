@@ -341,6 +341,7 @@
             <svg class="radar" id="radar-chart" width="300" height="300" viewBox="0 0 300 300" aria-label="Brand-to-GTM OS radar chart">
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
+              <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
               <polygon id="radar-area" fill="rgba(138,166,119,0.22)" stroke="#6f875f" stroke-width="3"></polygon>
               <g id="radar-points"></g>
               <g id="radar-labels"></g>
@@ -521,23 +522,28 @@
     }
 
     function renderRadarChart() {
-      const svg = document.getElementById("radar-chart");
       const grid = document.getElementById("radar-grid");
       const axes = document.getElementById("radar-axes");
       const labels = document.getElementById("radar-labels");
+      const targetArea = document.getElementById("radar-target-area");
       const area = document.getElementById("radar-area");
       const pointsGroup = document.getElementById("radar-points");
+
+      grid.innerHTML = "";
+      axes.innerHTML = "";
+      labels.innerHTML = "";
+      pointsGroup.innerHTML = "";
 
       const cx = 150;
       const cy = 150;
       const radius = 100;
 
       const data = [
-        { label: "Positioning", value: Number(pillarScores.positioning || 0) },
-        { label: "Value Architecture", value: Number(pillarScores.value_architecture || 0) },
-        { label: "Pricing & Packaging", value: Number(pillarScores.pricing_packaging || 0) },
-        { label: "GTM Focus", value: Number(pillarScores.gtm_focus || 0) },
-        { label: "Measurement", value: Number(pillarScores.measurement || 0) }
+        { key: "positioning", label: "Positioning", value: Number(pillarScores.positioning || 0) },
+        { key: "value_architecture", label: "Value Architecture", value: Number(pillarScores.value_architecture || 0) },
+        { key: "pricing_packaging", label: "Pricing & Packaging", value: Number(pillarScores.pricing_packaging || 0) },
+        { key: "gtm_focus", label: "GTM Focus", value: Number(pillarScores.gtm_focus || 0) },
+        { key: "measurement", label: "Measurement", value: Number(pillarScores.measurement || 0) }
       ];
 
       const levels = 4;
@@ -589,6 +595,14 @@
         text.textContent = item.label;
         labels.appendChild(text);
       });
+
+      const targetPolygonPoints = data.map((item, i) => {
+        const targetVal = Number(targetScores[item.key] || 0);
+        const p = pointFor(i, targetVal, 20);
+        return `${p.x},${p.y}`;
+      }).join(" ");
+
+      targetArea.setAttribute("points", targetPolygonPoints);
 
       const polygonPoints = data.map((item, i) => {
         const p = pointFor(i, item.value, 20);

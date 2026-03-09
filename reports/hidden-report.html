@@ -5,111 +5,399 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Client Diagnostic Briefing</title>
   <style>
+    :root {
+      --bg: #f7f4ea;
+      --card: #ffffff;
+      --text: #2f2f2f;
+      --muted: #6f6f69;
+      --line: #e6dfcf;
+      --accent: #8aa677;
+      --accent-dark: #6f875f;
+      --warning: #c67b5c;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
-      background: #f7f4ea;
-      color: #2f2f2f;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
-    .wrap {
-      max-width: 980px;
+
+    .page {
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 40px 24px 64px;
+      padding: 36px 20px 64px;
     }
+
     .card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
       margin-bottom: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
     }
-    h1 { margin: 0 0 8px; font-size: 34px; }
-    h2 { margin: 0 0 14px; font-size: 22px; }
-    h3 { margin: 0 0 10px; font-size: 17px; }
-    p, li { line-height: 1.55; }
-    .muted { color: #6e6e6a; }
-    .grid {
+
+    .hero {
+      padding: 36px 32px;
+      background:
+        radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
+        linear-gradient(135deg, #ffffff, #fbfaf6);
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 38px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0 0 12px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .muted { color: var(--muted); }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .meta-box {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.75);
+    }
+
+    .meta-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .meta-value {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 20px;
+    }
+
+    .chart-wrap {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .chart-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .score-summary .big-score {
+      font-size: 46px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .score-summary .score-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .constraint-box {
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--warning);
+      border-radius: 14px;
+      padding: 18px 18px 16px;
+      background: #fffdfa;
+    }
+
+    .pillars {
+      display: grid;
+      gap: 14px;
+    }
+
+    .pillar-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .pillar-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .pillar-label {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .pillar-score {
+      font-size: 14px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .bar {
+      width: 100%;
+      height: 12px;
+      background: #eee7d9;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+      border-radius: 999px;
+    }
+
+    .section-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 20px;
     }
-    ul { margin: 0; padding-left: 20px; }
-    .empty { color: #8d8d88; font-style: italic; }
-    @media (max-width: 760px) {
-      .grid { grid-template-columns: 1fr; }
+
+    .box-soft {
+      background: #fbfaf6;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .radar text {
+      font-size: 11px;
+      fill: var(--muted);
+      font-weight: 600;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 900px) {
+      .hero-meta,
+      .grid-2,
+      .section-grid,
+      .chart-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-box {
+        justify-content: flex-start;
+      }
+
+      h1 { font-size: 32px; }
+
+      .page {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .card,
+      .hero {
+        padding: 22px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
+  <div class="page">
+    <section class="card hero">
+      <div class="eyebrow">Vallenwood Consulting · Internal</div>
       <h1>Client Diagnostic Briefing</h1>
-      <p id="company" class="muted"></p>
-      <p id="date" class="muted"></p>
-    </div>
+      <p class="muted">
+        Internal operating brief for call prep, signal interpretation, and consulting opportunity assessment.
+      </p>
 
-    <div class="card">
-      <h2>Diagnostic Snapshot</h2>
-      <ul id="snapshot"></ul>
-    </div>
-
-    <div class="card">
-      <h2>Scoring Overview</h2>
-      <p id="score"></p>
-      <p id="primary"></p>
-      <ul id="ranked"></ul>
-    </div>
-
-    <div class="card">
-      <h2>Signal Analysis</h2>
-      <div class="grid">
-        <div>
-          <h3>Strength Signals</h3>
-          <ul id="strengths"></ul>
+      <div class="hero-meta">
+        <div class="meta-box">
+          <div class="meta-label">Company</div>
+          <div class="meta-value" id="company-name">Company</div>
         </div>
-        <div>
-          <h3>Constraint Signals</h3>
-          <ul id="constraints"></ul>
+        <div class="meta-box">
+          <div class="meta-label">Report Date</div>
+          <div class="meta-value" id="report-date">—</div>
         </div>
-        <div>
-          <h3>Risk Signals</h3>
-          <ul id="risks"></ul>
-        </div>
-        <div>
-          <h3>Opportunity Signals</h3>
-          <ul id="opportunities"></ul>
+        <div class="meta-box">
+          <div class="meta-label">Primary Constraint</div>
+          <div class="meta-value" id="primary-constraint-top">—</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>Interpretation</h2>
-      <p id="readout"></p>
-      <h3>Root Cause Hypotheses</h3>
-      <ul id="hypotheses"></ul>
-    </div>
+    <section class="grid-2">
+      <div class="card">
+        <h2>OS Alignment Score</h2>
+        <div class="chart-wrap">
+          <div class="chart-box">
+            <svg class="radar" id="radar-chart" width="300" height="300" viewBox="0 0 300 300">
+              <g id="radar-grid"></g>
+              <g id="radar-axes"></g>
+              <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
+              <polygon id="radar-area" fill="rgba(138,166,119,0.22)" stroke="#6f875f" stroke-width="3"></polygon>
+              <g id="radar-points"></g>
+              <g id="radar-labels"></g>
+            </svg>
+          </div>
 
-    <div class="card">
-      <h2>Call Briefing</h2>
-      <p id="opening"></p>
-      <h3>Top Questions to Ask</h3>
-      <ul id="questions"></ul>
-      <h3>Areas to Validate Live</h3>
-      <ul id="validate"></ul>
-    </div>
+          <div class="score-summary">
+            <div class="big-score" id="overall-score">0</div>
+            <div class="score-label">out of 100</div>
+            <h3 id="score-band" style="font-size:28px; margin-bottom:10px;">—</h3>
+            <p id="primary-constraint-detail" class="muted"></p>
+          </div>
+        </div>
+      </div>
 
-    <div class="card">
-      <h2>Consulting Opportunity</h2>
-      <p id="engagement"></p>
-      <p id="upsell"></p>
-      <ul id="needs"></ul>
-    </div>
+      <div class="card">
+        <h2>Diagnostic Snapshot</h2>
+        <div class="box-soft">
+          <ul id="snapshot-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5-Pillar Breakdown</h2>
+      <div class="pillars" id="pillar-list"></div>
+    </section>
+
+    <section class="section-grid">
+      <div class="card">
+        <h2>Signal Analysis</h2>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Strength Signals</h3>
+          <ul id="strength-signals"></ul>
+        </div>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Constraint Signals</h3>
+          <ul id="constraint-signals"></ul>
+        </div>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Risk Signals</h3>
+          <ul id="risk-signals"></ul>
+        </div>
+        <div class="box-soft">
+          <h3>Opportunity Signals</h3>
+          <ul id="opportunity-signals"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Interpretation</h2>
+        <div class="constraint-box" style="margin-bottom:14px;">
+          <h3>Executive Readout</h3>
+          <p id="executive-readout"></p>
+        </div>
+        <div class="box-soft">
+          <h3>Root Cause Hypotheses</h3>
+          <ul id="root-cause-hypotheses"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-grid">
+      <div class="card">
+        <h2>Call Briefing</h2>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Opening Summary</h3>
+          <p id="opening-summary"></p>
+        </div>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Top Questions to Ask</h3>
+          <ul id="top-questions"></ul>
+        </div>
+        <div class="box-soft">
+          <h3>Areas to Validate Live</h3>
+          <ul id="validate-live"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Consulting Opportunity</h2>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Priority Engagement Angle</h3>
+          <p id="engagement-angle"></p>
+        </div>
+        <div class="box-soft" style="margin-bottom:14px;">
+          <h3>Upsell Readiness</h3>
+          <p id="upsell-readiness"></p>
+        </div>
+        <div class="box-soft">
+          <h3>Likely Needs</h3>
+          <ul id="likely-needs"></ul>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
     const d = window.REPORT_DATA || {};
 
-    function fillList(id, items, formatter) {
+    function setText(id, value, fallback = "—") {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value || fallback;
+    }
+
+    function fillList(id, items, formatter = null, fallback = "No detail available yet.") {
       const el = document.getElementById(id);
       if (!el) return;
       el.innerHTML = "";
@@ -117,7 +405,7 @@
       if (!items || !items.length) {
         const li = document.createElement("li");
         li.className = "empty";
-        li.textContent = "No detail available yet.";
+        li.textContent = fallback;
         el.appendChild(li);
         return;
       }
@@ -129,47 +417,174 @@
       });
     }
 
-    document.getElementById("company").textContent = d.company_name || "";
-    document.getElementById("date").textContent = d.report_date ? `Report Date: ${d.report_date}` : "";
+    setText("company-name", d.company_name);
+    setText("report-date", d.report_date);
+    setText("primary-constraint-top", d.scoring?.primary_constraint?.label || "—");
+    setText("overall-score", d.scoring?.overall_score || 0);
+    setText("score-band", d.scoring?.score_band || "—");
+    setText(
+      "primary-constraint-detail",
+      d.scoring?.primary_constraint
+        ? `${d.scoring.primary_constraint.label} (${d.scoring.primary_constraint.score}/20)`
+        : "Primary constraint not available."
+    );
 
-    const snapshot = d.diagnostic_snapshot || {};
-    fillList("snapshot", Object.entries(snapshot), ([k, v]) => {
-      const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
-      const value = Array.isArray(v) ? v.join(", ") : v;
-      return `${label}: ${value ?? ""}`;
+    fillList(
+      "snapshot-list",
+      Object.entries(d.diagnostic_snapshot || {}),
+      ([k, v]) => {
+        const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+        const value = Array.isArray(v) ? v.join(", ") : v;
+        return `${label}: ${value ?? ""}`;
+      }
+    );
+
+    const pillarScores = d.scoring?.pillar_scores || {};
+    const targetScores = d.scoring?.target_pillar_scores || {};
+
+    const pillarOrder = [
+      ["positioning", "Positioning & Category"],
+      ["value_architecture", "Value Architecture"],
+      ["pricing_packaging", "Pricing & Packaging"],
+      ["gtm_focus", "GTM Focus"],
+      ["measurement", "Measurement"]
+    ];
+
+    const pillarList = document.getElementById("pillar-list");
+    pillarList.innerHTML = "";
+    pillarOrder.forEach(([key, label]) => {
+      const scoreVal = Number(pillarScores[key] || 0);
+      const targetVal = Number(targetScores[key] || 0);
+      const row = document.createElement("div");
+      row.className = "pillar-row";
+      row.innerHTML = `
+        <div class="pillar-top">
+          <div class="pillar-label">${label}</div>
+          <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
+        </div>
+      `;
+      pillarList.appendChild(row);
     });
 
-    const scoring = d.scoring || {};
-    document.getElementById("score").textContent =
-      `OS Score: ${scoring.overall_score || 0} / 100 — ${scoring.score_band || ""}`;
-    document.getElementById("primary").textContent =
-      scoring.primary_constraint
-        ? `Primary Constraint: ${scoring.primary_constraint.label} (${scoring.primary_constraint.score}/20)`
-        : "Primary Constraint: Not available";
+    fillList("strength-signals", d.signal_analysis?.strength_signals || []);
+    fillList("constraint-signals", d.signal_analysis?.constraint_signals || []);
+    fillList("risk-signals", d.signal_analysis?.risk_signals || []);
+    fillList("opportunity-signals", d.signal_analysis?.opportunity_signals || []);
+    setText("executive-readout", d.interpretation?.executive_readout || "");
+    fillList("root-cause-hypotheses", d.interpretation?.root_cause_hypotheses || []);
+    setText("opening-summary", d.call_briefing?.opening_summary || "");
+    fillList("top-questions", d.call_briefing?.top_questions_to_ask || []);
+    fillList("validate-live", d.call_briefing?.areas_to_validate_live || []);
+    setText("engagement-angle", d.consulting_opportunity?.priority_engagement_angle || "");
+    setText("upsell-readiness", d.consulting_opportunity?.upsell_readiness || "");
+    fillList("likely-needs", d.consulting_opportunity?.likely_needs || []);
 
-    fillList("ranked", scoring.pillar_ranked || [], (p) => `${p.label}: ${p.score}/20`);
+    function renderRadarChart() {
+      const grid = document.getElementById("radar-grid");
+      const axes = document.getElementById("radar-axes");
+      const labels = document.getElementById("radar-labels");
+      const targetArea = document.getElementById("radar-target-area");
+      const area = document.getElementById("radar-area");
+      const pointsGroup = document.getElementById("radar-points");
 
-    const signals = d.signal_analysis || {};
-    fillList("strengths", signals.strength_signals || []);
-    fillList("constraints", signals.constraint_signals || []);
-    fillList("risks", signals.risk_signals || []);
-    fillList("opportunities", signals.opportunity_signals || []);
+      grid.innerHTML = "";
+      axes.innerHTML = "";
+      labels.innerHTML = "";
+      pointsGroup.innerHTML = "";
 
-    const interpretation = d.interpretation || {};
-    document.getElementById("readout").textContent = interpretation.executive_readout || "";
-    fillList("hypotheses", interpretation.root_cause_hypotheses || []);
+      const cx = 150;
+      const cy = 150;
+      const radius = 100;
 
-    const briefing = d.call_briefing || {};
-    document.getElementById("opening").textContent = briefing.opening_summary || "";
-    fillList("questions", briefing.top_questions_to_ask || []);
-    fillList("validate", briefing.areas_to_validate_live || []);
+      const data = [
+        { key: "positioning", label: "Positioning", value: Number(pillarScores.positioning || 0) },
+        { key: "value_architecture", label: "Value Architecture", value: Number(pillarScores.value_architecture || 0) },
+        { key: "pricing_packaging", label: "Pricing & Packaging", value: Number(pillarScores.pricing_packaging || 0) },
+        { key: "gtm_focus", label: "GTM Focus", value: Number(pillarScores.gtm_focus || 0) },
+        { key: "measurement", label: "Measurement", value: Number(pillarScores.measurement || 0) }
+      ];
 
-    const opp = d.consulting_opportunity || {};
-    document.getElementById("engagement").textContent =
-      opp.priority_engagement_angle ? `Priority Engagement Angle: ${opp.priority_engagement_angle}` : "";
-    document.getElementById("upsell").textContent =
-      opp.upsell_readiness ? `Upsell Readiness: ${opp.upsell_readiness}` : "";
-    fillList("needs", opp.likely_needs || []);
+      const levels = 4;
+      const totalAxes = data.length;
+
+      function pointFor(index, value, max = 20) {
+        const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
+        const r = (value / max) * radius;
+        return {
+          x: cx + Math.cos(angle) * r,
+          y: cy + Math.sin(angle) * r
+        };
+      }
+
+      for (let level = 1; level <= levels; level++) {
+        const r = (radius / levels) * level;
+        const pts = data.map((_, i) => {
+          const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
+          return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
+        }).join(" ");
+
+        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        poly.setAttribute("points", pts);
+        poly.setAttribute("fill", "none");
+        poly.setAttribute("stroke", "#e6dfcf");
+        poly.setAttribute("stroke-width", "1");
+        grid.appendChild(poly);
+      }
+
+      data.forEach((item, i) => {
+        const outer = pointFor(i, 20, 20);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", cx);
+        line.setAttribute("y1", cy);
+        line.setAttribute("x2", outer.x);
+        line.setAttribute("y2", outer.y);
+        line.setAttribute("stroke", "#ddd4c3");
+        line.setAttribute("stroke-width", "1.2");
+        axes.appendChild(line);
+
+        const labelPoint = pointFor(i, 24, 20);
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", labelPoint.x);
+        text.setAttribute("y", labelPoint.y);
+        text.setAttribute(
+          "text-anchor",
+          Math.abs(labelPoint.x - cx) < 8 ? "middle" : (labelPoint.x < cx ? "end" : "start")
+        );
+        text.setAttribute("dominant-baseline", "middle");
+        text.textContent = item.label;
+        labels.appendChild(text);
+      });
+
+      const targetPolygonPoints = data.map((item, i) => {
+        const targetVal = Number(targetScores[item.key] || 0);
+        const p = pointFor(i, targetVal, 20);
+        return `${p.x},${p.y}`;
+      }).join(" ");
+
+      targetArea.setAttribute("points", targetPolygonPoints);
+
+      const polygonPoints = data.map((item, i) => {
+        const p = pointFor(i, item.value, 20);
+        return `${p.x},${p.y}`;
+      }).join(" ");
+
+      area.setAttribute("points", polygonPoints);
+
+      data.forEach((item, i) => {
+        const p = pointFor(i, item.value, 20);
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", p.x);
+        circle.setAttribute("cy", p.y);
+        circle.setAttribute("r", "4.5");
+        circle.setAttribute("fill", "#6f875f");
+        pointsGroup.appendChild(circle);
+      });
+    }
+
+    renderRadarChart();
   </script>
 </body>
 </html>

@@ -972,11 +972,11 @@ function buildExecReportData(report) {
   const secondary = sorted[1] || null;
 
   const targetPillarScores = {
-    positioning: Math.min((pillarScores.positioning || 0) + 4, 20),
-    value_architecture: Math.min((pillarScores.value_architecture || 0) + 4, 20),
-    pricing_packaging: Math.min((pillarScores.pricing_packaging || 0) + 3, 20),
-    gtm_focus: Math.min((pillarScores.gtm_focus || 0) + 3, 20),
-    measurement: Math.min((pillarScores.measurement || 0) + 4, 20),
+    positioning: 19,
+    value_architecture: 17,
+    pricing_packaging: 19,
+    gtm_focus: 20,
+    measurement: 20,
   };
 
   const secondaryExplanation = secondary
@@ -1072,6 +1072,14 @@ function buildAuditReportData(report) {
       pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
       gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
       measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
+    },
+
+    target_pillar_scores: {
+      positioning: 19,
+      value_architecture: 17,
+      pricing_packaging: 19,
+      gtm_focus: 20,
+      measurement: 20,
     },
 
     swot: report?.full_tier?.swot || null,
@@ -1170,6 +1178,13 @@ function buildHiddenReportData(report) {
       overall_score: report?.scoring?.overall_score || 0,
       score_band: report?.scoring?.band || "",
       pillar_scores: pillarScores,
+      target_pillar_scores: {
+        positioning: 19,
+        value_architecture: 17,
+        pricing_packaging: 19,
+        gtm_focus: 20,
+        measurement: 20,
+      },
       pillar_ranked: ranked.map((p) => ({
         key: p.key,
         label: p.label,
