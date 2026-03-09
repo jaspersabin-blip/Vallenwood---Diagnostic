@@ -509,7 +509,7 @@
       el.textContent = value || fallback;
     }
 
-    function fillList(id, items, field = null, fallback = "No detail available yet.") {
+    function fillList(id, items, field = null, fallback = "We will review this area together in the next step.") {
       const el = document.getElementById(id);
       if (!el) return;
       el.innerHTML = "";
@@ -550,8 +550,12 @@
     setText("primary-constraint-label", d.primary_constraint_label);
     setText("primary-constraint-why", d.primary_constraint_why_it_matters, "");
     setText("summary-paragraph", d.executive_summary_paragraph, "");
-    setText("roadmap-north-star", d.roadmap?.north_star || "No roadmap narrative available yet.");
-    setText("category", d.competitive_context?.category || "Not specified");
+    setText("roadmap-north-star", d.roadmap?.north_star || "The current assessment suggests the next priority is to improve clarity, value articulation, and go-to-market efficiency around the primary constraint.");
+    setText(
+      "category",
+      d.competitive_context?.category,
+      "We were not able to determine a clear competitive category from the intake alone."
+    );
 
     const pillarScores = d.pillar_scores || {};
     const targetScores = d.target_pillar_scores || {
@@ -589,31 +593,75 @@
       pillarList.appendChild(row);
     });
 
-    fillList("swot-strengths", d.swot?.strengths || [], "point");
-    fillList("swot-weaknesses", d.swot?.weaknesses || [], "point");
-    fillList("swot-opportunities", d.swot?.opportunities || [], "point");
-    fillList("swot-threats", d.swot?.threats || [], "point");
-    fillList("roadmap-principles", d.roadmap?.principles || []);
+    fillList(
+      "swot-strengths",
+      chooseList(d.swot?.strengths, [
+        { point: "The submission suggests there may be existing strengths in the business, but additional evidence is needed to confirm which ones are most commercially meaningful." },
+        { point: "We will use the review session to identify where the business is already creating trust, traction, or pricing power." }
+      ]),
+      "point"
+    );
+
+    fillList(
+      "swot-weaknesses",
+      chooseList(d.swot?.weaknesses, [
+        { point: "The intake indicates at least one structural constraint is present, but more context is needed to isolate the underlying weakness with confidence." },
+        { point: "The review session will help determine whether the core issue is positioning clarity, value articulation, pricing design, or GTM execution." }
+      ]),
+      "point"
+    );
+
+    fillList(
+      "swot-opportunities",
+      chooseList(d.swot?.opportunities, [
+        { point: "The diagnostic suggests there is likely unlockable upside, but the intake alone does not provide enough evidence to define the opportunity set precisely." },
+        { point: "We will use the review to identify the highest-leverage near-term opportunity." }
+      ]),
+      "point"
+    );
+
+    fillList(
+      "swot-threats",
+      chooseList(d.swot?.threats, [
+        { point: "No specific external threats could be validated from the current inputs alone." },
+        { point: "In the review session, we will identify whether competitive pressure, buyer confusion, pricing compression, or internal misalignment poses the most immediate risk." }
+      ]),
+      "point"
+    );
+
+    fillList(
+      "roadmap-principles",
+      chooseList(d.roadmap?.principles, [
+        "Clarity over breadth.",
+        "Proof over promises.",
+        "Focus over fragmentation."
+      ])
+    );
+
     fillList(
       "most-compared-to",
       chooseList(d.competitive_context?.most_compared_to, [
-        "No direct comparison set captured in intake.",
-        "Use the review session to identify who prospects benchmark against most often."
+        "We were not able to identify a reliable comparison set from the submitted inputs alone.",
+        "In the review session, we will clarify which competitors or alternatives prospects most often benchmark against.",
+        "This matters because comparison context shapes positioning, pricing pressure, and win/loss dynamics."
       ])
     );
+
     fillList(
       "pricing-current-state",
       chooseList(d.pricing_packaging_audit?.current_state_signals, [
-        "Current pricing-state signals were not fully captured in intake.",
-        "Use the audit review to confirm discounting patterns, packaging friction, and pricing comprehension."
+        "We were not able to assess pricing-state signals with confidence from the intake alone.",
+        "In the review session, we will validate where pricing friction appears and whether discounting is tied to value clarity, packaging, or buyer alignment.",
+        "This step helps distinguish a pricing problem from a positioning or value-communication problem."
       ])
     );
+
     fillList(
       "pricing-first-fixes",
       chooseList(d.pricing_packaging_audit?.first_fixes, [
-        "Clarify pricing tiers and buyer-facing packaging structure.",
-        "Identify where value articulation is breaking down before pricing objections appear.",
-        "Define the first packaging or pricing test worth running."
+        "Based on the current submission, the first priority is to clarify where buyer confusion or pricing resistance is entering the process.",
+        "From there, we can determine whether the best next move is packaging refinement, stronger value articulation, or pricing-structure simplification.",
+        "We will use the review session to identify the highest-confidence first fix."
       ])
     );
 
@@ -647,9 +695,9 @@
     fillList(
       "validate-live-list",
       chooseList(d.pricing_packaging_audit?.what_to_validate, [
-        "Whether the primary constraint is fully visible in active pipeline behavior.",
-        "Whether current pricing and packaging reflect real buyer value perception.",
-        "Whether internal teams are aligned on category, narrative, and proof points."
+        "Confirm whether the diagnosed constraint is showing up in active pipeline behavior.",
+        "Clarify where prospects hesitate, compare alternatives, or push back on value.",
+        "Validate whether the issue is primarily positioning, pricing, packaging, or internal message consistency."
       ])
     );
 
