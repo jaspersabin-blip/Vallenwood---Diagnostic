@@ -972,11 +972,11 @@ function buildExecReportData(report) {
   const secondary = sorted[1] || null;
 
   const targetPillarScores = {
-    positioning: 19,
-    value_architecture: 17,
-    pricing_packaging: 19,
-    gtm_focus: 20,
-    measurement: 20,
+    positioning: 16,
+    value_architecture: 15,
+    pricing_packaging: 16,
+    gtm_focus: 17,
+    measurement: 17,
   };
 
   const secondaryExplanation = secondary
