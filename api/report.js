@@ -50,8 +50,10 @@ export default async function handler(req, res) {
             ...(finalReportData.roadmap || {}),
             ...(aiInsights?.roadmap || {}),
           },
-          constraint_analysis:
-            aiInsights?.constraint_analysis || finalReportData.constraint_analysis || [],
+          constraint_analysis: {
+            ...(finalReportData.constraint_analysis || {}),
+            ...(aiInsights?.constraint_analysis || {}),
+          },
         };
       } catch (err) {
         console.error("[report] Audit enrichment failed:", err);
