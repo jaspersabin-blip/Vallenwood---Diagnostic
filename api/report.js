@@ -39,14 +39,19 @@ export default async function handler(req, res) {
 
         finalReportData = {
           ...finalReportData,
-          swot: aiInsights.swot || finalReportData.swot,
+          swot: aiInsights?.swot || finalReportData.swot,
           competitive_context:
-            aiInsights.competitive_context || finalReportData.competitive_context,
-          pricing_packaging_audit:
-            aiInsights.pricing_insight || finalReportData.pricing_packaging_audit,
-          roadmap: aiInsights.roadmap || finalReportData.roadmap,
+            aiInsights?.competitive_context || finalReportData.competitive_context,
+          pricing_packaging_audit: {
+            ...(finalReportData.pricing_packaging_audit || {}),
+            ...(aiInsights?.pricing_insight || {}),
+          },
+          roadmap: {
+            ...(finalReportData.roadmap || {}),
+            ...(aiInsights?.roadmap || {}),
+          },
           constraint_analysis:
-            aiInsights.constraint_analysis || finalReportData.constraint_analysis,
+            aiInsights?.constraint_analysis || finalReportData.constraint_analysis || [],
         };
       } catch (err) {
         console.error("[report] Audit enrichment failed:", err);
