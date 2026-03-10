@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { getReport } from "../lib/reportStore.js";
+import { enrichAuditReport } from "../lib/enrichAudit.js";
 
 export default async function handler(req, res) {
   try {
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     }
 
     const tier = requestedTier || stored.tier || "exec";
-    const reportData = stored.reportData || stored;
+    let finalReportData = stored.reportData || stored;
 
     let templatePath;
     if (tier === "audit") {
@@ -32,8 +33,28 @@ export default async function handler(req, res) {
       templatePath = path.join(process.cwd(), "reports", "exec-report.html");
     }
 
+    if (tier === "audit") {
+      try {
+        const aiInsights = await enrichAuditReport(finalReportData);
+
+        finalReportData = {
+          ...finalReportData,
+          swot: aiInsights.swot || finalReportData.swot,
+          competitive_context:
+            aiInsights.competitive_context || finalReportData.competitive_context,
+          pricing_packaging_audit:
+            aiInsights.pricing_insight || finalReportData.pricing_packaging_audit,
+          roadmap: aiInsights.roadmap || finalReportData.roadmap,
+          constraint_analysis:
+            aiInsights.constraint_analysis || finalReportData.constraint_analysis,
+        };
+      } catch (err) {
+        console.error("[report] Audit enrichment failed:", err);
+      }
+    }
+
     const html = fs.readFileSync(templatePath, "utf8");
-    const injection = `<script>window.REPORT_DATA = ${JSON.stringify(reportData)};</script>`;
+    const injection = `<script>window.REPORT_DATA = ${JSON.stringify(finalReportData)};</script>`;
 
     const injected = html.includes("</head>")
       ? html.replace("</head>", `  ${injection}\n</head>`)
