@@ -86,7 +86,7 @@
 
     .hero-meta {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
       margin-top: 22px;
     }
@@ -115,13 +115,13 @@
 
     .grid-2 {
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
+      grid-template-columns: 1fr 1fr;
       gap: 20px;
     }
 
     .chart-wrap {
       display: grid;
-      grid-template-columns: 320px 1fr;
+      grid-template-columns: 360px 1fr;
       gap: 22px;
       align-items: center;
     }
@@ -145,6 +145,13 @@
       letter-spacing: 0.06em;
       color: var(--muted);
       margin-bottom: 14px;
+    }
+
+    .box-soft {
+      background: #fbfaf6;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
     }
 
     .constraint-box {
@@ -197,19 +204,6 @@
       border-radius: 999px;
     }
 
-    .section-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    .box-soft {
-      background: #fbfaf6;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
-    }
-
     ul {
       margin: 0;
       padding-left: 20px;
@@ -226,15 +220,9 @@
       font-weight: 600;
     }
 
-    .empty {
-      color: var(--muted);
-      font-style: italic;
-    }
-
     @media (max-width: 900px) {
       .hero-meta,
       .grid-2,
-      .section-grid,
       .chart-wrap {
         grid-template-columns: 1fr;
       }
@@ -263,7 +251,7 @@
       <div class="eyebrow">Vallenwood Consulting · Internal</div>
       <h1>Client Diagnostic Briefing</h1>
       <p class="muted">
-        Internal operating brief for call prep, signal interpretation, and consulting opportunity assessment.
+        Internal pre-call brief designed to help frame the live conversation, validate the constraint, and identify the strongest engagement path.
       </p>
 
       <div class="hero-meta">
@@ -279,15 +267,19 @@
           <div class="meta-label">Primary Constraint</div>
           <div class="meta-value" id="primary-constraint-top">—</div>
         </div>
+        <div class="meta-box">
+          <div class="meta-label">OS Score</div>
+          <div class="meta-value" id="overall-score-top">—</div>
+        </div>
       </div>
     </section>
 
     <section class="grid-2">
       <div class="card">
-        <h2>OS Alignment Score</h2>
+        <h2>OS Alignment Snapshot</h2>
         <div class="chart-wrap">
           <div class="chart-box">
-            <svg class="radar" id="radar-chart" width="300" height="300" viewBox="0 0 300 300">
+            <svg class="radar" id="radar-chart" width="340" height="340" viewBox="0 0 340 340">
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
               <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
@@ -301,15 +293,17 @@
             <div class="big-score" id="overall-score">0</div>
             <div class="score-label">out of 100</div>
             <h3 id="score-band" style="font-size:28px; margin-bottom:10px;">—</h3>
-            <p id="primary-constraint-detail" class="muted"></p>
+            <p id="constraint-hypothesis-summary" class="muted"></p>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <h2>Diagnostic Snapshot</h2>
-        <div class="box-soft">
-          <ul id="snapshot-list"></ul>
+        <h2>Constraint Hypothesis</h2>
+        <div class="constraint-box">
+          <h3 id="primary-constraint-label">—</h3>
+          <p id="primary-constraint-why"></p>
+          <ul id="constraint-hypothesis-list"></ul>
         </div>
       </div>
     </section>
@@ -319,70 +313,68 @@
       <div class="pillars" id="pillar-list"></div>
     </section>
 
-    <section class="section-grid">
+    <section class="grid-2">
       <div class="card">
-        <h2>Signal Analysis</h2>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Strength Signals</h3>
-          <ul id="strength-signals"></ul>
-        </div>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Constraint Signals</h3>
-          <ul id="constraint-signals"></ul>
-        </div>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Risk Signals</h3>
-          <ul id="risk-signals"></ul>
-        </div>
+        <h2>Commercial Friction Signals</h2>
         <div class="box-soft">
-          <h3>Opportunity Signals</h3>
-          <ul id="opportunity-signals"></ul>
+          <ul id="commercial-friction-list"></ul>
         </div>
       </div>
 
       <div class="card">
-        <h2>Interpretation</h2>
-        <div class="constraint-box" style="margin-bottom:14px;">
-          <h3>Executive Readout</h3>
-          <p id="executive-readout"></p>
-        </div>
+        <h2>Likely Objections / Tensions</h2>
         <div class="box-soft">
-          <h3>Root Cause Hypotheses</h3>
-          <ul id="root-cause-hypotheses"></ul>
+          <ul id="likely-objections-list"></ul>
         </div>
       </div>
     </section>
 
-    <section class="section-grid">
+    <section class="grid-2">
       <div class="card">
-        <h2>Call Briefing</h2>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Opening Summary</h3>
-          <p id="opening-summary"></p>
-        </div>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Top Questions to Ask</h3>
-          <ul id="top-questions"></ul>
-        </div>
+        <h2>Discovery Questions</h2>
         <div class="box-soft">
-          <h3>Areas to Validate Live</h3>
-          <ul id="validate-live"></ul>
+          <ul id="discovery-questions-list"></ul>
         </div>
       </div>
 
       <div class="card">
-        <h2>Consulting Opportunity</h2>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Priority Engagement Angle</h3>
-          <p id="engagement-angle"></p>
-        </div>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>Upsell Readiness</h3>
-          <p id="upsell-readiness"></p>
-        </div>
+        <h2>Conversation Strategy</h2>
         <div class="box-soft">
-          <h3>Likely Needs</h3>
-          <ul id="likely-needs"></ul>
+          <ul id="conversation-strategy-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <h2>Engagement Opportunity Map</h2>
+        <div class="box-soft">
+          <ul id="engagement-opportunities-list"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Recommended Engagement Angle</h2>
+        <div class="box-soft">
+          <p><strong>Priority angle:</strong> <span id="engagement-angle"></span></p>
+          <p><strong>Upsell readiness:</strong> <span id="upsell-readiness"></span></p>
+          <ul id="likely-needs-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="card">
+        <h2>Diagnostic Snapshot</h2>
+        <div class="box-soft">
+          <ul id="snapshot-list"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Live Validation Priorities</h2>
+        <div class="box-soft">
+          <ul id="validate-live-list"></ul>
         </div>
       </div>
     </section>
@@ -397,14 +389,19 @@
       el.textContent = value || fallback;
     }
 
-    function fillList(id, items, formatter = null, fallback = "No detail available yet.") {
+    function chooseList(items, fallback) {
+      return Array.isArray(items) && items.length > 0 ? items : fallback;
+    }
+
+    function fillList(id, items, formatter = null, fallback = "Further validation recommended during the live review.") {
       const el = document.getElementById(id);
       if (!el) return;
       el.innerHTML = "";
 
       if (!items || !items.length) {
         const li = document.createElement("li");
-        li.className = "empty";
+        li.style.color = "#6f6f69";
+        li.style.fontStyle = "italic";
         li.textContent = fallback;
         el.appendChild(li);
         return;
@@ -419,19 +416,33 @@
 
     setText("company-name", d.company_name);
     setText("report-date", d.report_date);
-    setText("primary-constraint-top", d.scoring?.primary_constraint?.label || "—");
-    setText("overall-score", d.scoring?.overall_score || 0);
-    setText("score-band", d.scoring?.score_band || "—");
+    setText("primary-constraint-top", d.scoring?.primary_constraint?.label || d.primary_constraint_label);
+    setText("overall-score-top", d.scoring?.overall_score || d.overall_score || 0);
+    setText("overall-score", d.scoring?.overall_score || d.overall_score || 0);
+    setText("score-band", d.scoring?.score_band || d.score_band);
+    setText("primary-constraint-label", d.scoring?.primary_constraint?.label || d.primary_constraint_label);
     setText(
-      "primary-constraint-detail",
-      d.scoring?.primary_constraint
-        ? `${d.scoring.primary_constraint.label} (${d.scoring.primary_constraint.score}/20)`
-        : "Primary constraint not available."
+      "primary-constraint-why",
+      d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake."
+    );
+    setText(
+      "constraint-hypothesis-summary",
+      d.constraint_hypothesis_summary,
+      "Use this briefing to validate whether the diagnosed constraint is also visible in active pipeline behavior."
+    );
+    setText(
+      "engagement-angle",
+      d.consulting_opportunity?.priority_engagement_angle || "To be confirmed in the call"
+    );
+    setText(
+      "upsell-readiness",
+      d.consulting_opportunity?.upsell_readiness || "Moderate"
     );
 
+    const snapshot = d.diagnostic_snapshot || {};
     fillList(
       "snapshot-list",
-      Object.entries(d.diagnostic_snapshot || {}),
+      Object.entries(snapshot),
       ([k, v]) => {
         const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
         const value = Array.isArray(v) ? v.join(", ") : v;
@@ -439,8 +450,90 @@
       }
     );
 
-    const pillarScores = d.scoring?.pillar_scores || {};
-    const targetScores = d.scoring?.target_pillar_scores || {};
+    fillList(
+      "constraint-hypothesis-list",
+      chooseList(d.constraint_hypothesis, [
+        "The current signals suggest the diagnosed constraint is likely affecting more than one commercial lever at once.",
+        "Use the live conversation to confirm whether this issue is showing up in deal progression, pricing pressure, or internal message consistency.",
+        "If the diagnosis holds, this should become the focal point for the first consulting intervention."
+      ])
+    );
+
+    fillList(
+      "commercial-friction-list",
+      chooseList(d.commercial_friction, [
+        "Pricing pressure may be surfacing before value is fully established.",
+        "Internal message consistency may vary across buyer-facing conversations.",
+        "The current system may be creating avoidable friction in conversion quality or deal velocity."
+      ])
+    );
+
+    fillList(
+      "likely-objections-list",
+      chooseList(d.likely_objections, [
+        "The client may believe the issue is executional when it is actually structural.",
+        "They may frame the problem as pricing pressure rather than value articulation.",
+        "They may underestimate how much cross-functional message inconsistency is affecting commercial performance."
+      ])
+    );
+
+    fillList(
+      "discovery-questions-list",
+      chooseList(d.discovery_questions, [
+        "Where do deals most often slow down or become harder to advance?",
+        "How often do pricing objections appear before value is clearly established?",
+        "What proof points do buyers typically need before they are comfortable moving forward?",
+        "Where do prospects most often compare your solution to alternatives or internal options?"
+      ])
+    );
+
+    fillList(
+      "conversation-strategy-list",
+      chooseList(d.conversation_strategy, [
+        "Start by confirming whether the diagnosed constraint feels consistent with lived commercial reality.",
+        "Use recent deal examples to test whether the issue is systemic or isolated.",
+        "Move the discussion from symptoms to system design as early as possible.",
+        "Steer toward the highest-leverage intervention rather than a broad transformation discussion."
+      ])
+    );
+
+    fillList(
+      "engagement-opportunities-list",
+      chooseList(d.engagement_opportunities, [
+        "Value architecture refinement",
+        "Pricing and packaging strategy",
+        "Messaging system alignment",
+        "Focused GTM operating-system sprint"
+      ])
+    );
+
+    fillList(
+      "likely-needs-list",
+      chooseList(d.consulting_opportunity?.likely_needs, [
+        "Clarify the underlying commercial constraint",
+        "Prioritize the highest-confidence intervention",
+        "Translate diagnosis into a focused sprint scope"
+      ])
+    );
+
+    fillList(
+      "validate-live-list",
+      chooseList(d.call_briefing?.areas_to_validate_live, [
+        "Whether the primary constraint is visible in active pipeline behavior",
+        "Whether internal teams describe value consistently",
+        "Whether pricing friction is actually rooted in value clarity or packaging design",
+        "Whether the client is already feeling urgency around this issue"
+      ])
+    );
+
+    const pillarScores = d.scoring?.pillar_scores || d.pillar_scores || {};
+    const targetScores = d.scoring?.target_pillar_scores || d.target_pillar_scores || {
+      positioning: 16,
+      value_architecture: 15,
+      pricing_packaging: 16,
+      gtm_focus: 17,
+      measurement: 17
+    };
 
     const pillarOrder = [
       ["positioning", "Positioning & Category"],
@@ -469,19 +562,6 @@
       pillarList.appendChild(row);
     });
 
-    fillList("strength-signals", d.signal_analysis?.strength_signals || []);
-    fillList("constraint-signals", d.signal_analysis?.constraint_signals || []);
-    fillList("risk-signals", d.signal_analysis?.risk_signals || []);
-    fillList("opportunity-signals", d.signal_analysis?.opportunity_signals || []);
-    setText("executive-readout", d.interpretation?.executive_readout || "");
-    fillList("root-cause-hypotheses", d.interpretation?.root_cause_hypotheses || []);
-    setText("opening-summary", d.call_briefing?.opening_summary || "");
-    fillList("top-questions", d.call_briefing?.top_questions_to_ask || []);
-    fillList("validate-live", d.call_briefing?.areas_to_validate_live || []);
-    setText("engagement-angle", d.consulting_opportunity?.priority_engagement_angle || "");
-    setText("upsell-readiness", d.consulting_opportunity?.upsell_readiness || "");
-    fillList("likely-needs", d.consulting_opportunity?.likely_needs || []);
-
     function renderRadarChart() {
       const grid = document.getElementById("radar-grid");
       const axes = document.getElementById("radar-axes");
@@ -495,9 +575,9 @@
       labels.innerHTML = "";
       pointsGroup.innerHTML = "";
 
-      const cx = 150;
-      const cy = 150;
-      const radius = 100;
+      const cx = 170;
+      const cy = 170;
+      const radius = 92;
 
       const data = [
         { key: "positioning", label: "Positioning", value: Number(pillarScores.positioning || 0) },
@@ -525,7 +605,6 @@
           const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
           return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
         }).join(" ");
-
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", pts);
         poly.setAttribute("fill", "none");
@@ -545,7 +624,7 @@
         line.setAttribute("stroke-width", "1.2");
         axes.appendChild(line);
 
-        const labelPoint = pointFor(i, 24, 20);
+        const labelPoint = pointFor(i, 23, 20);
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", labelPoint.x);
         text.setAttribute("y", labelPoint.y);
