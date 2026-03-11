@@ -60,6 +60,53 @@ export default async function handler(req, res) {
       }
     }
 
+    if (tier === "hidden") {
+      try {
+        const aiInsights = await enrichHiddenReport(finalReportData);
+
+        finalReportData = {
+          ...finalReportData,
+          constraint_hypothesis_summary:
+            aiInsights?.constraint_hypothesis_summary ||
+            finalReportData.constraint_hypothesis_summary,
+          constraint_hypothesis:
+            aiInsights?.constraint_hypothesis ||
+            finalReportData.constraint_hypothesis ||
+            [],
+          commercial_friction:
+            aiInsights?.commercial_friction ||
+            finalReportData.commercial_friction ||
+            [],
+          likely_objections:
+            aiInsights?.likely_objections ||
+            finalReportData.likely_objections ||
+            [],
+          discovery_questions:
+            aiInsights?.discovery_questions ||
+            finalReportData.discovery_questions ||
+            [],
+          conversation_strategy:
+            aiInsights?.conversation_strategy ||
+            finalReportData.conversation_strategy ||
+            [],
+          engagement_opportunities:
+            aiInsights?.engagement_opportunities ||
+            finalReportData.engagement_opportunities ||
+            [],
+          consulting_opportunity: {
+            ...(finalReportData.consulting_opportunity || {}),
+            ...(aiInsights?.consulting_opportunity || {}),
+          },
+          call_briefing: {
+            ...(finalReportData.call_briefing || {}),
+            ...(aiInsights?.call_briefing || {}),
+          },
+        };
+      } catch (err) {
+        console.error("[report] Hidden enrichment failed:", err);
+      }
+    }
+
     const html = fs.readFileSync(templatePath, "utf8");
     const injection = `<script>window.REPORT_DATA = ${JSON.stringify(finalReportData)};</script>`;
 
@@ -72,38 +119,5 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("[report] Unhandled error:", err);
     return res.status(500).send(`Server error: ${err.message}`);
-  }
-}
-if (tier === "hidden") {
-  try {
-    const aiInsights = await enrichHiddenReport(finalReportData);
-
-    finalReportData = {
-      ...finalReportData,
-      constraint_hypothesis_summary:
-        aiInsights?.constraint_hypothesis_summary || finalReportData.constraint_hypothesis_summary,
-      constraint_hypothesis:
-        aiInsights?.constraint_hypothesis || finalReportData.constraint_hypothesis || [],
-      commercial_friction:
-        aiInsights?.commercial_friction || finalReportData.commercial_friction || [],
-      likely_objections:
-        aiInsights?.likely_objections || finalReportData.likely_objections || [],
-      discovery_questions:
-        aiInsights?.discovery_questions || finalReportData.discovery_questions || [],
-      conversation_strategy:
-        aiInsights?.conversation_strategy || finalReportData.conversation_strategy || [],
-      engagement_opportunities:
-        aiInsights?.engagement_opportunities || finalReportData.engagement_opportunities || [],
-      consulting_opportunity: {
-        ...(finalReportData.consulting_opportunity || {}),
-        ...(aiInsights?.consulting_opportunity || {}),
-      },
-      call_briefing: {
-        ...(finalReportData.call_briefing || {}),
-        ...(aiInsights?.call_briefing || {}),
-      },
-    };
-  } catch (err) {
-    console.error("[report] Hidden enrichment failed:", err);
   }
 }
