@@ -3,7 +3,7 @@
 // ✅ OS score is the headline everywhere (API + report + emails)
 // ✅ Legacy score remains computed, stored ONLY under report.scoring.legacy
 // ✅ Auth supports x-vw-token OR Authorization: Bearer <token>
-// ✅ Insufficient-data mode (Option 2) with missing-fields transparency
+// ✅ Insufficient-data mode with missing-fields transparency
 // ✅ Defensive answer normalization (trim strings, empty->null, arrays handled)
 // ✅ Optional report_json via INCLUDE_REPORT_JSON=1
 // ✅ Versioning + Zapier-friendly summary output
@@ -57,7 +57,6 @@ function cleanScalar(v) {
     return t === "" ? null : t;
   }
   if (typeof v === "number" || typeof v === "boolean") return v;
-  // For objects/arrays, return as-is; higher level normalization will handle where needed.
   return v;
 }
 
@@ -138,7 +137,6 @@ function computeBrandToGtmOsScore(inputs) {
     measurement: 0,
   };
 
-  // Light firmographic modifiers
   const revenueModMap = {
     "Under $5M": 0,
     "$5–10M": 1,
@@ -178,11 +176,11 @@ function computeBrandToGtmOsScore(inputs) {
     "Brand trust": 2,
     "Procurement friction": 3,
     "Feature gaps": 4,
-    "Price": 5,
+    Price: 5,
   };
   const consistencyMap = {
     "Yes — very consistent": 8,
-    "Somewhat": 5,
+    Somewhat: 5,
     "Often unclear": 2,
   };
 
@@ -194,14 +192,14 @@ function computeBrandToGtmOsScore(inputs) {
   // 2) Value Architecture
   const roiMap = {
     "Yes — documented & repeatable": 8,
-    "Somewhat": 5,
-    "No": 2,
+    Somewhat: 5,
+    No: 2,
   };
   const leadWithMap = {
     "Financial ROI": 6,
     "Business outcomes": 5,
     "Technical differentiation": 4,
-    "Features": 2,
+    Features: 2,
   };
   const metricsMap = {
     "Revenue growth": 6,
@@ -214,7 +212,8 @@ function computeBrandToGtmOsScore(inputs) {
 
   pillar_scores.value_architecture += roiMap[inputs.roi_quantifiable] ?? 0;
   pillar_scores.value_architecture += leadWithMap[inputs.sales_lead_with] ?? 0;
-  pillar_scores.value_architecture += metricsMap[inputs.financial_metrics_improved] ?? 0;
+  pillar_scores.value_architecture +=
+    metricsMap[inputs.financial_metrics_improved] ?? 0;
   pillar_scores.value_architecture = cap(pillar_scores.value_architecture, 20);
 
   // 3) Pricing & Packaging
@@ -225,7 +224,7 @@ function computeBrandToGtmOsScore(inputs) {
   };
   const tierClarityMap = {
     "Yes — very clear": 6,
-    "Somewhat": 4,
+    Somewhat: 4,
     "Often confused": 2,
   };
   const marginMap = {
@@ -235,8 +234,10 @@ function computeBrandToGtmOsScore(inputs) {
     "Under 50%": 2,
   };
 
-  pillar_scores.pricing_packaging += discountMap[inputs.discount_frequency] ?? 0;
-  pillar_scores.pricing_packaging += tierClarityMap[inputs.pricing_tiers_clarity] ?? 0;
+  pillar_scores.pricing_packaging +=
+    discountMap[inputs.discount_frequency] ?? 0;
+  pillar_scores.pricing_packaging +=
+    tierClarityMap[inputs.pricing_tiers_clarity] ?? 0;
   pillar_scores.pricing_packaging += marginMap[inputs.gross_margin] ?? 0;
   pillar_scores.pricing_packaging = cap(pillar_scores.pricing_packaging, 20);
 
@@ -300,7 +301,8 @@ function computeBrandToGtmOsScore(inputs) {
     No: 2,
   };
 
-  pillar_scores.measurement += measuredByMap[inputs.marketing_measured_by] ?? 0;
+  pillar_scores.measurement +=
+    measuredByMap[inputs.marketing_measured_by] ?? 0;
   pillar_scores.measurement += attributionMap[inputs.attribution_trusted] ?? 0;
   pillar_scores.measurement += forecastMap[inputs.forecast_accuracy] ?? 0;
   pillar_scores.measurement += cacMap[inputs.cac_by_channel] ?? 0;
@@ -313,7 +315,6 @@ function computeBrandToGtmOsScore(inputs) {
     pillar_scores.gtm_focus +
     pillar_scores.measurement;
 
-  // primary constraint = lowest pillar
   const primary_constraint_key = Object.keys(pillar_scores).sort(
     (a, b) => pillar_scores[a] - pillar_scores[b]
   )[0];
@@ -327,7 +328,7 @@ function computeBrandToGtmOsScore(inputs) {
 }
 
 /* =========================================================
-   Legacy Scoring (existing)
+   Legacy Scoring
 ========================================================= */
 
 const LEGACY_SCORING_VERSION = "legacy_v1";
@@ -360,8 +361,14 @@ function getConfig() {
           delta: -2,
           flag: "Positioning clarity issue.",
         },
-        { if: { "Why do you most often win deals?": "Clear differentiation" }, delta: 2 },
-        { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 },
+        {
+          if: { "Why do you most often win deals?": "Clear differentiation" },
+          delta: 2,
+        },
+        {
+          if: { "Why do you most often win deals?": "Brand trust" },
+          delta: 1,
+        },
       ],
       value_architecture: [
         {
@@ -378,7 +385,10 @@ function getConfig() {
           delta: -2,
           flag: "Feature-led selling limits pricing power.",
         },
-        { if: { "Sales conversations primarily lead with:": "Financial ROI" }, delta: 2 },
+        {
+          if: { "Sales conversations primarily lead with:": "Financial ROI" },
+          delta: 2,
+        },
         {
           if: {
             "What financial metrics do customers see improve due to your product?":
@@ -394,7 +404,10 @@ function getConfig() {
           delta: -3,
           flag: "Frequent discounting compresses margin.",
         },
-        { if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" }, delta: -1 },
+        {
+          if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" },
+          delta: -1,
+        },
         {
           if: { "Do customers clearly understand your pricing tiers?": "Often confused" },
           delta: -2,
@@ -404,9 +417,20 @@ function getConfig() {
         { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 },
       ],
       gtm_focus: [
-        { if: { "Do you know CAC by channel?": "No" }, delta: -2, flag: "Channel economics unclear." },
-        { if: { "How would you rate your growth status?": "Stalled" }, delta: -2, flag: "Growth stall indicator." },
-        { if: { "How would you rate your growth status?": "Plateauing" }, delta: -1 },
+        {
+          if: { "Do you know CAC by channel?": "No" },
+          delta: -2,
+          flag: "Channel economics unclear.",
+        },
+        {
+          if: { "How would you rate your growth status?": "Stalled" },
+          delta: -2,
+          flag: "Growth stall indicator.",
+        },
+        {
+          if: { "How would you rate your growth status?": "Plateauing" },
+          delta: -1,
+        },
       ],
       measurement: [
         {
@@ -414,9 +438,20 @@ function getConfig() {
           delta: -2,
           flag: "Lead-focused measurement may signal vanity metrics.",
         },
-        { if: { "Marketing is measured primarily by:": "Revenue" }, delta: 2 },
-        { if: { "Is attribution trusted internally?": "No" }, delta: -2, flag: "Attribution credibility gap." },
-        { if: { "Are revenue forecasts accurate within 10%": "No" }, delta: -2, flag: "Forecast reliability risk." },
+        {
+          if: { "Marketing is measured primarily by:": "Revenue" },
+          delta: 2,
+        },
+        {
+          if: { "Is attribution trusted internally?": "No" },
+          delta: -2,
+          flag: "Attribution credibility gap.",
+        },
+        {
+          if: { "Are revenue forecasts accurate within 10%": "No" },
+          delta: -2,
+          flag: "Forecast reliability risk.",
+        },
       ],
     },
     alignment_bands: [
@@ -463,7 +498,8 @@ function scoreLegacy(answers, config) {
       const field = Object.keys(rule.if)[0];
       const expected = rule.if[field];
 
-      const rawAnswer = field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
+      const rawAnswer =
+        field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
       if (normalizeValue(rawAnswer) === normalizeValue(expected)) {
         pillars[pillar] += rule.delta;
         if (rule.flag) flags.push(rule.flag);
@@ -477,89 +513,245 @@ function scoreLegacy(answers, config) {
 
   const total = Object.values(pillars).reduce((a, b) => a + b, 0);
   const band =
-    config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label || "Unknown";
+    config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label ||
+    "Unknown";
 
-  const primaryConstraint = Object.keys(pillars).sort((a, b) => pillars[a] - pillars[b])[0];
+  const primaryConstraint = Object.keys(pillars).sort(
+    (a, b) => pillars[a] - pillars[b]
+  )[0];
 
   return { total, band, pillars, primaryConstraint, flags };
 }
 
 /* =========================================================
-   Email Copy (OS-first)
+   Email Copy
 ========================================================= */
 
-function renderExecSummary({ osScored, clientName }) {
+function renderExecSummary({ osScored, clientName, clientCompany }) {
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
+  const subject = "Your Brand-to-GTM OS Executive Summary";
 
   const bodyText = `Hi ${clientName || "there"},
 
 Your Brand-to-GTM OS Executive Summary is ready.
 
-OS alignment: ${osScored.interpretation_band} (Score: ${osScored.brand_to_gtm_os_score}/100)
+Company: ${clientCompany || "Your organization"}
+OS alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
 Primary constraint: ${niceConstraint}
 
+Your report is ready to review.
+
 Next step:
-Reply to this email or book your 30-minute intro call to walk through the summary.
+Book your 30-minute review call to walk through the findings and identify the most actionable priorities.
 
 — Jasper
+Vallenwood Consulting
 `;
 
-  return { subject: "Your Brand-to-GTM OS Executive Summary", bodyText };
+  const bodyHtml = `
+  <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
+      <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">
+          Vallenwood Consulting
+        </div>
+        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">
+          Your Brand-to-GTM OS Executive Summary
+        </h1>
+        <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">
+          A diagnostic snapshot of the operating constraint most likely to be affecting growth, pricing power, and go-to-market efficiency.
+        </p>
+      </div>
+
+      <div style="padding:24px 28px;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
+
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+          Your diagnostic is complete. Here is the headline view of what the model surfaced:
+        </p>
+
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Company</p>
+          <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${clientCompany || "Your organization"}</p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">OS Alignment</p>
+          <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)</p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
+          <p style="margin:0;font-size:18px;font-weight:700;">${niceConstraint}</p>
+        </div>
+
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
+          The next step is a short review call to pressure-test the diagnosis and identify the highest-leverage priorities.
+        </p>
+
+        <a href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%20Review%20Call"
+           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
+          Book Your Review Call
+        </a>
+      </div>
+
+      <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">
+        This summary is directional and designed to surface leverage quickly, not replace a full strategic audit.
+      </div>
+    </div>
+  </div>
+  `;
+
+  return { subject, bodyText, bodyHtml };
 }
 
-function renderAudit({ osScored, clientName }) {
+function renderAudit({ osScored, clientName, clientCompany }) {
+  const subject = "Your Brand-to-GTM OS Strategic Audit";
+  const niceConstraint = prettyPillar(osScored.primary_constraint_key);
+
   const bodyText = `Hi ${clientName || "there"},
 
 Your Brand-to-GTM OS Strategic Audit is ready.
 
-OS alignment: ${osScored.interpretation_band} (Score: ${osScored.brand_to_gtm_os_score}/100)
+Company: ${clientCompany || "Your organization"}
+OS alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
+Primary constraint: ${niceConstraint}
 
-OS pillar scores (0–20):
-- Positioning & Category: ${osScored.pillar_scores.positioning}
-- Value Architecture: ${osScored.pillar_scores.value_architecture}
-- Pricing & Packaging: ${osScored.pillar_scores.pricing_packaging}
-- GTM Focus: ${osScored.pillar_scores.gtm_focus}
-- Measurement: ${osScored.pillar_scores.measurement}
+Your audit is ready to review.
 
-Primary constraint:
-- ${prettyPillar(osScored.primary_constraint_key)}
-
-Reply to confirm your 60-minute review session time.
+Next step:
+Book your 60-minute strategic review session to walk through the findings, validate the diagnosis, and align on the highest-leverage actions.
 
 — Jasper
+Vallenwood Consulting
 `;
 
-  return { subject: "Your Brand-to-GTM OS Strategic Audit", bodyText };
+  const bodyHtml = `
+  <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
+      <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">
+          Vallenwood Consulting
+        </div>
+        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">
+          Your Brand-to-GTM OS Strategic Audit
+        </h1>
+        <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">
+          A deeper strategic read on the operating constraint shaping positioning, pricing power, and go-to-market performance.
+        </p>
+      </div>
+
+      <div style="padding:24px 28px;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
+
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+          Your audit is complete. Here is the headline view of what the model surfaced:
+        </p>
+
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Company</p>
+          <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${clientCompany || "Your organization"}</p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">OS Alignment</p>
+          <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)</p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
+          <p style="margin:0;font-size:18px;font-weight:700;">${niceConstraint}</p>
+        </div>
+
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
+          The next step is a 60-minute strategic review to validate the diagnosis, pressure-test the assumptions, and prioritize the strongest next moves.
+        </p>
+
+        <a href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%2060-Minute%20Strategic%20Review"
+           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
+          Schedule 60-Min Review
+        </a>
+      </div>
+
+      <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">
+        This audit is designed to convert diagnosis into a focused action plan.
+      </div>
+    </div>
+  </div>
+  `;
+
+  return { subject, bodyText, bodyHtml };
 }
 
-function renderInsufficientDataEmail({ clientName }) {
+function renderInsufficientDataEmail({ clientName, clientCompany }) {
   const subject = "Your Brand-to-GTM OS Executive Summary";
+
   const bodyText = `Hi ${clientName || "there"},
 
 Thanks — I received your submission, but there isn’t enough data yet to generate a reliable OS score.
+
+Company: ${clientCompany || "Your organization"}
 
 Next step:
 Reply with a bit more detail (or resubmit the form) so I can produce an accurate summary.
 
 — Jasper
+Vallenwood Consulting
 `;
-  return { subject, bodyText };
+
+  const bodyHtml = `
+  <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
+      <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">
+          Vallenwood Consulting
+        </div>
+        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">
+          Your Brand-to-GTM OS Executive Summary
+        </h1>
+        <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">
+          We received your submission, but there was not enough structured input to generate a reliable OS score yet.
+        </p>
+      </div>
+
+      <div style="padding:24px 28px;">
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
+
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Company</p>
+          <p style="margin:0;font-size:18px;font-weight:700;">${clientCompany || "Your organization"}</p>
+        </div>
+
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
+          To produce a reliable diagnostic, I need a bit more information about your current go-to-market system.
+        </p>
+
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
+          Reply with additional detail or resubmit the form, and I’ll generate an updated summary.
+        </p>
+
+        <a href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%20Follow-Up"
+           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
+          Reply with More Detail
+        </a>
+      </div>
+
+      <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">
+        Once more input is available, the model will generate a fuller diagnostic view.
+      </div>
+    </div>
+  </div>
+  `;
+
+  return { subject, bodyText, bodyHtml };
 }
 
 /* =========================================================
-   Report Builder (OS-first; legacy kept but not headline)
+   Report Builder
 ========================================================= */
 
 function buildReport({
-    tier,
-    clientName,
-    clientEmail,
-    clientCompany,
-    clientWebsite,
-    answers,
-    osScored,
-    legacyScored,
-    content,
+  tier,
+  clientName,
+  clientEmail,
+  clientCompany,
+  clientWebsite,
+  answers,
+  osScored,
+  legacyScored,
+  content,
 }) {
   const generatedAt = new Date().toISOString();
   const na = normalizeAnswers(answers);
@@ -581,10 +773,8 @@ function buildReport({
     },
 
     scoring: {
-      // ✅ Versioning
       os_scoring_version: OS_SCORING_VERSION,
 
-      // ✅ OS headline
       overall_score: osScored.brand_to_gtm_os_score,
       overall_max: 100,
       band: osScored.interpretation_band,
@@ -601,14 +791,38 @@ function buildReport({
         ],
       },
       pillar_scores: [
-        { key: "positioning", label: "Positioning & Category", score: osScored.pillar_scores.positioning, max: 20 },
-        { key: "value_architecture", label: "Value Architecture", score: osScored.pillar_scores.value_architecture, max: 20 },
-        { key: "pricing_packaging", label: "Pricing & Packaging", score: osScored.pillar_scores.pricing_packaging, max: 20 },
-        { key: "gtm_focus", label: "GTM Focus", score: osScored.pillar_scores.gtm_focus, max: 20 },
-        { key: "measurement", label: "Measurement", score: osScored.pillar_scores.measurement, max: 20 },
+        {
+          key: "positioning",
+          label: "Positioning & Category",
+          score: osScored.pillar_scores.positioning,
+          max: 20,
+        },
+        {
+          key: "value_architecture",
+          label: "Value Architecture",
+          score: osScored.pillar_scores.value_architecture,
+          max: 20,
+        },
+        {
+          key: "pricing_packaging",
+          label: "Pricing & Packaging",
+          score: osScored.pillar_scores.pricing_packaging,
+          max: 20,
+        },
+        {
+          key: "gtm_focus",
+          label: "GTM Focus",
+          score: osScored.pillar_scores.gtm_focus,
+          max: 20,
+        },
+        {
+          key: "measurement",
+          label: "Measurement",
+          score: osScored.pillar_scores.measurement,
+          max: 20,
+        },
       ],
 
-      // ✅ Legacy kept (not headline)
       legacy: {
         legacy_scoring_version: LEGACY_SCORING_VERSION,
         overall_score: legacyScored.total,
@@ -657,10 +871,13 @@ function buildReport({
       email: {
         subject: content.subject,
         body_text: content.bodyText,
-        body_html: null,
+        body_html: content.bodyHtml || null,
       },
       pdf: {
-        title: tier === "audit" ? "Brand-to-GTM OS Strategic Audit" : "Brand-to-GTM OS Executive Summary",
+        title:
+          tier === "audit"
+            ? "Brand-to-GTM OS Strategic Audit"
+            : "Brand-to-GTM OS Executive Summary",
         pdf_url: null,
         html_url: null,
         pages_estimate: tier === "audit" ? 10 : 3,
@@ -696,7 +913,8 @@ function buildExecTierUpsell() {
           "Validate with 3 customer calls",
           "Align homepage + pitch deck messaging",
         ],
-        expected_impact: "Improved consistency in sales conversations and competitive win rates.",
+        expected_impact:
+          "Improved consistency in sales conversations and competitive win rates.",
         effort: "low",
       },
       {
@@ -730,7 +948,12 @@ function buildExecTierUpsell() {
         "Competitive pricing & packaging audit (hypotheses + what-to-verify)",
         "A prioritized 30/90-day roadmap + first sprint plan",
       ],
-      offer: { name: "Full Strategic Audit", price_usd: 499, cta_label: "Upgrade to Full Audit", cta_url: null },
+      offer: {
+        name: "Full Strategic Audit",
+        price_usd: 499,
+        cta_label: "Upgrade to Full Audit",
+        cta_url: null,
+      },
     },
   };
 }
@@ -780,7 +1003,7 @@ function buildFullTierPlaceholder({ answers }) {
 }
 
 /* =========================================================
-   LLM Enrichment (audit tier only, feature flag)
+   Optional LLM Enrichment (audit only)
 ========================================================= */
 
 function getOpenAIClient() {
@@ -877,7 +1100,7 @@ ${JSON.stringify(compactInput)}
 }
 
 /* =========================================================
-   Auth helper (x-vw-token OR Authorization: Bearer)
+   Auth helper
 ========================================================= */
 
 function extractAuthToken(req) {
@@ -895,12 +1118,11 @@ function extractAuthToken(req) {
 }
 
 /* =========================================================
-   Insufficient data guard (Option 2)
+   Insufficient data guard
 ========================================================= */
 
 const MIN_REQUIRED_FIELDS = 9;
 
-// Fields that actually drive OS scoring.
 const OS_REQUIRED_KEYS = [
   "annual_revenue",
   "acv",
@@ -939,8 +1161,9 @@ function countPresentRequired(osInputs) {
 }
 
 /* =========================================================
-   Handler
+   Report helpers
 ========================================================= */
+
 function getBaseUrl(req) {
   if (process.env.APP_BASE_URL) {
     return process.env.APP_BASE_URL.replace(/\/$/, "");
@@ -961,8 +1184,10 @@ function buildExecReportData(report) {
 
   const pillarScores = {
     positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
-    value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
-    pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+    value_architecture:
+      pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+    pricing_packaging:
+      pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
     gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
     measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
   };
@@ -1018,7 +1243,8 @@ function buildExecReportData(report) {
     target_pillar_scores: targetPillarScores,
 
     primary_constraint_score:
-      pillarArray.find((p) => p.key === report?.scoring?.primary_constraint?.key)?.score ?? 0,
+      pillarArray.find((p) => p.key === report?.scoring?.primary_constraint?.key)
+        ?.score ?? 0,
 
     primary_constraint_interpretation:
       report?.narrative?.pillar_interpretations?.[0]?.interpretation || "",
@@ -1068,8 +1294,10 @@ function buildAuditReportData(report) {
 
     pillar_scores: {
       positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
-      value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
-      pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+      value_architecture:
+        pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+      pricing_packaging:
+        pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
       gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
       measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
     },
@@ -1104,14 +1332,20 @@ function buildHiddenReportData(report) {
 
   const primary = ranked[0] || null;
 
+  const acquisitionChannels = report?.inputs?.normalized_answers?.acquisition_channels;
   const snapshot = {
     annual_revenue: report?.inputs?.normalized_answers?.annual_revenue || null,
     acv: report?.inputs?.normalized_answers?.acv || null,
     sales_cycle: report?.inputs?.normalized_answers?.sales_cycle || null,
     close_rate: report?.inputs?.normalized_answers?.close_rate || null,
     primary_channels:
-      report?.inputs?.normalized_answers?.acquisition_channels?.split(",") || [],
-    measurement_model: report?.inputs?.normalized_answers?.marketing_measured_by || null,
+      typeof acquisitionChannels === "string"
+        ? acquisitionChannels.split(",").map((s) => s.trim()).filter(Boolean)
+        : Array.isArray(acquisitionChannels)
+          ? acquisitionChannels
+          : [],
+    measurement_model:
+      report?.inputs?.normalized_answers?.marketing_measured_by || null,
   };
 
   const winReason = report?.inputs?.normalized_answers?.win_reason;
@@ -1138,19 +1372,19 @@ function buildHiddenReportData(report) {
     );
   }
 
-  if (discounting && discounting.includes("Rarely")) {
+  if (discounting && String(discounting).includes("Rarely")) {
     signals.opportunity_signals.push(
       "Low discounting frequency suggests some pricing power already exists."
     );
   }
 
-  if (pillarScores.measurement >= 17) {
+  if ((pillarScores.measurement || 0) >= 17) {
     signals.strength_signals.push(
       "Measurement maturity appears relatively strong compared to other pillars."
     );
   }
 
-  if (pillarScores.value_architecture < 14) {
+  if ((pillarScores.value_architecture || 0) < 14) {
     signals.risk_signals.push(
       "Weak value architecture may create downstream pressure on pricing and positioning."
     );
@@ -1206,7 +1440,7 @@ function buildHiddenReportData(report) {
         "Initial diagnostic suggests the primary leverage point lies in improving value articulation and packaging clarity.",
       root_cause_hypotheses: [
         "Customer outcomes may not be consistently quantified during sales conversations.",
-        "Packaging and tier structure may not anchor value clearly enough."
+        "Packaging and tier structure may not anchor value clearly enough.",
       ],
     },
 
@@ -1216,23 +1450,23 @@ function buildHiddenReportData(report) {
       top_questions_to_ask: [
         "How do prospects typically evaluate ROI before purchasing?",
         "Where in the sales process do pricing objections appear?",
-        "What proof points most often move deals forward?"
+        "What proof points most often move deals forward?",
       ],
       areas_to_validate_live: [
         "Whether pricing tiers reflect actual customer value segments",
-        "Whether sales messaging consistently leads with outcomes"
-      ]
+        "Whether sales messaging consistently leads with outcomes",
+      ],
     },
 
     consulting_opportunity: {
       likely_needs: [
         "Value architecture refinement",
         "Pricing and packaging strategy",
-        "Messaging system alignment"
+        "Messaging system alignment",
       ],
       priority_engagement_angle: "Value Architecture Sprint",
-      upsell_readiness: "Moderate to High"
-    }
+      upsell_readiness: "Moderate to High",
+    },
   };
 }
 
@@ -1254,6 +1488,10 @@ async function buildReportUrl(req, report, tier) {
   return `${baseUrl}/api/report?id=${reportId}&tier=${tier}`;
 }
 
+/* =========================================================
+   Handler
+========================================================= */
+
 export default async function handler(req, res) {
   const L = createDiagLogger(req);
   L.start();
@@ -1264,7 +1502,6 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "POST only" });
     }
 
-    // Auth
     const token = extractAuthToken(req);
     if (!token || token !== process.env.VW_TOKEN) {
       L.finish(401);
@@ -1274,7 +1511,6 @@ export default async function handler(req, res) {
     const payload = req.body || {};
     const rawAnswers = payload.answers;
 
-    // Validate answers
     if (
       rawAnswers === undefined ||
       rawAnswers === null ||
@@ -1288,11 +1524,9 @@ export default async function handler(req, res) {
         .json({ error: "Invalid payload: 'answers' must be a non-empty object." });
     }
 
-    // Defensive normalize answers (trim strings, ""->null, arrays cleaned)
     const answers = normalizeIncomingAnswers(rawAnswers);
 
-    // Tier
-    let tier = payload.tier || "exec"; // "exec" | "audit"
+    let tier = payload.tier || "exec";
     if (tier === "full") tier = "audit";
 
     const clientEmail = payload.client_email || "";
@@ -1300,13 +1534,14 @@ export default async function handler(req, res) {
     const clientCompany = payload.client_company || "";
     const clientWebsite = payload.client_website || "";
 
-    // ---- Legacy scoring (kept) ----
     const tLegacy = L.mark();
     const config = getConfig();
     const legacyScored = scoreLegacy(answers, config);
-    L.step("scoreLegacy", tLegacy, { total: legacyScored.total, band: legacyScored.band });
+    L.step("scoreLegacy", tLegacy, {
+      total: legacyScored.total,
+      band: legacyScored.band,
+    });
 
-    // ---- OS scoring inputs ----
     const tOS = L.mark();
     const na = normalizeAnswers(answers);
 
@@ -1336,13 +1571,15 @@ export default async function handler(req, res) {
       forecast_accuracy: na.forecast_accuracy,
     };
 
-    // ---- Insufficient data guard (Option 2) ----
     const { presentCount, missingKeys } = countPresentRequired(osInputs);
 
     if (presentCount < MIN_REQUIRED_FIELDS) {
       const tRender = L.mark();
-      const content = renderInsufficientDataEmail({ clientName });
-      L.step("render_insufficient", tRender, { presentCount, missing: missingKeys.length });
+      const content = renderInsufficientDataEmail({ clientName, clientCompany });
+      L.step("render_insufficient", tRender, {
+        presentCount,
+        missing: missingKeys.length,
+      });
 
       const generatedAt = new Date().toISOString();
 
@@ -1351,10 +1588,10 @@ export default async function handler(req, res) {
         generated_at: generatedAt,
         tier,
         client: {
-          company_name: null,
+          company_name: clientCompany || null,
           contact_name: clientName || null,
           contact_email: clientEmail || "",
-          website: null,
+          website: clientWebsite || null,
         },
         inputs: {
           source: "honeybook",
@@ -1399,7 +1636,11 @@ export default async function handler(req, res) {
           pillar_interpretations: [],
         },
         deliverables: {
-          email: { subject: content.subject, body_text: content.bodyText, body_html: null },
+          email: {
+            subject: content.subject,
+            body_text: content.bodyText,
+            body_html: content.bodyHtml || null,
+          },
           pdf: {
             title: "Brand-to-GTM OS Executive Summary",
             pdf_url: null,
@@ -1409,7 +1650,9 @@ export default async function handler(req, res) {
         },
         disclaimer: {
           ai_assisted: false,
-          limitations: ["This diagnostic requires a minimum set of inputs to produce a reliable score."],
+          limitations: [
+            "This diagnostic requires a minimum set of inputs to produce a reliable score.",
+          ],
         },
       };
 
@@ -1426,55 +1669,56 @@ export default async function handler(req, res) {
 
       const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
 
+      const execReportUrl =
+        tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
+
+      const auditReportUrl =
+        tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
+
+      const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
+
       L.finish(200);
       return res.status(200).json({
         report,
         ...(includeReportJson ? { report_json: JSON.stringify(report) } : {}),
 
-        // Explicit OS fields
         brand_to_gtm_os_score: null,
         brand_to_gtm_os_band: "Insufficient data",
         brand_to_gtm_os_pillar_scores: {},
         brand_to_gtm_os_primary_constraint: null,
         brand_to_gtm_os_primary_constraint_label: null,
 
-        // Zapier-friendly summary
         summary,
 
-        // Backward compatible keys (now point to OS headline; null here)
         tier,
         overall_score: null,
         band: "Insufficient data",
         primary_constraint: null,
 
-        // Email fields
         email_subject: content.subject,
         email_body_text: content.bodyText,
+        email_body_html: content.bodyHtml || null,
         client_email: clientEmail,
 
-        // Hosted report URL
-        exec_report_url: null,
-        audit_report_url: null,
-        hidden_report_url: null,
+        exec_report_url: execReportUrl,
+        audit_report_url: auditReportUrl,
+        hidden_report_url: hiddenReportUrl,
       });
     }
 
-    // ---- Compute OS score ----
     const osScored = computeBrandToGtmOsScore(osInputs);
     L.step("scoreOS", tOS, {
       total: osScored.brand_to_gtm_os_score,
       band: osScored.interpretation_band,
     });
 
-    // Email content (OS-first)
     const tRender = L.mark();
     const content =
       tier === "audit"
-        ? renderAudit({ osScored, clientName })
-        : renderExecSummary({ osScored, clientName });
+        ? renderAudit({ osScored, clientName, clientCompany })
+        : renderExecSummary({ osScored, clientName, clientCompany });
     L.step("render", tRender);
 
-    // Report (OS-first + legacy tucked inside)
     const tBuild = L.mark();
     const report = buildReport({
       tier,
@@ -1488,7 +1732,6 @@ export default async function handler(req, res) {
       content,
     });
 
-    // Add insufficient-data transparency fields (false here) for consistency
     report.scoring.insufficient_data = false;
     report.scoring.required_min = MIN_REQUIRED_FIELDS;
     report.scoring.present_required_count = presentCount;
@@ -1496,7 +1739,6 @@ export default async function handler(req, res) {
 
     L.step("buildReport", tBuild);
 
-    // Optional LLM enrichment (audit only)
     const llmEnabled = process.env.LLM_ENRICH === "1";
     const llmModel = process.env.LLM_MODEL || "gpt-5";
 
@@ -1538,39 +1780,41 @@ export default async function handler(req, res) {
     };
 
     const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
-    const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
-    const auditReportUrl = tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
-    const hiddenReportUrl = tier === "hidden" ? await buildReportUrl(req, report, "hidden") : null;
+
+    const execReportUrl =
+      tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
+
+    const auditReportUrl =
+      tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
+
+    const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
 
     L.finish(200);
 
-    // OS-first top-level response
     return res.status(200).json({
       report,
       ...(includeReportJson ? { report_json: JSON.stringify(report) } : {}),
 
-      // Explicit OS fields (new)
       brand_to_gtm_os_score: osScored.brand_to_gtm_os_score,
       brand_to_gtm_os_band: osScored.interpretation_band,
       brand_to_gtm_os_pillar_scores: osScored.pillar_scores,
       brand_to_gtm_os_primary_constraint: osScored.primary_constraint_key,
-      brand_to_gtm_os_primary_constraint_label: prettyPillar(osScored.primary_constraint_key),
+      brand_to_gtm_os_primary_constraint_label: prettyPillar(
+        osScored.primary_constraint_key
+      ),
 
-      // Zapier-friendly summary
       summary,
 
-      // Backward compatible keys (now point to OS headline)
       tier,
       overall_score: osScored.brand_to_gtm_os_score,
       band: osScored.interpretation_band,
       primary_constraint: osScored.primary_constraint_key,
 
-      // Email fields
       email_subject: content.subject,
       email_body_text: content.bodyText,
+      email_body_html: content.bodyHtml || null,
       client_email: clientEmail,
 
-      // Hosted report URL
       exec_report_url: execReportUrl,
       audit_report_url: auditReportUrl,
       hidden_report_url: hiddenReportUrl,
