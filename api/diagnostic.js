@@ -296,48 +296,86 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   const acv = String(normalizedAnswers?.acv || "").toLowerCase();
   const cycle = String(normalizedAnswers?.sales_cycle || "").toLowerCase();
   const growth = String(normalizedAnswers?.growth_status || "").toLowerCase();
+  const model = String(normalizedAnswers?.revenue_model || "").toLowerCase();
 
-  let targets = {
-    positioning: 15,
-    value_architecture: 15,
-    pricing_packaging: 15,
-    gtm_focus: 15,
-    measurement: 15,
-  };
+  // Baseline by maturity tier
+  let targets;
 
-  if (revenue.includes("100m") || revenue.includes("$100m+") || revenue.includes("100m+")) {
+  const isEnterprise =
+    revenue.includes("100m+") ||
+    revenue.includes("$100m+") ||
+    revenue.includes("50–100") ||
+    revenue.includes("50-100") ||
+    acv.includes("75–250") ||
+    acv.includes("75-250") ||
+    acv.includes("250k+");
+
+  const isScaling =
+    revenue.includes("25–50") ||
+    revenue.includes("25-50") ||
+    revenue.includes("10–25") ||
+    revenue.includes("10-25") ||
+    acv.includes("25–75") ||
+    acv.includes("25-75");
+
+  if (isEnterprise) {
     targets = {
-      positioning: 17,
+      positioning: 18,
       value_architecture: 17,
       pricing_packaging: 17,
-      gtm_focus: 18,
-      measurement: 18,
+      gtm_focus: 17,
+      measurement: 17,
     };
-  } else if (revenue.includes("50") || revenue.includes("25")) {
+  } else if (isScaling) {
     targets = {
       positioning: 16,
-      value_architecture: 16,
+      value_architecture: 15,
       pricing_packaging: 15,
-      gtm_focus: 17,
-      measurement: 16,
+      gtm_focus: 16,
+      measurement: 15,
+    };
+  } else {
+    targets = {
+      positioning: 15,
+      value_architecture: 14,
+      pricing_packaging: 14,
+      gtm_focus: 15,
+      measurement: 14,
     };
   }
 
-  if (acv.includes("250k")) {
+  // ACV complexity adjustments
+  if (acv.includes("250k+")) {
+    targets.value_architecture += 1;
     targets.pricing_packaging += 1;
+  } else if (acv.includes("75–250") || acv.includes("75-250")) {
     targets.value_architecture += 1;
   }
 
-  if (cycle.includes("6–12") || cycle.includes("6-12") || cycle.includes("12+")) {
+  // Longer cycles require stronger GTM + measurement discipline
+  if (
+    cycle.includes("6–12") ||
+    cycle.includes("6-12") ||
+    cycle.includes("12+")
+  ) {
     targets.gtm_focus += 1;
-  }
-
-  if (growth.includes("scaling")) {
     targets.measurement += 1;
   }
 
+  // Usage-based and hybrid models usually need stronger pricing clarity
+  if (model.includes("usage") || model.includes("hybrid")) {
+    targets.pricing_packaging += 1;
+  }
+
+  // Fast growth demands stronger measurement and GTM operating discipline
+  if (growth.includes("accelerating") || growth.includes("scaling rapidly")) {
+    targets.gtm_focus += 1;
+    targets.measurement += 1;
+  }
+
+  // Audit / hidden reports should feel slightly more demanding than exec
   if (tier === "audit" || tier === "hidden") {
-    return {
+    targets = {
       positioning: Math.min(20, targets.positioning + 1),
       value_architecture: Math.min(20, targets.value_architecture + 1),
       pricing_packaging: Math.min(20, targets.pricing_packaging + 1),
@@ -347,6 +385,16 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   }
 
   return targets;
+}
+
+function getRadarLabels() {
+  return {
+    positioning: "Positioning",
+    value_architecture: "Value",
+    pricing_packaging: "Pricing",
+    gtm_focus: "GTM",
+    measurement: "Measurement",
+  };
 }
 
 /* =========================================================
@@ -1044,10 +1092,9 @@ function buildExecReportData(report) {
   const strongest = [...pillarArray].sort((a, b) => b.score - a.score)[0] || null;
   const secondary = sorted[1] || null;
 
-  const targetPillarScores = getDynamicTargetPillarScores(
-    report?.inputs?.normalized_answers || {},
-    "exec"
-  );
+  const normalizedAnswers = report?.inputs?.normalized_answers || {};
+  const targetPillarScores = getDynamicTargetPillarScores(normalizedAnswers, "exec");
+  const radarLabels = getRadarLabels();
 
   const secondaryExplanation = secondary
     ? `Once the primary constraint is improved, ${secondary.label} is likely to become the next limiting factor in the operating system. This is a normal progression in systems where one fix increases pressure on the next-weakest pillar.`
@@ -1096,6 +1143,7 @@ function buildExecReportData(report) {
 
     pillar_scores: pillarScores,
     target_pillar_scores: targetPillarScores,
+    radar_labels: radarLabels,
 
     primary_constraint_score:
       pillarArray.find((p) => p.key === report?.scoring?.primary_constraint?.key)?.score ?? 0,
@@ -1119,6 +1167,9 @@ function buildExecReportData(report) {
 }
 
 function buildAuditReportData(report) {
+  const normalizedAnswers = report?.inputs?.normalized_answers || {};
+  const targetPillarScores = getDynamicTargetPillarScores(normalizedAnswers, "audit");
+  const radarLabels = getRadarLabels();
   const pillarArray = Array.isArray(report?.scoring?.pillar_scores)
     ? report.scoring.pillar_scores
     : [];
@@ -1155,10 +1206,8 @@ function buildAuditReportData(report) {
       measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
     },
 
-    target_pillar_scores: getDynamicTargetPillarScores(
-      report?.inputs?.normalized_answers || {},
-      "audit"
-    ),
+    target_pillar_scores: targetPillarScores,
+    radar_labels: radarLabels,
 
     benchmark_context: {
       average_saas_company: 62,
@@ -1194,6 +1243,8 @@ function buildHiddenReportData(report) {
   const primary = ranked[0] || null;
 
   const normalized = report?.inputs?.normalized_answers || {};
+  const targetPillarScores = getDynamicTargetPillarScores(normalized, "hidden");
+  const radarLabels = getRadarLabels();
   const rawChannels = normalized?.acquisition_channels;
 
   const primaryChannels = Array.isArray(rawChannels)
@@ -1222,12 +1273,19 @@ function buildHiddenReportData(report) {
       growth_status: normalized?.growth_status || null,
     },
 
+    benchmark_context: {
+      average_saas_company: 62,
+      top_quartile: 78,
+      elite_gtm_system: 88,
+    },
+
     scoring: {
       overall_score: report?.scoring?.overall_score || 0,
       score_band: report?.scoring?.band || "",
       confidence: report?.scoring?.confidence || "Moderate",
       pillar_scores: pillarScores,
-      target_pillar_scores: getDynamicTargetPillarScores(normalized, "hidden"),
+      target_pillar_scores: targetPillarScores,
+      radar_labels: radarLabels,
       pillar_ranked: ranked.map((p) => ({
         key: p.key,
         label: p.label,
