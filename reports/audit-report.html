@@ -121,7 +121,7 @@
 
     .chart-wrap {
       display: grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 400px 1fr;
       gap: 22px;
       align-items: center;
     }
@@ -352,7 +352,7 @@
         <h2>OS Alignment Score</h2>
         <div class="chart-wrap">
           <div class="chart-box">
-            <svg class="radar" id="radar-chart" width="340" height="340" viewBox="0 0 340 340">
+            <svg class="radar" id="radar-chart" width="380" height="340" viewBox="0 0 380 340">
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
               <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
@@ -557,13 +557,21 @@
       "We were not able to determine a clear competitive category from the intake alone."
     );
 
+    const radarLabels = d.radar_labels || {
+      positioning: "Positioning",
+      value_architecture: "Value",
+      pricing_packaging: "Pricing",
+      gtm_focus: "GTM",
+      measurement: "Measurement"
+    };
+
     const pillarScores = d.pillar_scores || {};
     const targetScores = d.target_pillar_scores || {
       positioning: 16,
       value_architecture: 15,
-      pricing_packaging: 16,
-      gtm_focus: 17,
-      measurement: 17
+      pricing_packaging: 15,
+      gtm_focus: 16,
+      measurement: 15
     };
 
     const pillarOrder = [
@@ -725,22 +733,23 @@
 
       const cx = 170;
       const cy = 170;
-      const radius = 92;
+      const radius = 90;
+      const labelRadius = 118;
 
       const data = [
-        { key: "positioning", label: "Positioning", value: Number(pillarScores.positioning || 0) },
-        { key: "value_architecture", label: "Value Architecture", value: Number(pillarScores.value_architecture || 0) },
-        { key: "pricing_packaging", label: "Pricing & Packaging", value: Number(pillarScores.pricing_packaging || 0) },
-        { key: "gtm_focus", label: "GTM Focus", value: Number(pillarScores.gtm_focus || 0) },
-        { key: "measurement", label: "Measurement", value: Number(pillarScores.measurement || 0) }
+        { key: "positioning", label: radarLabels.positioning, value: Number(pillarScores.positioning || 0) },
+        { key: "value_architecture", label: radarLabels.value_architecture, value: Number(pillarScores.value_architecture || 0) },
+        { key: "pricing_packaging", label: radarLabels.pricing_packaging, value: Number(pillarScores.pricing_packaging || 0) },
+        { key: "gtm_focus", label: radarLabels.gtm_focus, value: Number(pillarScores.gtm_focus || 0) },
+        { key: "measurement", label: radarLabels.measurement, value: Number(pillarScores.measurement || 0) }
       ];
 
       const levels = 4;
       const totalAxes = data.length;
 
-      function pointFor(index, value, max = 20) {
+      function pointFor(index, value, max = 20, customRadius = radius) {
         const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
-        const r = (value / max) * radius;
+        const r = (value / max) * customRadius;
         return {
           x: cx + Math.cos(angle) * r,
           y: cy + Math.sin(angle) * r
@@ -773,13 +782,13 @@
         line.setAttribute("stroke-width", "1.2");
         axes.appendChild(line);
 
-        const labelPoint = pointFor(i, 23, 20);
+        const labelPoint = pointFor(i, 20, 20, labelRadius);
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", labelPoint.x);
         text.setAttribute("y", labelPoint.y);
         text.setAttribute(
           "text-anchor",
-          Math.abs(labelPoint.x - cx) < 8 ? "middle" : (labelPoint.x < cx ? "end" : "start")
+          Math.abs(labelPoint.x - cx) < 10 ? "middle" : (labelPoint.x < cx ? "end" : "start")
         );
         text.setAttribute("dominant-baseline", "middle");
         text.textContent = item.label;
