@@ -1,17 +1,12 @@
 // api/diagnostic.js
-// Drop-in replacement (OS-first + production hardening).
-// ✅ OS score is the headline everywhere (API + report + emails)
-// ✅ Legacy score remains computed, stored ONLY under report.scoring.legacy
-// ✅ Auth supports x-vw-token OR Authorization: Bearer <token>
-// ✅ Insufficient-data mode with missing-fields transparency
-// ✅ Defensive answer normalization (trim strings, empty->null, arrays handled)
-// ✅ Optional report_json via INCLUDE_REPORT_JSON=1
-// ✅ Versioning + Zapier-friendly summary output
-// ✅ Keeps optional LLM enrichment (audit only)
+// Brand-to-GTM OS Diagnostic API
+// Updated to use lib/scoring.js as the active scoring engine
+// Keeps legacy scoring for internal comparison only
 
 import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
 import { makeReportId, saveReport } from "../lib/reportStore.js";
+import { scoreDiagnostic } from "../lib/scoring.js";
 
 /* =========================================================
    Helpers
@@ -22,9 +17,9 @@ function cap(n, max) {
 }
 
 function scoreBand(totalScore) {
-  if (totalScore >= 80) return "High Brand-to-GTM alignment";
-  if (totalScore >= 65) return "Moderate system friction";
-  if (totalScore >= 50) return "Structural GTM misalignment";
+  if (totalScore >= 85) return "High Brand-to-GTM alignment";
+  if (totalScore >= 70) return "Moderate system friction";
+  if (totalScore >= 55) return "Structural GTM misalignment";
   return "Severe growth constraints";
 }
 
@@ -37,6 +32,17 @@ function prettyPillar(key) {
     measurement: "Measurement",
   };
   return map[key] || key || null;
+}
+
+function pillarKeyFromLabel(label) {
+  const map = {
+    "Positioning & Category": "positioning",
+    "Value Architecture": "value_architecture",
+    "Pricing & Packaging": "pricing_packaging",
+    "GTM Focus": "gtm_focus",
+    "Measurement": "measurement",
+  };
+  return map[label] || "positioning";
 }
 
 function normalizeChannels(val) {
@@ -60,10 +66,6 @@ function cleanScalar(v) {
   return v;
 }
 
-// Defensive normalization for incoming answers object:
-// - trims strings
-// - converts "" to null
-// - preserves arrays (and cleans strings inside arrays)
 function normalizeIncomingAnswers(answers) {
   const out = {};
   for (const [kRaw, vRaw] of Object.entries(answers || {})) {
@@ -82,7 +84,7 @@ function normalizeIncomingAnswers(answers) {
   return out;
 }
 
-// Optional: map verbose question strings to stable keys
+// Maps verbose question strings to stable keys
 function normalizeAnswers(answers) {
   return {
     annual_revenue: answers["Annual Revenue"] ?? null,
@@ -122,213 +124,13 @@ function normalizeAnswers(answers) {
 }
 
 /* =========================================================
-   Brand-to-GTM OS Score (v1.0)
-   5 pillars x 20 points = 100
+   OS Scoring Version
 ========================================================= */
 
-const OS_SCORING_VERSION = "os_v1.0";
-
-function computeBrandToGtmOsScore(inputs) {
-  const pillar_scores = {
-    positioning: 0,
-    value_architecture: 0,
-    pricing_packaging: 0,
-    gtm_focus: 0,
-    measurement: 0,
-  };
-
-  const revenueModMap = {
-    "Under $5M": 0,
-    "$5–10M": 1,
-    "$10–25M": 2,
-    "$25–50M": 3,
-    "$50–100M": 4,
-    "$100M+": 4,
-  };
-  const acvModMap = {
-    "Under $10K": 0,
-    "$10–25K": 1,
-    "$25–75K": 2,
-    "$75–250K": 3,
-    "$250K+": 4,
-  };
-
-  const revenueMod = revenueModMap[inputs.annual_revenue] ?? 0;
-  const acvMod = acvModMap[inputs.acv] ?? 0;
-
-  pillar_scores.gtm_focus += revenueMod;
-  pillar_scores.measurement += revenueMod;
-  pillar_scores.value_architecture += acvMod;
-  pillar_scores.pricing_packaging += acvMod;
-
-  // 1) Positioning & Category
-  const winMap = {
-    "Clear differentiation": 6,
-    "Brand trust": 5,
-    "Feature depth": 4,
-    "Speed / Ease of Use": 4,
-    "Strong relationships": 2,
-    "Lowest price": 1,
-  };
-  const loseMap = {
-    "Lack of differentiation": 1,
-    "Unclear ROI": 2,
-    "Brand trust": 2,
-    "Procurement friction": 3,
-    "Feature gaps": 4,
-    Price: 5,
-  };
-  const consistencyMap = {
-    "Yes — very consistent": 8,
-    Somewhat: 5,
-    "Often unclear": 2,
-  };
-
-  pillar_scores.positioning += winMap[inputs.win_reason] ?? 0;
-  pillar_scores.positioning += loseMap[inputs.lose_reason] ?? 0;
-  pillar_scores.positioning += consistencyMap[inputs.consistency] ?? 0;
-  pillar_scores.positioning = cap(pillar_scores.positioning, 20);
-
-  // 2) Value Architecture
-  const roiMap = {
-    "Yes — documented & repeatable": 8,
-    Somewhat: 5,
-    No: 2,
-  };
-  const leadWithMap = {
-    "Financial ROI": 6,
-    "Business outcomes": 5,
-    "Technical differentiation": 4,
-    Features: 2,
-  };
-  const metricsMap = {
-    "Revenue growth": 6,
-    "Margin expansion": 6,
-    "Cost reduction": 5,
-    "Risk reduction": 4,
-    "Productivity gains": 4,
-    "Not clearly defined": 1,
-  };
-
-  pillar_scores.value_architecture += roiMap[inputs.roi_quantifiable] ?? 0;
-  pillar_scores.value_architecture += leadWithMap[inputs.sales_lead_with] ?? 0;
-  pillar_scores.value_architecture +=
-    metricsMap[inputs.financial_metrics_improved] ?? 0;
-  pillar_scores.value_architecture = cap(pillar_scores.value_architecture, 20);
-
-  // 3) Pricing & Packaging
-  const discountMap = {
-    "Rarely (<10%)": 8,
-    "Sometimes (10–40%)": 5,
-    "Frequently (40%+)": 2,
-  };
-  const tierClarityMap = {
-    "Yes — very clear": 6,
-    Somewhat: 4,
-    "Often confused": 2,
-  };
-  const marginMap = {
-    "75%+": 6,
-    "65–75%": 5,
-    "50–65%": 4,
-    "Under 50%": 2,
-  };
-
-  pillar_scores.pricing_packaging +=
-    discountMap[inputs.discount_frequency] ?? 0;
-  pillar_scores.pricing_packaging +=
-    tierClarityMap[inputs.pricing_tiers_clarity] ?? 0;
-  pillar_scores.pricing_packaging += marginMap[inputs.gross_margin] ?? 0;
-  pillar_scores.pricing_packaging = cap(pillar_scores.pricing_packaging, 20);
-
-  // 4) GTM Focus
-  const channelPoints = {
-    Partnerships: 3,
-    Content: 3,
-    "Product-led": 3,
-    "Outbound SDR": 2,
-    "Founder-led selling": 2,
-    Events: 2,
-    "Paid search": 1,
-    "Paid social": 1,
-  };
-
-  const salesCycleMap = {
-    "Under 1 month": 6,
-    "1–3 months": 5,
-    "3–6 months": 4,
-    "6–12 months": 3,
-    "12+ months": 2,
-  };
-  const closeRateMap = {
-    "40%+": 6,
-    "25–40%": 5,
-    "15–25%": 4,
-    "Under 15%": 2,
-  };
-
-  const channels = Array.isArray(inputs.acquisition_channels)
-    ? inputs.acquisition_channels
-    : [];
-  const channelScoreRaw = channels
-    .slice(0, 3)
-    .reduce((sum, ch) => sum + (channelPoints[ch] ?? 0), 0);
-
-  pillar_scores.gtm_focus += cap(channelScoreRaw, 8);
-  pillar_scores.gtm_focus += salesCycleMap[inputs.sales_cycle] ?? 0;
-  pillar_scores.gtm_focus += closeRateMap[inputs.close_rate] ?? 0;
-  pillar_scores.gtm_focus = cap(pillar_scores.gtm_focus, 20);
-
-  // 5) Measurement
-  const measuredByMap = {
-    Revenue: 6,
-    Pipeline: 5,
-    "Brand metrics": 3,
-    Leads: 2,
-  };
-  const attributionMap = {
-    Yes: 8,
-    Debated: 5,
-    No: 2,
-  };
-  const forecastMap = {
-    Yes: 6,
-    No: 2,
-  };
-  const cacMap = {
-    Yes: 6,
-    "Rough estimates": 4,
-    No: 2,
-  };
-
-  pillar_scores.measurement +=
-    measuredByMap[inputs.marketing_measured_by] ?? 0;
-  pillar_scores.measurement += attributionMap[inputs.attribution_trusted] ?? 0;
-  pillar_scores.measurement += forecastMap[inputs.forecast_accuracy] ?? 0;
-  pillar_scores.measurement += cacMap[inputs.cac_by_channel] ?? 0;
-  pillar_scores.measurement = cap(pillar_scores.measurement, 20);
-
-  const brand_to_gtm_os_score =
-    pillar_scores.positioning +
-    pillar_scores.value_architecture +
-    pillar_scores.pricing_packaging +
-    pillar_scores.gtm_focus +
-    pillar_scores.measurement;
-
-  const primary_constraint_key = Object.keys(pillar_scores).sort(
-    (a, b) => pillar_scores[a] - pillar_scores[b]
-  )[0];
-
-  return {
-    brand_to_gtm_os_score,
-    interpretation_band: scoreBand(brand_to_gtm_os_score),
-    pillar_scores,
-    primary_constraint_key,
-  };
-}
+const OS_SCORING_VERSION = "os_v2.0_consulting";
 
 /* =========================================================
-   Legacy Scoring
+   Legacy Scoring (existing)
 ========================================================= */
 
 const LEGACY_SCORING_VERSION = "legacy_v1";
@@ -361,14 +163,8 @@ function getConfig() {
           delta: -2,
           flag: "Positioning clarity issue.",
         },
-        {
-          if: { "Why do you most often win deals?": "Clear differentiation" },
-          delta: 2,
-        },
-        {
-          if: { "Why do you most often win deals?": "Brand trust" },
-          delta: 1,
-        },
+        { if: { "Why do you most often win deals?": "Clear differentiation" }, delta: 2 },
+        { if: { "Why do you most often win deals?": "Brand trust" }, delta: 1 },
       ],
       value_architecture: [
         {
@@ -385,10 +181,7 @@ function getConfig() {
           delta: -2,
           flag: "Feature-led selling limits pricing power.",
         },
-        {
-          if: { "Sales conversations primarily lead with:": "Financial ROI" },
-          delta: 2,
-        },
+        { if: { "Sales conversations primarily lead with:": "Financial ROI" }, delta: 2 },
         {
           if: {
             "What financial metrics do customers see improve due to your product?":
@@ -404,10 +197,7 @@ function getConfig() {
           delta: -3,
           flag: "Frequent discounting compresses margin.",
         },
-        {
-          if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" },
-          delta: -1,
-        },
+        { if: { "How often are discounts required to close deals?": "Sometimes (10–40%)" }, delta: -1 },
         {
           if: { "Do customers clearly understand your pricing tiers?": "Often confused" },
           delta: -2,
@@ -417,20 +207,9 @@ function getConfig() {
         { if: { "What is your gross margin (%)?": "75%+" }, delta: 2 },
       ],
       gtm_focus: [
-        {
-          if: { "Do you know CAC by channel?": "No" },
-          delta: -2,
-          flag: "Channel economics unclear.",
-        },
-        {
-          if: { "How would you rate your growth status?": "Stalled" },
-          delta: -2,
-          flag: "Growth stall indicator.",
-        },
-        {
-          if: { "How would you rate your growth status?": "Plateauing" },
-          delta: -1,
-        },
+        { if: { "Do you know CAC by channel?": "No" }, delta: -2, flag: "Channel economics unclear." },
+        { if: { "How would you rate your growth status?": "Stalled" }, delta: -2, flag: "Growth stall indicator." },
+        { if: { "How would you rate your growth status?": "Plateauing" }, delta: -1 },
       ],
       measurement: [
         {
@@ -438,20 +217,9 @@ function getConfig() {
           delta: -2,
           flag: "Lead-focused measurement may signal vanity metrics.",
         },
-        {
-          if: { "Marketing is measured primarily by:": "Revenue" },
-          delta: 2,
-        },
-        {
-          if: { "Is attribution trusted internally?": "No" },
-          delta: -2,
-          flag: "Attribution credibility gap.",
-        },
-        {
-          if: { "Are revenue forecasts accurate within 10%": "No" },
-          delta: -2,
-          flag: "Forecast reliability risk.",
-        },
+        { if: { "Marketing is measured primarily by:": "Revenue" }, delta: 2 },
+        { if: { "Is attribution trusted internally?": "No" }, delta: -2, flag: "Attribution credibility gap." },
+        { if: { "Are revenue forecasts accurate within 10%": "No" }, delta: -2, flag: "Forecast reliability risk." },
       ],
     },
     alignment_bands: [
@@ -498,8 +266,7 @@ function scoreLegacy(answers, config) {
       const field = Object.keys(rule.if)[0];
       const expected = rule.if[field];
 
-      const rawAnswer =
-        field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
+      const rawAnswer = field in answers ? answers[field] : normalizedLookup[normalizeKey(field)];
       if (normalizeValue(rawAnswer) === normalizeValue(expected)) {
         pillars[pillar] += rule.delta;
         if (rule.flag) flags.push(rule.flag);
@@ -513,22 +280,82 @@ function scoreLegacy(answers, config) {
 
   const total = Object.values(pillars).reduce((a, b) => a + b, 0);
   const band =
-    config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label ||
-    "Unknown";
+    config.alignment_bands.find((b) => total >= b.min && total <= b.max)?.label || "Unknown";
 
-  const primaryConstraint = Object.keys(pillars).sort(
-    (a, b) => pillars[a] - pillars[b]
-  )[0];
+  const primaryConstraint = Object.keys(pillars).sort((a, b) => pillars[a] - pillars[b])[0];
 
   return { total, band, pillars, primaryConstraint, flags };
 }
 
 /* =========================================================
-   Email Copy
+   Dynamic target scores
+========================================================= */
+
+function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
+  const revenue = String(normalizedAnswers?.annual_revenue || "").toLowerCase();
+  const acv = String(normalizedAnswers?.acv || "").toLowerCase();
+  const cycle = String(normalizedAnswers?.sales_cycle || "").toLowerCase();
+  const growth = String(normalizedAnswers?.growth_status || "").toLowerCase();
+
+  let targets = {
+    positioning: 15,
+    value_architecture: 15,
+    pricing_packaging: 15,
+    gtm_focus: 15,
+    measurement: 15,
+  };
+
+  if (revenue.includes("100m") || revenue.includes("$100m+") || revenue.includes("100m+")) {
+    targets = {
+      positioning: 17,
+      value_architecture: 17,
+      pricing_packaging: 17,
+      gtm_focus: 18,
+      measurement: 18,
+    };
+  } else if (revenue.includes("50") || revenue.includes("25")) {
+    targets = {
+      positioning: 16,
+      value_architecture: 16,
+      pricing_packaging: 15,
+      gtm_focus: 17,
+      measurement: 16,
+    };
+  }
+
+  if (acv.includes("250k")) {
+    targets.pricing_packaging += 1;
+    targets.value_architecture += 1;
+  }
+
+  if (cycle.includes("6–12") || cycle.includes("6-12") || cycle.includes("12+")) {
+    targets.gtm_focus += 1;
+  }
+
+  if (growth.includes("scaling")) {
+    targets.measurement += 1;
+  }
+
+  if (tier === "audit" || tier === "hidden") {
+    return {
+      positioning: Math.min(20, targets.positioning + 1),
+      value_architecture: Math.min(20, targets.value_architecture + 1),
+      pricing_packaging: Math.min(20, targets.pricing_packaging + 1),
+      gtm_focus: Math.min(20, targets.gtm_focus + 1),
+      measurement: Math.min(20, targets.measurement + 1),
+    };
+  }
+
+  return targets;
+}
+
+/* =========================================================
+   Email Copy (OS-first)
 ========================================================= */
 
 function renderExecSummary({ osScored, clientName, clientCompany }) {
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
+
   const subject = "Your Brand-to-GTM OS Executive Summary";
 
   const bodyText = `Hi ${clientName || "there"},
@@ -538,6 +365,7 @@ Your Brand-to-GTM OS Executive Summary is ready.
 Company: ${clientCompany || "Your organization"}
 OS alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
 Primary constraint: ${niceConstraint}
+Confidence: ${osScored.confidence || "Moderate"}
 
 Your report is ready to review.
 
@@ -578,7 +406,10 @@ Vallenwood Consulting
           <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)</p>
 
           <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
-          <p style="margin:0;font-size:18px;font-weight:700;">${niceConstraint}</p>
+          <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${niceConstraint}</p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Confidence</p>
+          <p style="margin:0;font-size:18px;font-weight:700;">${osScored.confidence || "Moderate"}</p>
         </div>
 
         <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
@@ -612,6 +443,7 @@ Your Brand-to-GTM OS Strategic Audit is ready.
 Company: ${clientCompany || "Your organization"}
 OS alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
 Primary constraint: ${niceConstraint}
+Confidence: ${osScored.confidence || "Moderate"}
 
 Your audit is ready to review.
 
@@ -652,7 +484,10 @@ Vallenwood Consulting
           <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)</p>
 
           <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
-          <p style="margin:0;font-size:18px;font-weight:700;">${niceConstraint}</p>
+          <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${niceConstraint}</p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Confidence</p>
+          <p style="margin:0;font-size:18px;font-weight:700;">${osScored.confidence || "Moderate"}</p>
         </div>
 
         <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
@@ -756,8 +591,23 @@ function buildReport({
   const generatedAt = new Date().toISOString();
   const na = normalizeAnswers(answers);
 
+  const contradictionBullets = (osScored.contradictions || []).slice(0, 3).map((c) => c.tension);
+
+  const pillarLabels = {
+    positioning: "Positioning & Category",
+    value_architecture: "Value Architecture",
+    pricing_packaging: "Pricing & Packaging",
+    gtm_focus: "GTM Focus",
+    measurement: "Measurement",
+  };
+
+  const primarySymptoms = (osScored.contradictions || [])
+    .filter((c) => pillarKeyFromLabel(c.pillar) === osScored.primary_constraint_key)
+    .slice(0, 3)
+    .map((c) => c.tension);
+
   const baseReport = {
-    schema_version: "1.0",
+    schema_version: "1.1",
     generated_at: generatedAt,
     tier,
     client: {
@@ -774,16 +624,19 @@ function buildReport({
 
     scoring: {
       os_scoring_version: OS_SCORING_VERSION,
-
       overall_score: osScored.brand_to_gtm_os_score,
       overall_max: 100,
       band: osScored.interpretation_band,
+      confidence: osScored.confidence || "Moderate",
+      contradiction_count: (osScored.contradictions || []).length,
+      contradiction_penalty: osScored.contradiction_penalty || 0,
+      operating_tensions: osScored.contradictions || [],
       primary_constraint: {
         key: osScored.primary_constraint_key,
         label: prettyPillar(osScored.primary_constraint_key),
         why_it_matters:
           "This pillar most constrains performance across brand clarity, pricing power, and go-to-market execution.",
-        symptoms: [],
+        symptoms: primarySymptoms,
         downstream_impacts: [
           "Lower win rates in competitive deals",
           "Discounting pressure and margin compression",
@@ -791,36 +644,11 @@ function buildReport({
         ],
       },
       pillar_scores: [
-        {
-          key: "positioning",
-          label: "Positioning & Category",
-          score: osScored.pillar_scores.positioning,
-          max: 20,
-        },
-        {
-          key: "value_architecture",
-          label: "Value Architecture",
-          score: osScored.pillar_scores.value_architecture,
-          max: 20,
-        },
-        {
-          key: "pricing_packaging",
-          label: "Pricing & Packaging",
-          score: osScored.pillar_scores.pricing_packaging,
-          max: 20,
-        },
-        {
-          key: "gtm_focus",
-          label: "GTM Focus",
-          score: osScored.pillar_scores.gtm_focus,
-          max: 20,
-        },
-        {
-          key: "measurement",
-          label: "Measurement",
-          score: osScored.pillar_scores.measurement,
-          max: 20,
-        },
+        { key: "positioning", label: "Positioning & Category", score: osScored.pillar_scores.positioning, max: 20 },
+        { key: "value_architecture", label: "Value Architecture", score: osScored.pillar_scores.value_architecture, max: 20 },
+        { key: "pricing_packaging", label: "Pricing & Packaging", score: osScored.pillar_scores.pricing_packaging, max: 20 },
+        { key: "gtm_focus", label: "GTM Focus", score: osScored.pillar_scores.gtm_focus, max: 20 },
+        { key: "measurement", label: "Measurement", score: osScored.pillar_scores.measurement, max: 20 },
       ],
 
       legacy: {
@@ -840,22 +668,22 @@ function buildReport({
           osScored.primary_constraint_key
         )}`,
         summary_paragraph:
-          "This diagnostic reflects alignment across five pillars of the Brand-to-GTM Operating System. The goal is to identify the constraint that, if improved, will unlock the most leverage.",
-        key_observations: [],
+          "This diagnostic reflects alignment across five pillars of the Brand-to-GTM Operating System. The goal is to identify the operating constraint that, if improved, will unlock the most leverage.",
+        key_observations: contradictionBullets,
         what_to_do_next: [
           "Confirm the primary constraint with a short review call",
+          "Pressure-test the operating tensions surfaced by the model",
           "Prioritize 1–2 quick wins to improve clarity and commercial outcomes",
-          "Decide if a full Strategic Audit is warranted",
         ],
       },
       pillar_interpretations: [
         {
           pillar_key: osScored.primary_constraint_key,
           interpretation:
-            "Your lowest-scoring pillar is likely creating downstream friction across differentiation, pricing power, and GTM efficiency.",
+            "Your lowest-leverage point is likely creating downstream friction across differentiation, pricing power, and GTM efficiency.",
           quick_wins: [
             "Define a sharper category POV and differentiation claim",
-            "Anchor value in measurable outcomes (economic proof)",
+            "Anchor value in measurable outcomes and economic proof",
             "Reduce discounting by tightening packaging and guardrails",
           ],
           questions_to_answer: [
@@ -865,6 +693,12 @@ function buildReport({
           ],
         },
       ],
+      operating_tensions: (osScored.contradictions || []).slice(0, 3).map((c) => ({
+        tension: c.tension,
+        implication: c.implication,
+        pillar: c.pillar,
+        severity: c.severity,
+      })),
     },
 
     deliverables: {
@@ -874,10 +708,7 @@ function buildReport({
         body_html: content.bodyHtml || null,
       },
       pdf: {
-        title:
-          tier === "audit"
-            ? "Brand-to-GTM OS Strategic Audit"
-            : "Brand-to-GTM OS Executive Summary",
+        title: tier === "audit" ? "Brand-to-GTM OS Strategic Audit" : "Brand-to-GTM OS Executive Summary",
         pdf_url: null,
         html_url: null,
         pages_estimate: tier === "audit" ? 10 : 3,
@@ -887,14 +718,14 @@ function buildReport({
     disclaimer: {
       ai_assisted: false,
       limitations: [
-        "This diagnostic is based on provided inputs and deterministic scoring rules.",
-        "Competitive analysis and pricing insights (when present) should be validated with market research.",
+        "This diagnostic is based on provided inputs and calibrated scoring rules.",
+        "Competitive analysis and pricing insights should be validated with market research and live stakeholder review.",
       ],
     },
   };
 
   if (tier === "audit") {
-    baseReport.full_tier = buildFullTierPlaceholder({ answers });
+    baseReport.full_tier = buildFullTierPlaceholder({ answers, osScored });
   } else {
     baseReport.exec_tier = buildExecTierUpsell();
   }
@@ -913,8 +744,7 @@ function buildExecTierUpsell() {
           "Validate with 3 customer calls",
           "Align homepage + pitch deck messaging",
         ],
-        expected_impact:
-          "Improved consistency in sales conversations and competitive win rates.",
+        expected_impact: "Improved consistency in sales conversations and competitive win rates.",
         effort: "low",
       },
       {
@@ -944,21 +774,16 @@ function buildExecTierUpsell() {
       headline: "What the Full Strategic Audit Unlocks",
       value_bullets: [
         "A pillar-by-pillar diagnosis with specific root-cause hypotheses",
-        "SWOT tied directly to Brand-to-GTM levers",
+        "Operating tensions across brand, pricing, and GTM layers",
         "Competitive pricing & packaging audit (hypotheses + what-to-verify)",
         "A prioritized 30/90-day roadmap + first sprint plan",
       ],
-      offer: {
-        name: "Full Strategic Audit",
-        price_usd: 499,
-        cta_label: "Upgrade to Full Audit",
-        cta_url: null,
-      },
+      offer: { name: "Full Strategic Audit", price_usd: 499, cta_label: "Upgrade to Full Audit", cta_url: null },
     },
   };
 }
 
-function buildFullTierPlaceholder({ answers }) {
+function buildFullTierPlaceholder({ answers, osScored }) {
   return {
     swot: {
       strengths: [{ point: "Strength placeholder", evidence: [] }],
@@ -985,12 +810,13 @@ function buildFullTierPlaceholder({ answers }) {
     },
     roadmap: {
       north_star:
-        "Establish clear positioning and value proof to reduce discounting and improve GTM efficiency.",
+        "Establish clearer positioning, stronger value proof, and sharper commercial discipline to improve growth efficiency.",
       principles: ["Clarity over breadth", "Proof over promises", "Focus over fragmentation"],
       thirty_day: [],
       ninety_day: [],
       six_to_twelve_month: [],
     },
+    operating_tensions: (osScored.contradictions || []).slice(0, 5),
     first_sprint_plan: { weeks: [] },
     appendix: {
       response_summary: Object.entries(answers).map(([question, answer]) => ({
@@ -1003,7 +829,7 @@ function buildFullTierPlaceholder({ answers }) {
 }
 
 /* =========================================================
-   Optional LLM Enrichment (audit only)
+   LLM Enrichment
 ========================================================= */
 
 function getOpenAIClient() {
@@ -1038,13 +864,36 @@ async function enrichAuditReport(report) {
   };
 
   const systemPrompt =
-    "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing.";
+    "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing. Identify cross-pillar contradictions where one part of the GTM system appears more mature than another. Favor consultant-style interpretation over generic summaries.";
 
   const userPrompt = `
 Using the diagnostic data below, return ONLY valid JSON with this shape:
 
 {
-  "narrative": { "text": "..." },
+  "narrative": {
+    "executive_summary": {
+      "headline": "",
+      "summary_paragraph": "",
+      "key_observations": [],
+      "what_to_do_next": []
+    },
+    "pillar_interpretations": [
+      {
+        "pillar_key": "",
+        "interpretation": "",
+        "quick_wins": [],
+        "questions_to_answer": []
+      }
+    ],
+    "operating_tensions": [
+      {
+        "tension": "",
+        "implication": "",
+        "pillar": "",
+        "severity": 1
+      }
+    ]
+  },
   "full_tier": {
     "swot": {
       "strengths": [{"point":"","evidence":[]}],
@@ -1073,7 +922,8 @@ Using the diagnostic data below, return ONLY valid JSON with this shape:
       "thirty_day": [],
       "ninety_day": [],
       "six_to_twelve_month": []
-    }
+    },
+    "operating_tensions": []
   }
 }
 
@@ -1161,7 +1011,7 @@ function countPresentRequired(osInputs) {
 }
 
 /* =========================================================
-   Report helpers
+   Hosted report builders
 ========================================================= */
 
 function getBaseUrl(req) {
@@ -1184,10 +1034,8 @@ function buildExecReportData(report) {
 
   const pillarScores = {
     positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
-    value_architecture:
-      pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
-    pricing_packaging:
-      pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+    value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+    pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
     gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
     measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
   };
@@ -1196,13 +1044,10 @@ function buildExecReportData(report) {
   const strongest = [...pillarArray].sort((a, b) => b.score - a.score)[0] || null;
   const secondary = sorted[1] || null;
 
-  const targetPillarScores = {
-    positioning: 16,
-    value_architecture: 15,
-    pricing_packaging: 16,
-    gtm_focus: 17,
-    measurement: 17,
-  };
+  const targetPillarScores = getDynamicTargetPillarScores(
+    report?.inputs?.normalized_answers || {},
+    "exec"
+  );
 
   const secondaryExplanation = secondary
     ? `Once the primary constraint is improved, ${secondary.label} is likely to become the next limiting factor in the operating system. This is a normal progression in systems where one fix increases pressure on the next-weakest pillar.`
@@ -1221,6 +1066,7 @@ function buildExecReportData(report) {
 
     overall_score: report?.scoring?.overall_score ?? 0,
     score_band: report?.scoring?.band || "",
+    confidence: report?.scoring?.confidence || "Moderate",
 
     primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
     primary_constraint_why_it_matters:
@@ -1235,16 +1081,24 @@ function buildExecReportData(report) {
       report?.scoring?.primary_constraint?.downstream_impacts?.slice(0, 3) || [],
 
     risks:
+      report?.narrative?.operating_tensions?.slice(0, 3).map((t) => t.tension) ||
       report?.scoring?.legacy?.flags?.slice(0, 3) ||
-      report?.narrative?.executive_summary?.key_observations?.slice(0, 3) ||
       [],
+
+    operating_tensions:
+      report?.narrative?.operating_tensions?.slice(0, 3) || [],
+
+    benchmark_context: {
+      average_saas_company: 62,
+      top_quartile: 78,
+      elite_gtm_system: 85,
+    },
 
     pillar_scores: pillarScores,
     target_pillar_scores: targetPillarScores,
 
     primary_constraint_score:
-      pillarArray.find((p) => p.key === report?.scoring?.primary_constraint?.key)
-        ?.score ?? 0,
+      pillarArray.find((p) => p.key === report?.scoring?.primary_constraint?.key)?.score ?? 0,
 
     primary_constraint_interpretation:
       report?.narrative?.pillar_interpretations?.[0]?.interpretation || "",
@@ -1282,6 +1136,7 @@ function buildAuditReportData(report) {
 
     overall_score: report?.scoring?.overall_score ?? 0,
     score_band: report?.scoring?.band || "",
+    confidence: report?.scoring?.confidence || "Moderate",
 
     primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
     primary_constraint_why_it_matters:
@@ -1294,21 +1149,27 @@ function buildAuditReportData(report) {
 
     pillar_scores: {
       positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
-      value_architecture:
-        pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
-      pricing_packaging:
-        pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+      value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+      pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
       gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
       measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
     },
 
-    target_pillar_scores: {
-      positioning: 19,
-      value_architecture: 17,
-      pricing_packaging: 19,
-      gtm_focus: 20,
-      measurement: 20,
+    target_pillar_scores: getDynamicTargetPillarScores(
+      report?.inputs?.normalized_answers || {},
+      "audit"
+    ),
+
+    benchmark_context: {
+      average_saas_company: 62,
+      top_quartile: 78,
+      elite_gtm_system: 85,
     },
+
+    operating_tensions:
+      report?.narrative?.operating_tensions?.slice(0, 5) ||
+      report?.scoring?.operating_tensions?.slice(0, 5) ||
+      [],
 
     swot: report?.full_tier?.swot || null,
     competitive_context: report?.full_tier?.competitive_context || null,
@@ -1332,69 +1193,14 @@ function buildHiddenReportData(report) {
 
   const primary = ranked[0] || null;
 
-  const acquisitionChannels = report?.inputs?.normalized_answers?.acquisition_channels;
-  const snapshot = {
-    annual_revenue: report?.inputs?.normalized_answers?.annual_revenue || null,
-    acv: report?.inputs?.normalized_answers?.acv || null,
-    sales_cycle: report?.inputs?.normalized_answers?.sales_cycle || null,
-    close_rate: report?.inputs?.normalized_answers?.close_rate || null,
-    primary_channels:
-      typeof acquisitionChannels === "string"
-        ? acquisitionChannels.split(",").map((s) => s.trim()).filter(Boolean)
-        : Array.isArray(acquisitionChannels)
-          ? acquisitionChannels
-          : [],
-    measurement_model:
-      report?.inputs?.normalized_answers?.marketing_measured_by || null,
-  };
+  const normalized = report?.inputs?.normalized_answers || {};
+  const rawChannels = normalized?.acquisition_channels;
 
-  const winReason = report?.inputs?.normalized_answers?.win_reason;
-  const loseReason = report?.inputs?.normalized_answers?.lose_reason;
-  const discounting = report?.inputs?.normalized_answers?.discounting;
-
-  const signals = {
-    strength_signals: [],
-    constraint_signals: [],
-    risk_signals: [],
-    opportunity_signals: [],
-    contradictions: [],
-  };
-
-  if (winReason === "Strong relationships") {
-    signals.constraint_signals.push(
-      "Sales wins rely heavily on relationships rather than structured value articulation."
-    );
-  }
-
-  if (loseReason === "Price") {
-    signals.constraint_signals.push(
-      "Price-based losses suggest value articulation or packaging weakness."
-    );
-  }
-
-  if (discounting && String(discounting).includes("Rarely")) {
-    signals.opportunity_signals.push(
-      "Low discounting frequency suggests some pricing power already exists."
-    );
-  }
-
-  if ((pillarScores.measurement || 0) >= 17) {
-    signals.strength_signals.push(
-      "Measurement maturity appears relatively strong compared to other pillars."
-    );
-  }
-
-  if ((pillarScores.value_architecture || 0) < 14) {
-    signals.risk_signals.push(
-      "Weak value architecture may create downstream pressure on pricing and positioning."
-    );
-  }
-
-  if (winReason === "Strong relationships" && loseReason === "Price") {
-    signals.contradictions.push(
-      "Relationship-driven wins combined with price-based losses indicate value may not be clearly quantified in competitive deals."
-    );
-  }
+  const primaryChannels = Array.isArray(rawChannels)
+    ? rawChannels
+    : typeof rawChannels === "string"
+      ? rawChannels.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
 
   return {
     company_name: report?.client?.company_name || "Company",
@@ -1406,19 +1212,22 @@ function buildHiddenReportData(report) {
         })
       : "",
 
-    diagnostic_snapshot: snapshot,
+    diagnostic_snapshot: {
+      annual_revenue: normalized?.annual_revenue || null,
+      acv: normalized?.acv || null,
+      sales_cycle: normalized?.sales_cycle || null,
+      close_rate: normalized?.close_rate || null,
+      primary_channels: primaryChannels,
+      measurement_model: normalized?.marketing_measured_by || null,
+      growth_status: normalized?.growth_status || null,
+    },
 
     scoring: {
       overall_score: report?.scoring?.overall_score || 0,
       score_band: report?.scoring?.band || "",
+      confidence: report?.scoring?.confidence || "Moderate",
       pillar_scores: pillarScores,
-      target_pillar_scores: {
-        positioning: 19,
-        value_architecture: 17,
-        pricing_packaging: 19,
-        gtm_focus: 20,
-        measurement: 20,
-      },
+      target_pillar_scores: getDynamicTargetPillarScores(normalized, "hidden"),
       pillar_ranked: ranked.map((p) => ({
         key: p.key,
         label: p.label,
@@ -1433,40 +1242,66 @@ function buildHiddenReportData(report) {
         : null,
     },
 
-    signal_analysis: signals,
+    signal_analysis: {
+      operating_tensions: report?.scoring?.operating_tensions || [],
+      strength_signals: [
+        ...(pillarScores.measurement >= 17
+          ? ["Measurement maturity appears relatively strong compared to other pillars."]
+          : []),
+        ...(pillarScores.gtm_focus >= 17
+          ? ["GTM execution appears relatively strong compared to other pillars."]
+          : []),
+      ],
+      constraint_signals: [
+        ...(pillarScores.value_architecture < 14
+          ? ["Weak value architecture may create downstream pressure on pricing and positioning."]
+          : []),
+        ...(pillarScores.pricing_packaging < 14
+          ? ["Pricing and packaging appear to be limiting margin protection or deal discipline."]
+          : []),
+      ],
+      risk_signals: (report?.scoring?.operating_tensions || [])
+        .slice(0, 3)
+        .map((c) => c.implication),
+      opportunity_signals: [
+        ...(String(normalized?.discounting || "").includes("Rarely")
+          ? ["Low discounting frequency suggests some pricing power already exists."]
+          : []),
+      ],
+    },
 
     interpretation: {
       executive_readout:
-        "Initial diagnostic suggests the primary leverage point lies in improving value articulation and packaging clarity.",
-      root_cause_hypotheses: [
-        "Customer outcomes may not be consistently quantified during sales conversations.",
-        "Packaging and tier structure may not anchor value clearly enough.",
-      ],
+        "Initial diagnostic suggests the primary leverage point lies in improving the constraint most likely to suppress pricing power, differentiation, or GTM efficiency.",
+      root_cause_hypotheses:
+        (report?.scoring?.operating_tensions || []).slice(0, 3).map((c) => c.implication),
     },
 
     call_briefing: {
       opening_summary:
-        "Begin the conversation by confirming how prospects evaluate ROI and what typically triggers price objections.",
+        "Begin by confirming where the commercial motion appears stronger than the proof, pricing, or measurement systems supporting it.",
       top_questions_to_ask: [
         "How do prospects typically evaluate ROI before purchasing?",
         "Where in the sales process do pricing objections appear?",
-        "What proof points most often move deals forward?",
+        "Which customer proof points most often move deals forward?"
       ],
       areas_to_validate_live: [
         "Whether pricing tiers reflect actual customer value segments",
         "Whether sales messaging consistently leads with outcomes",
-      ],
+        "Whether attribution trust matches leadership expectations"
+      ]
     },
 
     consulting_opportunity: {
       likely_needs: [
         "Value architecture refinement",
         "Pricing and packaging strategy",
-        "Messaging system alignment",
+        "Messaging system alignment"
       ],
-      priority_engagement_angle: "Value Architecture Sprint",
-      upsell_readiness: "Moderate to High",
-    },
+      priority_engagement_angle: prettyPillar(report?.scoring?.primary_constraint?.key) || "Strategic Diagnostic Sprint",
+      upsell_readiness:
+        (report?.scoring?.overall_score || 0) <= 70 ? "High" : "Moderate"
+    }
   };
 }
 
@@ -1534,22 +1369,24 @@ export default async function handler(req, res) {
     const clientCompany = payload.client_company || "";
     const clientWebsite = payload.client_website || "";
 
+    // Legacy scoring
     const tLegacy = L.mark();
     const config = getConfig();
     const legacyScored = scoreLegacy(answers, config);
-    L.step("scoreLegacy", tLegacy, {
-      total: legacyScored.total,
-      band: legacyScored.band,
-    });
+    L.step("scoreLegacy", tLegacy, { total: legacyScored.total, band: legacyScored.band });
 
+    // Normalized OS inputs
     const tOS = L.mark();
     const na = normalizeAnswers(answers);
 
     const osInputs = {
       annual_revenue: na.annual_revenue,
+      revenue_model: na.revenue_model,
       acv: na.acv,
       sales_cycle: na.sales_cycle,
       close_rate: na.close_rate,
+      category: na.category,
+      compared_to: na.compared_to,
 
       win_reason: na.win_reason,
       lose_reason: na.lose_reason,
@@ -1566,6 +1403,7 @@ export default async function handler(req, res) {
       acquisition_channels: normalizeChannels(na.acquisition_channels),
       cac_by_channel: na.cac_by_channel,
 
+      growth_status: na.growth_status,
       marketing_measured_by: na.marketing_measured_by,
       attribution_trusted: na.attribution_trusted,
       forecast_accuracy: na.forecast_accuracy,
@@ -1576,15 +1414,12 @@ export default async function handler(req, res) {
     if (presentCount < MIN_REQUIRED_FIELDS) {
       const tRender = L.mark();
       const content = renderInsufficientDataEmail({ clientName, clientCompany });
-      L.step("render_insufficient", tRender, {
-        presentCount,
-        missing: missingKeys.length,
-      });
+      L.step("render_insufficient", tRender, { presentCount, missing: missingKeys.length });
 
       const generatedAt = new Date().toISOString();
 
       const report = {
-        schema_version: "1.0",
+        schema_version: "1.1",
         generated_at: generatedAt,
         tier,
         client: {
@@ -1609,6 +1444,10 @@ export default async function handler(req, res) {
           overall_score: null,
           overall_max: 100,
           band: "Insufficient data",
+          confidence: null,
+          contradiction_count: 0,
+          contradiction_penalty: 0,
+          operating_tensions: [],
           primary_constraint: null,
           pillar_scores: [],
 
@@ -1634,6 +1473,7 @@ export default async function handler(req, res) {
             ],
           },
           pillar_interpretations: [],
+          operating_tensions: [],
         },
         deliverables: {
           email: {
@@ -1650,9 +1490,7 @@ export default async function handler(req, res) {
         },
         disclaimer: {
           ai_assisted: false,
-          limitations: [
-            "This diagnostic requires a minimum set of inputs to produce a reliable score.",
-          ],
+          limitations: ["This diagnostic requires a minimum set of inputs to produce a reliable score."],
         },
       };
 
@@ -1661,6 +1499,7 @@ export default async function handler(req, res) {
         band: "Insufficient data",
         primary_constraint: null,
         primary_constraint_label: null,
+        confidence: null,
         insufficient_data: true,
         present_required_count: presentCount,
         required_min: MIN_REQUIRED_FIELDS,
@@ -1687,6 +1526,8 @@ export default async function handler(req, res) {
         brand_to_gtm_os_pillar_scores: {},
         brand_to_gtm_os_primary_constraint: null,
         brand_to_gtm_os_primary_constraint_label: null,
+        brand_to_gtm_os_confidence: null,
+        brand_to_gtm_os_operating_tensions: [],
 
         summary,
 
@@ -1706,10 +1547,31 @@ export default async function handler(req, res) {
       });
     }
 
-    const osScored = computeBrandToGtmOsScore(osInputs);
+    // NEW OS scoring engine
+    const scoring = scoreDiagnostic(osInputs);
+
+    const osScored = {
+      brand_to_gtm_os_score: scoring.osScore,
+      interpretation_band: scoreBand(scoring.osScore),
+      primary_constraint_key: pillarKeyFromLabel(scoring.primaryConstraint),
+      pillar_scores: {
+        positioning: scoring.scores.positioning,
+        value_architecture: scoring.scores.value,
+        pricing_packaging: scoring.scores.pricing,
+        gtm_focus: scoring.scores.gtm,
+        measurement: scoring.scores.measurement,
+      },
+      confidence: scoring.confidence,
+      contradictions: scoring.contradictions || [],
+      contradiction_penalty: scoring.contradictionPenalty || 0,
+      raw_score: scoring.rawScore,
+      adjusted_raw_score: scoring.adjustedRawScore,
+    };
+
     L.step("scoreOS", tOS, {
       total: osScored.brand_to_gtm_os_score,
       band: osScored.interpretation_band,
+      confidence: osScored.confidence,
     });
 
     const tRender = L.mark();
@@ -1773,6 +1635,7 @@ export default async function handler(req, res) {
       band: osScored.interpretation_band,
       primary_constraint: osScored.primary_constraint_key,
       primary_constraint_label: prettyPillar(osScored.primary_constraint_key),
+      confidence: osScored.confidence,
       insufficient_data: false,
       present_required_count: presentCount,
       required_min: MIN_REQUIRED_FIELDS,
@@ -1799,9 +1662,9 @@ export default async function handler(req, res) {
       brand_to_gtm_os_band: osScored.interpretation_band,
       brand_to_gtm_os_pillar_scores: osScored.pillar_scores,
       brand_to_gtm_os_primary_constraint: osScored.primary_constraint_key,
-      brand_to_gtm_os_primary_constraint_label: prettyPillar(
-        osScored.primary_constraint_key
-      ),
+      brand_to_gtm_os_primary_constraint_label: prettyPillar(osScored.primary_constraint_key),
+      brand_to_gtm_os_confidence: osScored.confidence,
+      brand_to_gtm_os_operating_tensions: osScored.contradictions,
 
       summary,
 
