@@ -1557,13 +1557,9 @@ export default async function handler(req, res) {
 
       const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
 
-      const execReportUrl =
-        tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
-
-      const auditReportUrl =
-        tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
-
-      const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
+      const execReportUrl = null;
+      const auditReportUrl = null;
+      const hiddenReportUrl = null;
 
       L.finish(200);
       return res.status(200).json({
@@ -1731,10 +1727,15 @@ export default async function handler(req, res) {
       audit_report_url: auditReportUrl,
       hidden_report_url: hiddenReportUrl,
     });
-  } catch (err) {
+    } catch (err) {
     L.error("Unhandled error", { message: err?.message, name: err?.name });
     L.finish(500);
     console.error("[diag] Unhandled error:", err);
-    return res.status(500).json({ error: "Server error" });
+
+    return res.status(500).json({
+      error: "Server error",
+      message: err?.message || null,
+      name: err?.name || null
+    });
   }
 }
