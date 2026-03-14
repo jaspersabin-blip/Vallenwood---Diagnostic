@@ -298,7 +298,9 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   const growth = String(normalizedAnswers?.growth_status || "").toLowerCase();
   const model = String(normalizedAnswers?.revenue_model || "").toLowerCase();
 
-  // Baseline by maturity tier
+  // Target = minimum balanced-system threshold,
+  // not aspirational perfection.
+
   let targets;
 
   const isEnterprise =
@@ -318,23 +320,16 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
     acv.includes("25–75") ||
     acv.includes("25-75");
 
+  // Baseline thresholds by maturity stage
   if (isEnterprise) {
-    targets = {
-      positioning: 18,
-      value_architecture: 17,
-      pricing_packaging: 17,
-      gtm_focus: 17,
-      measurement: 17,
-    };
-  } else if (isScaling) {
     targets = {
       positioning: 16,
       value_architecture: 15,
       pricing_packaging: 15,
-      gtm_focus: 16,
-      measurement: 15,
+      gtm_focus: 15,
+      measurement: 16,
     };
-  } else {
+  } else if (isScaling) {
     targets = {
       positioning: 15,
       value_architecture: 14,
@@ -342,9 +337,18 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
       gtm_focus: 15,
       measurement: 14,
     };
+  } else {
+    targets = {
+      positioning: 14,
+      value_architecture: 13,
+      pricing_packaging: 13,
+      gtm_focus: 14,
+      measurement: 13,
+    };
   }
 
-  // ACV complexity adjustments
+  // Enterprise complexity increases the need for stronger value and pricing structure,
+  // but should not imply near-perfect execution.
   if (acv.includes("250k+")) {
     targets.value_architecture += 1;
     targets.pricing_packaging += 1;
@@ -352,49 +356,36 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
     targets.value_architecture += 1;
   }
 
-  // Longer cycles require stronger GTM + measurement discipline
-  if (
-    cycle.includes("6–12") ||
-    cycle.includes("6-12") ||
-    cycle.includes("12+")
-  ) {
+  // Longer cycles require more GTM discipline and better measurement hygiene
+  if (cycle.includes("6–12") || cycle.includes("6-12") || cycle.includes("12+")) {
     targets.gtm_focus += 1;
     targets.measurement += 1;
   }
 
-  // Usage-based and hybrid models usually need stronger pricing clarity
+  // Usage-based / hybrid models need stronger pricing clarity
   if (model.includes("usage") || model.includes("hybrid")) {
     targets.pricing_packaging += 1;
   }
 
-  // Fast growth demands stronger measurement and GTM operating discipline
+  // Fast growth increases the need for GTM + measurement discipline,
+  // but only slightly.
   if (growth.includes("accelerating") || growth.includes("scaling rapidly")) {
     targets.gtm_focus += 1;
-    targets.measurement += 1;
   }
 
-  // Audit / hidden reports should feel slightly more demanding than exec
+  // Audit and hidden reports can be a touch more demanding,
+  // but still represent functional thresholds, not perfection.
   if (tier === "audit" || tier === "hidden") {
     targets = {
-      positioning: Math.min(20, targets.positioning + 1),
+      positioning: Math.min(20, targets.positioning + 0),
       value_architecture: Math.min(20, targets.value_architecture + 1),
       pricing_packaging: Math.min(20, targets.pricing_packaging + 1),
-      gtm_focus: Math.min(20, targets.gtm_focus + 1),
+      gtm_focus: Math.min(20, targets.gtm_focus + 0),
       measurement: Math.min(20, targets.measurement + 1),
     };
   }
 
   return targets;
-}
-
-function getRadarLabels() {
-  return {
-    positioning: "Positioning",
-    value_architecture: "Value",
-    pricing_packaging: "Pricing",
-    gtm_focus: "GTM",
-    measurement: "Measurement",
-  };
 }
 
 /* =========================================================
