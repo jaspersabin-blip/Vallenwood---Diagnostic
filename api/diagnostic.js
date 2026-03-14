@@ -298,16 +298,6 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   const growth = String(normalizedAnswers?.growth_status || "").toLowerCase();
   const model = String(normalizedAnswers?.revenue_model || "").toLowerCase();
 
-  function getRadarLabels() {
-  return {
-    positioning: "Positioning",
-    value_architecture: "Value",
-    pricing_packaging: "Pricing",
-    gtm_focus: "GTM",
-    measurement: "Measurement",
-  };
-}
-
   // Target = minimum balanced-system threshold,
   // not aspirational perfection.
 
@@ -377,25 +367,34 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
     targets.pricing_packaging += 1;
   }
 
-  // Fast growth increases the need for GTM + measurement discipline,
-  // but only slightly.
+  // Fast growth increases the need for GTM discipline, but only slightly
   if (growth.includes("accelerating") || growth.includes("scaling rapidly")) {
     targets.gtm_focus += 1;
   }
 
-  // Audit and hidden reports can be a touch more demanding,
-  // but still represent functional thresholds, not perfection.
+  // Audit and hidden reports can be slightly more demanding,
+  // while still representing functional thresholds, not perfection.
   if (tier === "audit" || tier === "hidden") {
     targets = {
-      positioning: Math.min(20, targets.positioning + 0),
+      positioning: Math.min(20, targets.positioning),
       value_architecture: Math.min(20, targets.value_architecture + 1),
       pricing_packaging: Math.min(20, targets.pricing_packaging + 1),
-      gtm_focus: Math.min(20, targets.gtm_focus + 0),
+      gtm_focus: Math.min(20, targets.gtm_focus),
       measurement: Math.min(20, targets.measurement + 1),
     };
   }
 
   return targets;
+}
+
+function getRadarLabels() {
+  return {
+    positioning: "Positioning",
+    value_architecture: "Value",
+    pricing_packaging: "Pricing",
+    gtm_focus: "GTM",
+    measurement: "Measurement",
+  };
 }
 
 /* =========================================================
