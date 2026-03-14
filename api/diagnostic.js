@@ -298,6 +298,16 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   const growth = String(normalizedAnswers?.growth_status || "").toLowerCase();
   const model = String(normalizedAnswers?.revenue_model || "").toLowerCase();
 
+  function getRadarLabels() {
+  return {
+    positioning: "Positioning",
+    value_architecture: "Value",
+    pricing_packaging: "Pricing",
+    gtm_focus: "GTM",
+    measurement: "Measurement",
+  };
+}
+
   // Target = minimum balanced-system threshold,
   // not aspirational perfection.
 
@@ -1557,9 +1567,13 @@ export default async function handler(req, res) {
 
       const includeReportJson = process.env.INCLUDE_REPORT_JSON === "1";
 
-      const execReportUrl = null;
-      const auditReportUrl = null;
-      const hiddenReportUrl = null;
+      const execReportUrl =
+        tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
+
+      const auditReportUrl =
+        tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
+
+      const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
 
       L.finish(200);
       return res.status(200).json({
