@@ -29,9 +29,25 @@
     }
 
     .page {
-      max-width: 1100px;
+      max-width: 1120px;
       margin: 0 auto;
       padding: 36px 20px 64px;
+      position: relative;
+    }
+
+    .logo {
+      position: absolute;
+      top: 28px;
+      right: 28px;
+      height: 36px;
+      opacity: 0.9;
+      z-index: 2;
+    }
+
+    .logo img {
+      height: 100%;
+      width: auto;
+      display: block;
     }
 
     .card {
@@ -43,7 +59,7 @@
     }
 
     .hero {
-      padding: 36px 32px;
+      padding: 36px 160px 36px 32px;
       background:
         radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
         linear-gradient(135deg, #ffffff, #fbfaf6);
@@ -89,7 +105,7 @@
 
     .hero-meta {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
       margin-top: 22px;
     }
@@ -279,12 +295,7 @@
       overflow: visible;
     }
 
-    .radar text {
-      font-size: 11px;
-      fill: var(--muted);
-      font-weight: 600;
-    }
-
+    .radar text,
     .radar-label {
       font-size: 11px;
       fill: var(--muted);
@@ -316,11 +327,22 @@
       .hero {
         padding: 22px;
       }
+
+      .logo {
+        position: static;
+        margin: 0 0 12px auto;
+        display: flex;
+        justify-content: flex-end;
+      }
     }
   </style>
 </head>
 <body>
   <div class="page">
+    <div class="logo">
+      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
+    </div>
+
     <section class="card hero">
       <div class="eyebrow">Vallenwood Consulting</div>
       <h1>Brand-to-GTM OS Executive Summary</h1>
@@ -341,6 +363,10 @@
           <div class="meta-label">Primary Constraint</div>
           <div class="meta-value" id="primary-constraint-top">—</div>
         </div>
+        <div class="meta-box">
+          <div class="meta-label">OS Score</div>
+          <div class="meta-value" id="overall-score-top">—</div>
+        </div>
       </div>
     </section>
 
@@ -349,14 +375,7 @@
         <h2>OS Alignment Score</h2>
         <div class="chart-wrap">
           <div class="chart-box">
-            <svg
-              class="radar"
-              id="radar-chart"
-              width="400"
-              height="360"
-              viewBox="0 0 400 360"
-              aria-label="Brand-to-GTM OS radar chart"
-            >
+            <svg class="radar" id="radar-chart" width="400" height="360" viewBox="0 0 400 360" aria-label="Brand-to-GTM OS radar chart">
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
               <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
@@ -458,25 +477,17 @@
     function splitLabel(label) {
       const text = String(label || "").trim();
       if (!text) return [""];
-
       if (Array.isArray(label)) return label;
-
       if (text.length <= 12) return [text];
-
       if (text.includes(" & ")) {
         const parts = text.split(" & ");
         if (parts.length === 2) return [`${parts[0]} &`, parts[1]];
       }
-
       const words = text.split(/\s+/);
       if (words.length === 1) return [text];
       if (words.length === 2) return words;
-
       const midpoint = Math.ceil(words.length / 2);
-      return [
-        words.slice(0, midpoint).join(" "),
-        words.slice(midpoint).join(" ")
-      ];
+      return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")];
     }
 
     function escapeHtml(str) {
@@ -508,6 +519,7 @@
     setText("company-name", d.company_name);
     setText("report-date", d.report_date);
     setText("primary-constraint-top", d.primary_constraint_label);
+    setText("overall-score-top", d.overall_score || 0);
     setText("overall-score", d.overall_score || 0);
     setText("score-band", d.score_band);
     setText("executive-headline", d.executive_headline, "");
@@ -516,17 +528,8 @@
     setText("primary-constraint-interpretation", d.primary_constraint_interpretation, "");
     setText("summary-paragraph", d.executive_summary_paragraph, "");
 
-    makeListItems(
-      document.getElementById("implications-list"),
-      d.diagnosis_implications || [],
-      "No major implications surfaced."
-    );
-
-    makeListItems(
-      document.getElementById("risks-list"),
-      d.risks || [],
-      "No major risks surfaced."
-    );
+    makeListItems(document.getElementById("implications-list"), d.diagnosis_implications || [], "No major implications surfaced.");
+    makeListItems(document.getElementById("risks-list"), d.risks || [], "No major risks surfaced.");
 
     const pillarList = document.getElementById("pillar-list");
     const pillarOrder = [
@@ -544,7 +547,6 @@
       const targetVal = Number(targetScores[key] || 0);
       const row = document.createElement("div");
       row.className = "pillar-row";
-
       row.innerHTML = `
         <div class="pillar-top">
           <div class="pillar-label">${escapeHtml(label)}</div>
@@ -554,7 +556,6 @@
           <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
         </div>
       `;
-
       pillarList.appendChild(row);
     });
 
@@ -571,17 +572,14 @@
       moves.forEach((move) => {
         const block = document.createElement("div");
         block.className = "move";
-
         const howItems = Array.isArray(move.how)
           ? move.how.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
           : "";
-
         block.innerHTML = `
           <div class="move-title">${escapeHtml(move.title || "")}</div>
           <div class="move-why">${escapeHtml(move.why || "")}</div>
           <ul class="list">${howItems}</ul>
         `;
-
         movesList.appendChild(block);
       });
     }
@@ -603,7 +601,6 @@
       const cy = 178;
       const radius = 96;
       const labelRadius = 136;
-
       const data = [
         { key: "positioning", label: radarLabels.positioning, value: Number(pillarScores.positioning || 0) },
         { key: "value_architecture", label: radarLabels.value_architecture, value: Number(pillarScores.value_architecture || 0) },
@@ -619,11 +616,7 @@
       function pointFor(index, value, max = 20, customRadius = radius) {
         const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
         const r = (value / max) * customRadius;
-        return {
-          x: cx + Math.cos(angle) * r,
-          y: cy + Math.sin(angle) * r,
-          angle
-        };
+        return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
       }
 
       function labelAnchor(x) {
@@ -642,7 +635,6 @@
           const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
           return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
         }).join(" ");
-
         const poly = document.createElementNS(svgNS, "polygon");
         poly.setAttribute("points", pts);
         poly.setAttribute("fill", "none");
@@ -653,7 +645,6 @@
 
       data.forEach((item, i) => {
         const outer = pointFor(i, 20, 20);
-
         const line = document.createElementNS(svgNS, "line");
         line.setAttribute("x1", cx);
         line.setAttribute("y1", cy);
@@ -665,7 +656,6 @@
 
         const labelPoint = pointFor(i, 20, 20, labelRadius);
         const labelLines = splitLabel(item.label);
-
         const text = document.createElementNS(svgNS, "text");
         text.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
         text.setAttribute("y", labelPoint.y);
@@ -692,14 +682,12 @@
         const p = pointFor(i, targetVal, 20);
         return `${p.x},${p.y}`;
       }).join(" ");
-
       targetArea.setAttribute("points", targetPolygonPoints);
 
       const polygonPoints = data.map((item, i) => {
         const p = pointFor(i, item.value, 20);
         return `${p.x},${p.y}`;
       }).join(" ");
-
       area.setAttribute("points", polygonPoints);
 
       data.forEach((item, i) => {
