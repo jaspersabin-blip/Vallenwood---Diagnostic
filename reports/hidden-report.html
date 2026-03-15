@@ -392,354 +392,447 @@
   </div>
 
   <script>
-    const d = window.REPORT_DATA || {};
+  const d = window.REPORT_DATA || {};
 
-    function setText(id, value, fallback = "—") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = value || fallback;
+  function setText(id, value, fallback = "—") {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const finalValue =
+      value !== undefined && value !== null && value !== "" ? value : fallback;
+    el.textContent = finalValue;
+  }
+
+  function chooseList(items, fallback) {
+    return Array.isArray(items) && items.length > 0 ? items : fallback;
+  }
+
+  function fillList(id, items, formatter = null, fallback = "Further validation recommended during the live review.") {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = "";
+
+    if (!items || !items.length) {
+      const li = document.createElement("li");
+      li.style.color = "#6f6f69";
+      li.style.fontStyle = "italic";
+      li.textContent = fallback;
+      el.appendChild(li);
+      return;
     }
 
-    function chooseList(items, fallback) {
-      return Array.isArray(items) && items.length > 0 ? items : fallback;
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = formatter ? formatter(item) : String(item);
+      el.appendChild(li);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function splitLabel(label) {
+    const text = String(label || "").trim();
+    if (!text) return [""];
+
+    if (Array.isArray(label)) return label;
+    if (text.length <= 12) return [text];
+
+    if (text.includes(" & ")) {
+      const parts = text.split(" & ");
+      if (parts.length === 2) return [`${parts[0]} &`, parts[1]];
     }
 
-    function fillList(id, items, formatter = null, fallback = "Further validation recommended during the live review.") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.innerHTML = "";
+    const words = text.split(/\s+/);
+    if (words.length === 1) return [text];
+    if (words.length === 2) return words;
 
-      if (!items || !items.length) {
-        const li = document.createElement("li");
-        li.style.color = "#6f6f69";
-        li.style.fontStyle = "italic";
-        li.textContent = fallback;
-        el.appendChild(li);
-        return;
-      }
+    const midpoint = Math.ceil(words.length / 2);
+    return [
+      words.slice(0, midpoint).join(" "),
+      words.slice(midpoint).join(" ")
+    ];
+  }
 
-      items.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = formatter ? formatter(item) : String(item);
-        el.appendChild(li);
-      });
+  function firstDefined(...values) {
+    for (const value of values) {
+      if (value !== undefined && value !== null && value !== "") return value;
     }
+    return undefined;
+  }
 
-    function escapeHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
+  function num(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
 
-    function splitLabel(label) {
-      const text = String(label || "").trim();
-      if (!text) return [""];
-
-      if (Array.isArray(label)) return label;
-      if (text.length <= 12) return [text];
-
-      if (text.includes(" & ")) {
-        const parts = text.split(" & ");
-        if (parts.length === 2) return [`${parts[0]} &`, parts[1]];
-      }
-
-      const words = text.split(/\s+/);
-      if (words.length === 1) return [text];
-      if (words.length === 2) return words;
-
-      const midpoint = Math.ceil(words.length / 2);
-      return [
-        words.slice(0, midpoint).join(" "),
-        words.slice(midpoint).join(" ")
-      ];
-    }
-
-    setText("company-name", d.company_name);
-    setText("report-date", d.report_date);
-    setText("primary-constraint-top", d.primary_constraint_label || d.scoring?.primary_constraint?.label);
-    setText("overall-score-top", d.overall_score || d.scoring?.overall_score || 0);
-    setText("overall-score", d.overall_score || d.scoring?.overall_score || 0);
-    setText("score-band", d.score_band || d.scoring?.score_band);
-    setText("primary-constraint-label", d.primary_constraint_label || d.scoring?.primary_constraint?.label);
-    setText(
-      "primary-constraint-why",
-      d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake."
-    );
-    setText(
-      "constraint-hypothesis-summary",
-      d.constraint_hypothesis_summary,
-      "Use this briefing to validate whether the diagnosed constraint is also visible in active pipeline behavior."
-    );
-    setText(
-      "engagement-angle",
-      d.consulting_opportunity?.priority_engagement_angle || "To be confirmed in the call"
-    );
-    setText(
-      "upsell-readiness",
-      d.consulting_opportunity?.upsell_readiness || "Moderate"
-    );
-
-    const snapshot = d.diagnostic_snapshot || {};
-    fillList(
-      "snapshot-list",
-      Object.entries(snapshot),
-      ([k, v]) => {
-        const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
-        const value = Array.isArray(v) ? v.join(", ") : v;
-        return `${label}: ${value ?? ""}`;
-      }
-    );
-
-    fillList(
-      "constraint-hypothesis-list",
-      chooseList(d.constraint_hypothesis, [
-        "The current signals suggest the diagnosed constraint is likely affecting more than one commercial lever at once.",
-        "Use the live conversation to confirm whether this issue is showing up in deal progression, pricing pressure, or internal message consistency.",
-        "If the diagnosis holds, this should become the focal point for the first consulting intervention."
-      ])
-    );
-
-    fillList(
-      "commercial-friction-list",
-      chooseList(d.commercial_friction, [
-        "Pricing pressure may be surfacing before value is fully established.",
-        "Internal message consistency may vary across buyer-facing conversations.",
-        "The current system may be creating avoidable friction in conversion quality or deal velocity."
-      ])
-    );
-
-    fillList(
-      "likely-objections-list",
-      chooseList(d.likely_objections, [
-        "The client may believe the issue is executional when it is actually structural.",
-        "They may frame the problem as pricing pressure rather than value articulation.",
-        "They may underestimate how much cross-functional message inconsistency is affecting commercial performance."
-      ])
-    );
-
-    fillList(
-      "discovery-questions-list",
-      chooseList(d.discovery_questions, [
-        "Where do deals most often slow down or become harder to advance?",
-        "How often do pricing objections appear before value is clearly established?",
-        "What proof points do buyers typically need before they are comfortable moving forward?",
-        "Where do prospects most often compare your solution to alternatives or internal options?"
-      ])
-    );
-
-    fillList(
-      "conversation-strategy-list",
-      chooseList(d.conversation_strategy, [
-        "Start by confirming whether the diagnosed constraint feels consistent with lived commercial reality.",
-        "Use recent deal examples to test whether the issue is systemic or isolated.",
-        "Move the discussion from symptoms to system design as early as possible.",
-        "Steer toward the highest-leverage intervention rather than a broad transformation discussion."
-      ])
-    );
-
-    fillList(
-      "engagement-opportunities-list",
-      chooseList(d.engagement_opportunities, [
-        "Value architecture refinement",
-        "Pricing and packaging strategy",
-        "Messaging system alignment",
-        "Focused GTM operating-system sprint"
-      ])
-    );
-
-    fillList(
-      "likely-needs-list",
-      chooseList(d.consulting_opportunity?.likely_needs, [
-        "Clarify the underlying commercial constraint",
-        "Prioritize the highest-confidence intervention",
-        "Translate diagnosis into a focused sprint scope"
-      ])
-    );
-
-    fillList(
-      "validate-live-list",
-      chooseList(d.call_briefing?.areas_to_validate_live, [
-        "Whether the primary constraint is visible in active pipeline behavior",
-        "Whether internal teams describe value consistently",
-        "Whether pricing friction is actually rooted in value clarity or packaging design",
-        "Whether the client is already feeling urgency around this issue"
-      ])
-    );
-
-    const pillarScores = d.pillar_scores || d.scoring?.pillar_scores || {};
-    const targetScores = d.target_pillar_scores || d.scoring?.target_pillar_scores || {
-      positioning: 16,
-      value_architecture: 15,
-      pricing_packaging: 15,
-      gtm_focus: 16,
-      measurement: 15
+  function getScoresFromObject(obj) {
+    if (!obj || Array.isArray(obj)) return null;
+    return {
+      positioning: num(obj.positioning),
+      value_architecture: num(obj.value_architecture),
+      pricing_packaging: num(obj.pricing_packaging),
+      gtm_focus: num(obj.gtm_focus),
+      measurement: num(obj.measurement)
     };
+  }
 
-    const radarLabels = d.radar_labels || d.scoring?.radar_labels || {
+  function getScoresFromArray(arr) {
+    if (!Array.isArray(arr)) return null;
+    return {
+      positioning: num(arr.find((p) => p.key === "positioning")?.score),
+      value_architecture: num(arr.find((p) => p.key === "value_architecture")?.score),
+      pricing_packaging: num(arr.find((p) => p.key === "pricing_packaging")?.score),
+      gtm_focus: num(arr.find((p) => p.key === "gtm_focus")?.score),
+      measurement: num(arr.find((p) => p.key === "measurement")?.score)
+    };
+  }
+
+  function getScoresFromChartArray(arr) {
+    if (!Array.isArray(arr) || arr.length < 5) return null;
+    return {
+      positioning: num(arr[0]),
+      value_architecture: num(arr[1]),
+      pricing_packaging: num(arr[2]),
+      gtm_focus: num(arr[3]),
+      measurement: num(arr[4])
+    };
+  }
+
+  function resolvePillarScores() {
+    return (
+      getScoresFromObject(d.pillar_scores) ||
+      getScoresFromObject(d.scoring?.pillar_scores) ||
+      getScoresFromArray(d.pillar_scores) ||
+      getScoresFromArray(d.scoring?.pillar_scores) ||
+      getScoresFromChartArray(d.chart?.actual_scores) ||
+      getScoresFromChartArray(d.scoring?.chart?.actual_scores) || {
+        positioning: 0,
+        value_architecture: 0,
+        pricing_packaging: 0,
+        gtm_focus: 0,
+        measurement: 0
+      }
+    );
+  }
+
+  function resolveTargetScores() {
+    return (
+      getScoresFromObject(d.target_pillar_scores) ||
+      getScoresFromObject(d.scoring?.target_pillar_scores) ||
+      getScoresFromChartArray(d.chart?.target_scores) ||
+      getScoresFromChartArray(d.scoring?.chart?.target_scores) || {
+        positioning: 16,
+        value_architecture: 15,
+        pricing_packaging: 15,
+        gtm_focus: 16,
+        measurement: 15
+      }
+    );
+  }
+
+  function resolveRadarLabels() {
+    return firstDefined(
+      d.radar_labels,
+      d.scoring?.radar_labels
+    ) || {
       positioning: "Positioning",
       value_architecture: "Value Architecture",
       pricing_packaging: "Pricing & Packaging",
       gtm_focus: "GTM Focus",
       measurement: "Measurement"
     };
+  }
 
-    const pillarOrder = [
-      ["positioning", "Positioning & Category"],
-      ["value_architecture", "Value Architecture"],
-      ["pricing_packaging", "Pricing & Packaging"],
-      ["gtm_focus", "GTM Focus"],
-      ["measurement", "Measurement"]
+  const overallScore = firstDefined(d.overall_score, d.scoring?.overall_score, 0);
+  const scoreBand = firstDefined(d.score_band, d.scoring?.score_band, "—");
+  const primaryConstraintLabel = firstDefined(
+    d.primary_constraint_label,
+    d.scoring?.primary_constraint?.label,
+    "—"
+  );
+
+  const pillarScores = resolvePillarScores();
+  const targetScores = resolveTargetScores();
+  const radarLabels = resolveRadarLabels();
+
+  console.log("[hidden report] REPORT_DATA", d);
+  console.log("[hidden report] resolved pillarScores", pillarScores);
+  console.log("[hidden report] resolved targetScores", targetScores);
+  console.log("[hidden report] resolved radarLabels", radarLabels);
+  console.log("[hidden report] resolved overallScore", overallScore);
+
+  setText("company-name", d.company_name);
+  setText("report-date", d.report_date);
+  setText("primary-constraint-top", primaryConstraintLabel);
+  setText("overall-score-top", overallScore);
+  setText("overall-score", overallScore);
+  setText("score-band", scoreBand);
+  setText("primary-constraint-label", primaryConstraintLabel);
+  setText(
+    "primary-constraint-why",
+    d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake."
+  );
+  setText(
+    "constraint-hypothesis-summary",
+    d.constraint_hypothesis_summary,
+    "Use this briefing to validate whether the diagnosed constraint is also visible in active pipeline behavior."
+  );
+  setText(
+    "engagement-angle",
+    d.consulting_opportunity?.priority_engagement_angle || "To be confirmed in the call"
+  );
+  setText(
+    "upsell-readiness",
+    d.consulting_opportunity?.upsell_readiness || "Moderate"
+  );
+
+  const snapshot = d.diagnostic_snapshot || {};
+  fillList(
+    "snapshot-list",
+    Object.entries(snapshot),
+    ([k, v]) => {
+      const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+      const value = Array.isArray(v) ? v.join(", ") : v;
+      return `${label}: ${value ?? ""}`;
+    }
+  );
+
+  fillList(
+    "constraint-hypothesis-list",
+    chooseList(d.constraint_hypothesis, [
+      "The current signals suggest the diagnosed constraint is likely affecting more than one commercial lever at once.",
+      "Use the live conversation to confirm whether this issue is showing up in deal progression, pricing pressure, or internal message consistency.",
+      "If the diagnosis holds, this should become the focal point for the first consulting intervention."
+    ])
+  );
+
+  fillList(
+    "commercial-friction-list",
+    chooseList(d.commercial_friction, [
+      "Pricing pressure may be surfacing before value is fully established.",
+      "Internal message consistency may vary across buyer-facing conversations.",
+      "The current system may be creating avoidable friction in conversion quality or deal velocity."
+    ])
+  );
+
+  fillList(
+    "likely-objections-list",
+    chooseList(d.likely_objections, [
+      "The client may believe the issue is executional when it is actually structural.",
+      "They may frame the problem as pricing pressure rather than value articulation.",
+      "They may underestimate how much cross-functional message inconsistency is affecting commercial performance."
+    ])
+  );
+
+  fillList(
+    "discovery-questions-list",
+    chooseList(d.discovery_questions, [
+      "Where do deals most often slow down or become harder to advance?",
+      "How often do pricing objections appear before value is clearly established?",
+      "What proof points do buyers typically need before they are comfortable moving forward?",
+      "Where do prospects most often compare your solution to alternatives or internal options?"
+    ])
+  );
+
+  fillList(
+    "conversation-strategy-list",
+    chooseList(d.conversation_strategy, [
+      "Start by confirming whether the diagnosed constraint feels consistent with lived commercial reality.",
+      "Use recent deal examples to test whether the issue is systemic or isolated.",
+      "Move the discussion from symptoms to system design as early as possible.",
+      "Steer toward the highest-leverage intervention rather than a broad transformation discussion."
+    ])
+  );
+
+  fillList(
+    "engagement-opportunities-list",
+    chooseList(d.engagement_opportunities, [
+      "Value architecture refinement",
+      "Pricing and packaging strategy",
+      "Messaging system alignment",
+      "Focused GTM operating-system sprint"
+    ])
+  );
+
+  fillList(
+    "likely-needs-list",
+    chooseList(d.consulting_opportunity?.likely_needs, [
+      "Clarify the underlying commercial constraint",
+      "Prioritize the highest-confidence intervention",
+      "Translate diagnosis into a focused sprint scope"
+    ])
+  );
+
+  fillList(
+    "validate-live-list",
+    chooseList(d.call_briefing?.areas_to_validate_live, [
+      "Whether the primary constraint is visible in active pipeline behavior",
+      "Whether internal teams describe value consistently",
+      "Whether pricing friction is actually rooted in value clarity or packaging design",
+      "Whether the client is already feeling urgency around this issue"
+    ])
+  );
+
+  const pillarOrder = [
+    ["positioning", "Positioning & Category"],
+    ["value_architecture", "Value Architecture"],
+    ["pricing_packaging", "Pricing & Packaging"],
+    ["gtm_focus", "GTM Focus"],
+    ["measurement", "Measurement"]
+  ];
+
+  const pillarList = document.getElementById("pillar-list");
+  pillarList.innerHTML = "";
+  pillarOrder.forEach(([key, label]) => {
+    const scoreVal = num(pillarScores[key]);
+    const targetVal = num(targetScores[key]);
+    const row = document.createElement("div");
+    row.className = "pillar-row";
+    row.innerHTML = `
+      <div class="pillar-top">
+        <div class="pillar-label">${escapeHtml(label)}</div>
+        <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
+      </div>
+      <div class="bar">
+        <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
+      </div>
+    `;
+    pillarList.appendChild(row);
+  });
+
+  function renderRadarChart() {
+    const grid = document.getElementById("radar-grid");
+    const axes = document.getElementById("radar-axes");
+    const labels = document.getElementById("radar-labels");
+    const targetArea = document.getElementById("radar-target-area");
+    const area = document.getElementById("radar-area");
+    const pointsGroup = document.getElementById("radar-points");
+
+    grid.innerHTML = "";
+    axes.innerHTML = "";
+    labels.innerHTML = "";
+    pointsGroup.innerHTML = "";
+
+    const cx = 200;
+    const cy = 178;
+    const radius = 96;
+    const labelRadius = 136;
+
+    const data = [
+      { key: "positioning", label: radarLabels.positioning, value: num(pillarScores.positioning) },
+      { key: "value_architecture", label: radarLabels.value_architecture, value: num(pillarScores.value_architecture) },
+      { key: "pricing_packaging", label: radarLabels.pricing_packaging, value: num(pillarScores.pricing_packaging) },
+      { key: "gtm_focus", label: radarLabels.gtm_focus, value: num(pillarScores.gtm_focus) },
+      { key: "measurement", label: radarLabels.measurement, value: num(pillarScores.measurement) }
     ];
 
-    const pillarList = document.getElementById("pillar-list");
-    pillarList.innerHTML = "";
-    pillarOrder.forEach(([key, label]) => {
-      const scoreVal = Number(pillarScores[key] || 0);
-      const targetVal = Number(targetScores[key] || 0);
-      const row = document.createElement("div");
-      row.className = "pillar-row";
-      row.innerHTML = `
-        <div class="pillar-top">
-          <div class="pillar-label">${escapeHtml(label)}</div>
-          <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
-        </div>
-        <div class="bar">
-          <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
-        </div>
-      `;
-      pillarList.appendChild(row);
-    });
+    const levels = 4;
+    const totalAxes = data.length;
+    const svgNS = "http://www.w3.org/2000/svg";
 
-    function renderRadarChart() {
-      const grid = document.getElementById("radar-grid");
-      const axes = document.getElementById("radar-axes");
-      const labels = document.getElementById("radar-labels");
-      const targetArea = document.getElementById("radar-target-area");
-      const area = document.getElementById("radar-area");
-      const pointsGroup = document.getElementById("radar-points");
-
-      grid.innerHTML = "";
-      axes.innerHTML = "";
-      labels.innerHTML = "";
-      pointsGroup.innerHTML = "";
-
-      const cx = 200;
-      const cy = 178;
-      const radius = 96;
-      const labelRadius = 136;
-
-      const data = [
-        { key: "positioning", label: radarLabels.positioning, value: Number(pillarScores.positioning || 0) },
-        { key: "value_architecture", label: radarLabels.value_architecture, value: Number(pillarScores.value_architecture || 0) },
-        { key: "pricing_packaging", label: radarLabels.pricing_packaging, value: Number(pillarScores.pricing_packaging || 0) },
-        { key: "gtm_focus", label: radarLabels.gtm_focus, value: Number(pillarScores.gtm_focus || 0) },
-        { key: "measurement", label: radarLabels.measurement, value: Number(pillarScores.measurement || 0) }
-      ];
-
-      const levels = 4;
-      const totalAxes = data.length;
-      const svgNS = "http://www.w3.org/2000/svg";
-
-      function pointFor(index, value, max = 20, customRadius = radius) {
-        const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
-        const r = (value / max) * customRadius;
-        return {
-          x: cx + Math.cos(angle) * r,
-          y: cy + Math.sin(angle) * r
-        };
-      }
-
-      function labelAnchor(x) {
-        if (Math.abs(x - cx) < 14) return "middle";
-        return x < cx ? "end" : "start";
-      }
-
-      function labelLineOffset(point) {
-        if (Math.abs(point.x - cx) < 14) return 0;
-        return point.x < cx ? -2 : 2;
-      }
-
-      for (let level = 1; level <= levels; level++) {
-        const r = (radius / levels) * level;
-        const pts = data.map((_, i) => {
-          const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
-          return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
-        }).join(" ");
-
-        const poly = document.createElementNS(svgNS, "polygon");
-        poly.setAttribute("points", pts);
-        poly.setAttribute("fill", "none");
-        poly.setAttribute("stroke", "#e6dfcf");
-        poly.setAttribute("stroke-width", "1");
-        grid.appendChild(poly);
-      }
-
-      data.forEach((item, i) => {
-        const outer = pointFor(i, 20, 20);
-
-        const line = document.createElementNS(svgNS, "line");
-        line.setAttribute("x1", cx);
-        line.setAttribute("y1", cy);
-        line.setAttribute("x2", outer.x);
-        line.setAttribute("y2", outer.y);
-        line.setAttribute("stroke", "#ddd4c3");
-        line.setAttribute("stroke-width", "1.2");
-        axes.appendChild(line);
-
-        const labelPoint = pointFor(i, 20, 20, labelRadius);
-        const labelLines = splitLabel(item.label);
-
-        const text = document.createElementNS(svgNS, "text");
-        text.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
-        text.setAttribute("y", labelPoint.y);
-        text.setAttribute("text-anchor", labelAnchor(labelPoint.x));
-        text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("class", "radar-label");
-
-        const lineHeight = 13;
-        const startDy = -((labelLines.length - 1) * lineHeight) / 2;
-
-        labelLines.forEach((lineText, lineIndex) => {
-          const tspan = document.createElementNS(svgNS, "tspan");
-          tspan.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
-          tspan.setAttribute("dy", lineIndex === 0 ? startDy : lineHeight);
-          tspan.textContent = lineText;
-          text.appendChild(tspan);
-        });
-
-        labels.appendChild(text);
-      });
-
-      const targetPolygonPoints = data.map((item, i) => {
-        const targetVal = Number(targetScores[item.key] || 0);
-        const p = pointFor(i, targetVal, 20);
-        return `${p.x},${p.y}`;
-      }).join(" ");
-
-      targetArea.setAttribute("points", targetPolygonPoints);
-
-      const polygonPoints = data.map((item, i) => {
-        const p = pointFor(i, item.value, 20);
-        return `${p.x},${p.y}`;
-      }).join(" ");
-
-      area.setAttribute("points", polygonPoints);
-
-      data.forEach((item, i) => {
-        const p = pointFor(i, item.value, 20);
-        const circle = document.createElementNS(svgNS, "circle");
-        circle.setAttribute("cx", p.x);
-        circle.setAttribute("cy", p.y);
-        circle.setAttribute("r", "4.5");
-        circle.setAttribute("fill", "#6f875f");
-        pointsGroup.appendChild(circle);
-      });
+    function pointFor(index, value, max = 20, customRadius = radius) {
+      const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
+      const r = (value / max) * customRadius;
+      return {
+        x: cx + Math.cos(angle) * r,
+        y: cy + Math.sin(angle) * r
+      };
     }
 
-    renderRadarChart();
-  </script>
+    function labelAnchor(x) {
+      if (Math.abs(x - cx) < 14) return "middle";
+      return x < cx ? "end" : "start";
+    }
+
+    function labelLineOffset(point) {
+      if (Math.abs(point.x - cx) < 14) return 0;
+      return point.x < cx ? -2 : 2;
+    }
+
+    for (let level = 1; level <= levels; level++) {
+      const r = (radius / levels) * level;
+      const pts = data.map((_, i) => {
+        const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
+        return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
+      }).join(" ");
+
+      const poly = document.createElementNS(svgNS, "polygon");
+      poly.setAttribute("points", pts);
+      poly.setAttribute("fill", "none");
+      poly.setAttribute("stroke", "#e6dfcf");
+      poly.setAttribute("stroke-width", "1");
+      grid.appendChild(poly);
+    }
+
+    data.forEach((item, i) => {
+      const outer = pointFor(i, 20, 20);
+
+      const line = document.createElementNS(svgNS, "line");
+      line.setAttribute("x1", cx);
+      line.setAttribute("y1", cy);
+      line.setAttribute("x2", outer.x);
+      line.setAttribute("y2", outer.y);
+      line.setAttribute("stroke", "#ddd4c3");
+      line.setAttribute("stroke-width", "1.2");
+      axes.appendChild(line);
+
+      const labelPoint = pointFor(i, 20, 20, labelRadius);
+      const labelLines = splitLabel(item.label);
+
+      const text = document.createElementNS(svgNS, "text");
+      text.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
+      text.setAttribute("y", labelPoint.y);
+      text.setAttribute("text-anchor", labelAnchor(labelPoint.x));
+      text.setAttribute("dominant-baseline", "middle");
+      text.setAttribute("class", "radar-label");
+
+      const lineHeight = 13;
+      const startDy = -((labelLines.length - 1) * lineHeight) / 2;
+
+      labelLines.forEach((lineText, lineIndex) => {
+        const tspan = document.createElementNS(svgNS, "tspan");
+        tspan.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
+        tspan.setAttribute("dy", lineIndex === 0 ? startDy : lineHeight);
+        tspan.textContent = lineText;
+        text.appendChild(tspan);
+      });
+
+      labels.appendChild(text);
+    });
+
+    const targetPolygonPoints = data.map((item, i) => {
+      const targetVal = num(targetScores[item.key]);
+      const p = pointFor(i, targetVal, 20);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+
+    targetArea.setAttribute("points", targetPolygonPoints);
+
+    const polygonPoints = data.map((item, i) => {
+      const p = pointFor(i, item.value, 20);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+
+    area.setAttribute("points", polygonPoints);
+
+    data.forEach((item, i) => {
+      const p = pointFor(i, item.value, 20);
+      const circle = document.createElementNS(svgNS, "circle");
+      circle.setAttribute("cx", p.x);
+      circle.setAttribute("cy", p.y);
+      circle.setAttribute("r", "4.5");
+      circle.setAttribute("fill", "#6f875f");
+      pointsGroup.appendChild(circle);
+    });
+  }
+
+  renderRadarChart();
+</script>
 </body>
 </html>
