@@ -24,18 +24,24 @@ function getDefaultTargetScores() {
 }
 
 function getPillarScoreObject(reportData) {
-  // Supports either object form or array form
-  if (reportData?.pillar_scores && !Array.isArray(reportData.pillar_scores)) {
+  const source =
+    reportData?.pillar_scores ??
+    reportData?.scoring?.pillar_scores ??
+    [];
+
+  // Supports object form
+  if (source && !Array.isArray(source) && typeof source === "object") {
     return {
-      positioning: Number(reportData.pillar_scores.positioning || 0),
-      value_architecture: Number(reportData.pillar_scores.value_architecture || 0),
-      pricing_packaging: Number(reportData.pillar_scores.pricing_packaging || 0),
-      gtm_focus: Number(reportData.pillar_scores.gtm_focus || 0),
-      measurement: Number(reportData.pillar_scores.measurement || 0),
+      positioning: Number(source.positioning || 0),
+      value_architecture: Number(source.value_architecture || 0),
+      pricing_packaging: Number(source.pricing_packaging || 0),
+      gtm_focus: Number(source.gtm_focus || 0),
+      measurement: Number(source.measurement || 0),
     };
   }
 
-  const arr = Array.isArray(reportData?.pillar_scores) ? reportData.pillar_scores : [];
+  // Supports array form
+  const arr = Array.isArray(source) ? source : [];
 
   return {
     positioning: Number(arr.find((p) => p.key === "positioning")?.score || 0),
