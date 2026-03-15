@@ -32,22 +32,6 @@
       max-width: 1120px;
       margin: 0 auto;
       padding: 36px 20px 64px;
-      position: relative;
-    }
-
-    .logo {
-      position: absolute;
-      top: 28px;
-      right: 28px;
-      height: 36px;
-      opacity: 0.9;
-      z-index: 2;
-    }
-
-    .logo img {
-      height: 100%;
-      width: auto;
-      display: block;
     }
 
     .card {
@@ -59,10 +43,26 @@
     }
 
     .hero {
-      padding: 36px 160px 36px 32px;
+      position: relative;
+      padding: 36px 220px 36px 32px;
       background:
         radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
         linear-gradient(135deg, #ffffff, #fbfaf6);
+    }
+
+    .logo {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      height: 52px;
+      opacity: 0.98;
+      z-index: 2;
+    }
+
+    .logo img {
+      display: block;
+      height: 100%;
+      width: auto;
     }
 
     .eyebrow {
@@ -328,9 +328,14 @@
         padding: 22px;
       }
 
+      .hero {
+        padding-right: 22px;
+      }
+
       .logo {
         position: static;
         margin: 0 0 12px auto;
+        height: 40px;
         display: flex;
         justify-content: flex-end;
       }
@@ -339,11 +344,11 @@
 </head>
 <body>
   <div class="page">
-    <div class="logo">
-      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
-    </div>
-
     <section class="card hero">
+      <div class="logo">
+        <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
+      </div>
+
       <div class="eyebrow">Vallenwood Consulting</div>
       <h1>Brand-to-GTM OS Executive Summary</h1>
       <p class="muted">
