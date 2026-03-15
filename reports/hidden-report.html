@@ -31,22 +31,6 @@
       max-width: 1120px;
       margin: 0 auto;
       padding: 36px 20px 64px;
-      position: relative;
-    }
-
-    .logo {
-      position: absolute;
-      top: 28px;
-      right: 28px;
-      height: 36px;
-      opacity: 0.9;
-      z-index: 2;
-    }
-
-    .logo img {
-      height: 100%;
-      width: auto;
-      display: block;
     }
 
     .card {
@@ -57,8 +41,24 @@
       margin-bottom: 20px;
     }
 
+    .logo {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      height: 44px;
+      opacity: 0.95;
+      z-index: 2;
+    }
+
+    .logo img {
+      display: block;
+      height: 100%;
+      width: auto;
+    }
+
     .hero {
-      padding: 36px 160px 36px 32px;
+      position: relative;
+      padding: 36px 180px 36px 32px;
       background:
         radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
         linear-gradient(135deg, #ffffff, #fbfaf6);
@@ -270,17 +270,18 @@
         margin: 0 0 12px auto;
         display: flex;
         justify-content: flex-end;
+        height: 36px;
       }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="logo">
-      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
-    </div>
-
     <section class="card hero">
+      <div class="logo">
+        <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
+      </div>
+
       <div class="eyebrow">Vallenwood Consulting · Internal</div>
       <h1>Client Diagnostic Briefing</h1>
       <p class="muted">
@@ -580,69 +581,110 @@
     setText("overall-score", overallScore);
     setText("score-band", scoreBand);
     setText("primary-constraint-label", primaryConstraintLabel);
-    setText("primary-constraint-why", d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake.");
-    setText("constraint-hypothesis-summary", d.constraint_hypothesis_summary, "Use this briefing to validate whether the diagnosed constraint is also visible in active pipeline behavior.");
-    setText("engagement-angle", d.consulting_opportunity?.priority_engagement_angle || "To be confirmed in the call");
-    setText("upsell-readiness", d.consulting_opportunity?.upsell_readiness || "Moderate");
+    setText(
+      "primary-constraint-why",
+      d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake."
+    );
+    setText(
+      "constraint-hypothesis-summary",
+      d.constraint_hypothesis_summary,
+      "Use this briefing to validate whether the diagnosed constraint is also visible in active pipeline behavior."
+    );
+    setText(
+      "engagement-angle",
+      d.consulting_opportunity?.priority_engagement_angle || "To be confirmed in the call"
+    );
+    setText(
+      "upsell-readiness",
+      d.consulting_opportunity?.upsell_readiness || "Moderate"
+    );
 
     const snapshot = d.diagnostic_snapshot || {};
-    fillList("snapshot-list", Object.entries(snapshot), ([k, v]) => {
-      const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
-      const value = Array.isArray(v) ? v.join(", ") : v;
-      return `${label}: ${value ?? ""}`;
-    });
+    fillList(
+      "snapshot-list",
+      Object.entries(snapshot),
+      ([k, v]) => {
+        const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
+        const value = Array.isArray(v) ? v.join(", ") : v;
+        return `${label}: ${value ?? ""}`;
+      }
+    );
 
-    fillList("constraint-hypothesis-list", chooseList(d.constraint_hypothesis, [
-      "The current signals suggest the diagnosed constraint is likely affecting more than one commercial lever at once.",
-      "Use the live conversation to confirm whether this issue is showing up in deal progression, pricing pressure, or internal message consistency.",
-      "If the diagnosis holds, this should become the focal point for the first consulting intervention."
-    ]));
+    fillList(
+      "constraint-hypothesis-list",
+      chooseList(d.constraint_hypothesis, [
+        "The current signals suggest the diagnosed constraint is likely affecting more than one commercial lever at once.",
+        "Use the live conversation to confirm whether this issue is showing up in deal progression, pricing pressure, or internal message consistency.",
+        "If the diagnosis holds, this should become the focal point for the first consulting intervention."
+      ])
+    );
 
-    fillList("commercial-friction-list", chooseList(d.commercial_friction, [
-      "Pricing pressure may be surfacing before value is fully established.",
-      "Internal message consistency may vary across buyer-facing conversations.",
-      "The current system may be creating avoidable friction in conversion quality or deal velocity."
-    ]));
+    fillList(
+      "commercial-friction-list",
+      chooseList(d.commercial_friction, [
+        "Pricing pressure may be surfacing before value is fully established.",
+        "Internal message consistency may vary across buyer-facing conversations.",
+        "The current system may be creating avoidable friction in conversion quality or deal velocity."
+      ])
+    );
 
-    fillList("likely-objections-list", chooseList(d.likely_objections, [
-      "The client may believe the issue is executional when it is actually structural.",
-      "They may frame the problem as pricing pressure rather than value articulation.",
-      "They may underestimate how much cross-functional message inconsistency is affecting commercial performance."
-    ]));
+    fillList(
+      "likely-objections-list",
+      chooseList(d.likely_objections, [
+        "The client may believe the issue is executional when it is actually structural.",
+        "They may frame the problem as pricing pressure rather than value articulation.",
+        "They may underestimate how much cross-functional message inconsistency is affecting commercial performance."
+      ])
+    );
 
-    fillList("discovery-questions-list", chooseList(d.discovery_questions, [
-      "Where do deals most often slow down or become harder to advance?",
-      "How often do pricing objections appear before value is clearly established?",
-      "What proof points do buyers typically need before they are comfortable moving forward?",
-      "Where do prospects most often compare your solution to alternatives or internal options?"
-    ]));
+    fillList(
+      "discovery-questions-list",
+      chooseList(d.discovery_questions, [
+        "Where do deals most often slow down or become harder to advance?",
+        "How often do pricing objections appear before value is clearly established?",
+        "What proof points do buyers typically need before they are comfortable moving forward?",
+        "Where do prospects most often compare your solution to alternatives or internal options?"
+      ])
+    );
 
-    fillList("conversation-strategy-list", chooseList(d.conversation_strategy, [
-      "Start by confirming whether the diagnosed constraint feels consistent with lived commercial reality.",
-      "Use recent deal examples to test whether the issue is systemic or isolated.",
-      "Move the discussion from symptoms to system design as early as possible.",
-      "Steer toward the highest-leverage intervention rather than a broad transformation discussion."
-    ]));
+    fillList(
+      "conversation-strategy-list",
+      chooseList(d.conversation_strategy, [
+        "Start by confirming whether the diagnosed constraint feels consistent with lived commercial reality.",
+        "Use recent deal examples to test whether the issue is systemic or isolated.",
+        "Move the discussion from symptoms to system design as early as possible.",
+        "Steer toward the highest-leverage intervention rather than a broad transformation discussion."
+      ])
+    );
 
-    fillList("engagement-opportunities-list", chooseList(d.engagement_opportunities, [
-      "Value architecture refinement",
-      "Pricing and packaging strategy",
-      "Messaging system alignment",
-      "Focused GTM operating-system sprint"
-    ]));
+    fillList(
+      "engagement-opportunities-list",
+      chooseList(d.engagement_opportunities, [
+        "Value architecture refinement",
+        "Pricing and packaging strategy",
+        "Messaging system alignment",
+        "Focused GTM operating-system sprint"
+      ])
+    );
 
-    fillList("likely-needs-list", chooseList(d.consulting_opportunity?.likely_needs, [
-      "Clarify the underlying commercial constraint",
-      "Prioritize the highest-confidence intervention",
-      "Translate diagnosis into a focused sprint scope"
-    ]));
+    fillList(
+      "likely-needs-list",
+      chooseList(d.consulting_opportunity?.likely_needs, [
+        "Clarify the underlying commercial constraint",
+        "Prioritize the highest-confidence intervention",
+        "Translate diagnosis into a focused sprint scope"
+      ])
+    );
 
-    fillList("validate-live-list", chooseList(d.call_briefing?.areas_to_validate_live, [
-      "Whether the primary constraint is visible in active pipeline behavior",
-      "Whether internal teams describe value consistently",
-      "Whether pricing friction is actually rooted in value clarity or packaging design",
-      "Whether the client is already feeling urgency around this issue"
-    ]));
+    fillList(
+      "validate-live-list",
+      chooseList(d.call_briefing?.areas_to_validate_live, [
+        "Whether the primary constraint is visible in active pipeline behavior",
+        "Whether internal teams describe value consistently",
+        "Whether pricing friction is actually rooted in value clarity or packaging design",
+        "Whether the client is already feeling urgency around this issue"
+      ])
+    );
 
     const pillarOrder = [
       ["positioning", "Positioning & Category"],
