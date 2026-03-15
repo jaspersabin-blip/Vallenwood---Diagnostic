@@ -459,11 +459,11 @@
 
     setText("company-name", d.company_name);
     setText("report-date", d.report_date);
-    setText("primary-constraint-top", d.scoring?.primary_constraint?.label || d.primary_constraint_label);
-    setText("overall-score-top", d.scoring?.overall_score || d.overall_score || 0);
-    setText("overall-score", d.scoring?.overall_score || d.overall_score || 0);
-    setText("score-band", d.scoring?.score_band || d.score_band);
-    setText("primary-constraint-label", d.scoring?.primary_constraint?.label || d.primary_constraint_label);
+    setText("primary-constraint-top", d.primary_constraint_label || d.scoring?.primary_constraint?.label);
+    setText("overall-score-top", d.overall_score || d.scoring?.overall_score || 0);
+    setText("overall-score", d.overall_score || d.scoring?.overall_score || 0);
+    setText("score-band", d.score_band || d.scoring?.score_band);
+    setText("primary-constraint-label", d.primary_constraint_label || d.scoring?.primary_constraint?.label);
     setText(
       "primary-constraint-why",
       d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake."
@@ -569,8 +569,8 @@
       ])
     );
 
-    const pillarScores = d.scoring?.pillar_scores || d.pillar_scores || {};
-    const targetScores = d.scoring?.target_pillar_scores || d.target_pillar_scores || {
+    const pillarScores = d.pillar_scores || d.scoring?.pillar_scores || {};
+    const targetScores = d.target_pillar_scores || d.scoring?.target_pillar_scores || {
       positioning: 16,
       value_architecture: 15,
       pricing_packaging: 15,
@@ -578,7 +578,7 @@
       measurement: 15
     };
 
-    const radarLabels = d.scoring?.radar_labels || d.radar_labels || {
+    const radarLabels = d.radar_labels || d.scoring?.radar_labels || {
       positioning: "Positioning",
       value_architecture: "Value Architecture",
       pricing_packaging: "Pricing & Packaging",
