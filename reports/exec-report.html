@@ -124,7 +124,7 @@
 
     .chart-wrap {
       display: grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 400px 1fr;
       gap: 22px;
       align-items: center;
     }
@@ -133,6 +133,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: visible;
     }
 
     .score-summary .big-score {
@@ -274,7 +275,17 @@
       color: var(--muted);
     }
 
+    .radar {
+      overflow: visible;
+    }
+
     .radar text {
+      font-size: 11px;
+      fill: var(--muted);
+      font-weight: 600;
+    }
+
+    .radar-label {
       font-size: 11px;
       fill: var(--muted);
       font-weight: 600;
@@ -338,7 +349,14 @@
         <h2>OS Alignment Score</h2>
         <div class="chart-wrap">
           <div class="chart-box">
-            <svg class="radar" id="radar-chart" width="360" height="320" viewBox="0 0 360 320" aria-label="Brand-to-GTM OS radar chart">
+            <svg
+              class="radar"
+              id="radar-chart"
+              width="400"
+              height="360"
+              viewBox="0 0 400 360"
+              aria-label="Brand-to-GTM OS radar chart"
+            >
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
               <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
@@ -437,11 +455,44 @@
       });
     }
 
+    function splitLabel(label) {
+      const text = String(label || "").trim();
+      if (!text) return [""];
+
+      if (Array.isArray(label)) return label;
+
+      if (text.length <= 12) return [text];
+
+      if (text.includes(" & ")) {
+        const parts = text.split(" & ");
+        if (parts.length === 2) return [`${parts[0]} &`, parts[1]];
+      }
+
+      const words = text.split(/\s+/);
+      if (words.length === 1) return [text];
+      if (words.length === 2) return words;
+
+      const midpoint = Math.ceil(words.length / 2);
+      return [
+        words.slice(0, midpoint).join(" "),
+        words.slice(midpoint).join(" ")
+      ];
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     const radarLabels = d.radar_labels || {
       positioning: "Positioning",
-      value_architecture: "Value",
-      pricing_packaging: "Pricing",
-      gtm_focus: "GTM",
+      value_architecture: "Value Architecture",
+      pricing_packaging: "Pricing & Packaging",
+      gtm_focus: "GTM Focus",
       measurement: "Measurement"
     };
 
@@ -496,7 +547,7 @@
 
       row.innerHTML = `
         <div class="pillar-top">
-          <div class="pillar-label">${label}</div>
+          <div class="pillar-label">${escapeHtml(label)}</div>
           <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
         </div>
         <div class="bar">
@@ -522,12 +573,12 @@
         block.className = "move";
 
         const howItems = Array.isArray(move.how)
-          ? move.how.map((item) => `<li>${item}</li>`).join("")
+          ? move.how.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
           : "";
 
         block.innerHTML = `
-          <div class="move-title">${move.title || ""}</div>
-          <div class="move-why">${move.why || ""}</div>
+          <div class="move-title">${escapeHtml(move.title || "")}</div>
+          <div class="move-why">${escapeHtml(move.why || "")}</div>
           <ul class="list">${howItems}</ul>
         `;
 
@@ -548,10 +599,10 @@
       labels.innerHTML = "";
       pointsGroup.innerHTML = "";
 
-      const cx = 160;
-      const cy = 160;
-      const radius = 88;
-      const labelRadius = 116;
+      const cx = 200;
+      const cy = 178;
+      const radius = 96;
+      const labelRadius = 136;
 
       const data = [
         { key: "positioning", label: radarLabels.positioning, value: Number(pillarScores.positioning || 0) },
@@ -563,14 +614,26 @@
 
       const levels = 4;
       const totalAxes = data.length;
+      const svgNS = "http://www.w3.org/2000/svg";
 
       function pointFor(index, value, max = 20, customRadius = radius) {
         const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
         const r = (value / max) * customRadius;
         return {
           x: cx + Math.cos(angle) * r,
-          y: cy + Math.sin(angle) * r
+          y: cy + Math.sin(angle) * r,
+          angle
         };
+      }
+
+      function labelAnchor(x) {
+        if (Math.abs(x - cx) < 14) return "middle";
+        return x < cx ? "end" : "start";
+      }
+
+      function labelLineOffset(point) {
+        if (Math.abs(point.x - cx) < 14) return 0;
+        return point.x < cx ? -2 : 2;
       }
 
       for (let level = 1; level <= levels; level++) {
@@ -579,7 +642,8 @@
           const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
           return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
         }).join(" ");
-        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+
+        const poly = document.createElementNS(svgNS, "polygon");
         poly.setAttribute("points", pts);
         poly.setAttribute("fill", "none");
         poly.setAttribute("stroke", "#e6dfcf");
@@ -590,7 +654,7 @@
       data.forEach((item, i) => {
         const outer = pointFor(i, 20, 20);
 
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        const line = document.createElementNS(svgNS, "line");
         line.setAttribute("x1", cx);
         line.setAttribute("y1", cy);
         line.setAttribute("x2", outer.x);
@@ -600,15 +664,26 @@
         axes.appendChild(line);
 
         const labelPoint = pointFor(i, 20, 20, labelRadius);
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", labelPoint.x);
+        const labelLines = splitLabel(item.label);
+
+        const text = document.createElementNS(svgNS, "text");
+        text.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
         text.setAttribute("y", labelPoint.y);
-        text.setAttribute(
-          "text-anchor",
-          Math.abs(labelPoint.x - cx) < 10 ? "middle" : (labelPoint.x < cx ? "end" : "start")
-        );
+        text.setAttribute("text-anchor", labelAnchor(labelPoint.x));
         text.setAttribute("dominant-baseline", "middle");
-        text.textContent = item.label;
+        text.setAttribute("class", "radar-label");
+
+        const lineHeight = 13;
+        const startDy = -((labelLines.length - 1) * lineHeight) / 2;
+
+        labelLines.forEach((lineText, lineIndex) => {
+          const tspan = document.createElementNS(svgNS, "tspan");
+          tspan.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
+          tspan.setAttribute("dy", lineIndex === 0 ? startDy : lineHeight);
+          tspan.textContent = lineText;
+          text.appendChild(tspan);
+        });
+
         labels.appendChild(text);
       });
 
@@ -629,7 +704,7 @@
 
       data.forEach((item, i) => {
         const p = pointFor(i, item.value, 20);
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        const circle = document.createElementNS(svgNS, "circle");
         circle.setAttribute("cx", p.x);
         circle.setAttribute("cy", p.y);
         circle.setAttribute("r", "4.5");
