@@ -903,7 +903,7 @@ function validateAuditEnrichment(obj) {
 
 async function enrichAuditReport(report) {
   const client = getOpenAIClient();
-  const model = process.env.LLM_MODEL || "gpt-5";
+  const model = process.env.LLM_MODEL || "gpt-4o";
 
   const compactInput = {
     tier: report.tier,
@@ -979,15 +979,17 @@ Diagnostic data:
 ${JSON.stringify(compactInput)}
 `.trim();
 
-  const response = await client.responses.create({
+  const response = await client.chat.completions.create({
     model,
-    input: [
+    messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
+    temperature: 0.4,
+    max_tokens: 2000,
   });
 
-  const text = response.output_text || "";
+  const text = response.choices[0]?.message?.content || "";
   const parsed = safeJsonParse(text);
 
   if (!validateAuditEnrichment(parsed)) {
