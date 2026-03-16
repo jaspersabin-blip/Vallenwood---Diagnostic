@@ -1,0 +1,9 @@
+{
+  "tier": "exec",
+  "client_name": "Test User",
+  "client_email": "test@example.com",
+  "client_company": "TestCo",
+  "answers": {
+    "Annual Revenue": "$10–25M"
+  }
+}

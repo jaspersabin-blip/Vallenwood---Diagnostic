@@ -1,0 +1,27 @@
+{
+  "tier": "exec",
+  "client_name": "Test User",
+  "client_email": "test@example.com",
+  "client_company": "TestCo",
+  "client_website": "https://testco.example",
+  "answers": {
+    "Annual Revenue": "$10–25M",
+    "Average Contract Value (ACV)": "$25–75K",
+    "Average Sales Cycle Length": "1–3 months",
+    "Close Rate (%)": "25–40%",
+    "Why do you most often win deals?": "Clear differentiation",
+    "Why do you most often lose deals?": "Price",
+    "Do customers describe your company consistently?": "Yes — very consistent",
+    "Can you quantify ROI for most customers?": "Yes — documented & repeatable",
+    "Sales conversations primarily lead with:": "Business outcomes",
+    "What financial metrics do customers see improve due to your product?": "Revenue growth",
+    "How often are discounts required to close deals?": "Sometimes (10–40%)",
+    "Do customers clearly understand your pricing tiers?": "Somewhat",
+    "What is your gross margin (%)?": "65–75%",
+    "What are your primary acquisition channels (select up to 3)": ["Content", "Outbound SDR", "Partnerships"],
+    "Do you know CAC by channel?": "Rough estimates",
+    "Marketing is measured primarily by:": "Revenue",
+    "Is attribution trusted internally?": "Yes",
+    "Are revenue forecasts accurate within 10%": "Yes"
+  }
+}
