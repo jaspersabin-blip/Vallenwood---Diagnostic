@@ -212,7 +212,7 @@ export default async function handler(req, res) {
       templatePath = path.join(process.cwd(), "reports", "exec-report.html");
     }
 
-    if (tier === "audit") {
+    if (tier === "audit" && !finalReportData.swot) {
       try {
         const aiInsights = await enrichAuditReport(finalReportData);
 
@@ -239,7 +239,7 @@ export default async function handler(req, res) {
       }
     }
 
-    if (tier === "hidden") {
+    if (tier === "hidden" && !finalReportData.constraint_hypothesis_summary) {
       try {
         const aiInsights = await enrichHiddenReport(finalReportData);
 
