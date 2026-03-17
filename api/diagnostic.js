@@ -1677,6 +1677,12 @@ export default async function handler(req, res) {
 
         if (enriched?.full_tier) report.full_tier = enriched.full_tier;
         if (enriched?.narrative) report.narrative = enriched.narrative;
+
+        // Also map top-level enrichment keys into full_tier
+        if (enriched?.swot) report.full_tier.swot = enriched.swot;
+        if (enriched?.roadmap) report.full_tier.roadmap = { ...report.full_tier.roadmap, ...enriched.roadmap };
+        if (enriched?.pricing_insight) report.full_tier.pricing_packaging_audit = { ...report.full_tier.pricing_packaging_audit, ...enriched.pricing_insight };
+        if (enriched?.competitive_context) report.full_tier.competitive_context = { ...report.full_tier.competitive_context, ...enriched.competitive_context };
         if (report?.disclaimer) report.disclaimer.ai_assisted = true;
       } catch (err) {
         L.step("enrichAuditReport FAIL", tEnrich, {
