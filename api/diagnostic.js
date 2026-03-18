@@ -402,31 +402,14 @@ function getRadarLabels() {
 ========================================================= */
 
 function renderExecSummary({ osScored, clientName, clientCompany }) {
+function renderExecSummary({ osScored, clientName, clientCompany, execReportUrl }) {
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
-
-  const subject = "Your Brand-to-GTM OS Executive Summary";
-
-  const bodyText = `Hi ${clientName || "there"},
-
-Your Brand-to-GTM OS Executive Summary is ready.
-
-Company: ${clientCompany || "Your organization"}
-OS alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
-Primary constraint: ${niceConstraint}
-Confidence: ${osScored.confidence || "Moderate"}
-
-Your report is ready to review.
-
-Next step:
-Book your 30-minute review call to walk through the findings and identify the most actionable priorities.
-
-— Jasper
-Vallenwood Consulting
-`;
+  const subject = `Your Brand-to-GTM OS Executive Summary — ${clientCompany || "Your Organization"}`;
 
   const bodyHtml = `
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
     <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
+
       <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">
           Vallenwood Consulting
@@ -443,7 +426,7 @@ Vallenwood Consulting
         <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
 
         <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
-          Your diagnostic is complete. Here is the headline view of what the model surfaced:
+          Thank you for completing the Brand-to-GTM OS Diagnostic for <strong>${clientCompany || "your organization"}</strong>. Your Executive Summary has been generated and is ready to review.
         </p>
 
         <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
@@ -460,22 +443,54 @@ Vallenwood Consulting
           <p style="margin:0;font-size:18px;font-weight:700;">${osScored.confidence || "Moderate"}</p>
         </div>
 
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+          The diagnostic has identified the operating constraint most likely to be limiting growth, pricing power, and GTM efficiency. Your summary includes a headline diagnosis, key risk signals, and recommended 30-day priorities.
+        </p>
+
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+          <strong>View your executive summary:</strong><br>
+          <a href="${execReportUrl || "https://vallenwoodconsulting.com"}" style="color:#6f875f;font-weight:600;text-decoration:none;">
+            Brand-to-GTM OS Executive Summary &rarr;
+          </a>
+        </p>
+
         <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
-          The next step is a short review call to pressure-test the diagnosis and identify the highest-leverage priorities.
+          Included with your summary is a <strong>30-minute Brand-to-GTM Review Call</strong> where we walk through the findings and identify the highest-leverage next moves.
         </p>
 
         <a href="https://vallenwoodconsultingllc.hbportal.co/schedule/68e972a4097e7b0027a71406"
-           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
-          Book Your Review Call
+           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 20px;border-radius:12px;font-size:15px;">
+          Book Your 30-Minute Review Call
         </a>
       </div>
 
       <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">
-        This summary is directional and designed to surface leverage quickly, not replace a full strategic audit.
+        This summary is directional and designed to surface leverage quickly. Reports may take a few minutes to fully generate after submission.
       </div>
+
     </div>
   </div>
   `;
+
+  const bodyText = `Hi ${clientName || "there"},
+
+Thank you for completing the Brand-to-GTM OS Diagnostic for ${clientCompany || "your organization"}.
+
+Your Executive Summary is ready to review.
+
+OS Alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
+Primary Constraint: ${niceConstraint}
+Confidence: ${osScored.confidence || "Moderate"}
+
+View your executive summary:
+${execReportUrl || ""}
+
+Book your 30-minute Review Call:
+https://vallenwoodconsultingllc.hbportal.co/schedule/68e972a4097e7b0027a71406
+
+— Jasper
+Vallenwood Consulting
+`;
 
   return { subject, bodyText, bodyHtml };
 }
@@ -573,65 +588,135 @@ Vallenwood Consulting
   return { subject, bodyText, bodyHtml };
 }
 
-function renderInsufficientDataEmail({ clientName, clientCompany }) {
-  const subject = "Your Brand-to-GTM OS Executive Summary";
+function renderInternalEmail({ osScored, clientName, clientCompany, clientEmail, clientWebsite, auditReportUrl, hiddenReportUrl, answers }) {
+  const niceConstraint = prettyPillar(osScored.primary_constraint_key);
+  const subject = `New Diagnostic — ${clientCompany || "Unknown Company"} · ${niceConstraint}`;
 
-  const bodyText = `Hi ${clientName || "there"},
+  const na = normalizeAnswers(answers || {});
 
-Thanks — I received your submission, but there isn’t enough data yet to generate a reliable OS score.
+  const pillarRows = [
+    { label: "Positioning & Category", key: "positioning", score: osScored.pillar_scores.positioning },
+    { label: "Value Architecture", key: "value_architecture", score: osScored.pillar_scores.value_architecture },
+    { label: "Pricing & Packaging", key: "pricing_packaging", score: osScored.pillar_scores.pricing_packaging },
+    { label: "GTM Focus", key: "gtm_focus", score: osScored.pillar_scores.gtm_focus },
+    { label: "Measurement", key: "measurement", score: osScored.pillar_scores.measurement },
+  ].map(p => {
+    const isWeak = p.score < 14;
+    const color = isWeak ? "#c67b5c" : "#6f875f";
+    return `<tr>
+      <td style="padding:5px 0;font-size:13px;color:#2f2f2f;">${p.label}</td>
+      <td style="text-align:right;font-size:13px;font-weight:700;color:${color};">${p.score}/20</td>
+    </tr>`;
+  }).join("");
 
-Company: ${clientCompany || "Your organization"}
+  const tensionRows = (osScored.contradictions || []).map(c => `
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f0e9db;">
+      <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#2f2f2f;">${c.tension}</p>
+      <p style="margin:0;font-size:13px;color:#6f6f69;">${c.implication}</p>
+    </div>
+  `).join("") || `<p style="margin:0;font-size:13px;color:#6f6f69;">No significant tensions detected.</p>`;
 
-Next step:
-Reply with a bit more detail (or resubmit the form) so I can produce an accurate summary.
-
-— Jasper
-Vallenwood Consulting
-`;
+  const snapshotItems = [
+    na.annual_revenue ? `<p style="margin:0 0 4px;font-size:13px;"><strong>Revenue:</strong> ${na.annual_revenue}</p>` : "",
+    na.acv ? `<p style="margin:0 0 4px;font-size:13px;"><strong>ACV:</strong> ${na.acv}</p>` : "",
+    na.sales_cycle ? `<p style="margin:0 0 4px;font-size:13px;"><strong>Sales cycle:</strong> ${na.sales_cycle}</p>` : "",
+    na.close_rate ? `<p style="margin:0 0 4px;font-size:13px;"><strong>Close rate:</strong> ${na.close_rate}</p>` : "",
+    na.revenue_model ? `<p style="margin:0 0 4px;font-size:13px;"><strong>Revenue model:</strong> ${na.revenue_model}</p>` : "",
+    na.growth_status ? `<p style="margin:0 0 4px;font-size:13px;"><strong>Growth status:</strong> ${na.growth_status}</p>` : "",
+    clientWebsite ? `<p style="margin:0 0 4px;font-size:13px;"><strong>Website:</strong> ${clientWebsite}</p>` : "",
+  ].filter(Boolean).join("");
 
   const bodyHtml = `
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
     <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
-      <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">
-          Vallenwood Consulting
+
+      <div style="padding:24px 28px 16px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:6px;">
+          Vallenwood Consulting · Internal
         </div>
-        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">
-          Your Brand-to-GTM OS Executive Summary
-        </h1>
-        <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">
-          We received your submission, but there was not enough structured input to generate a reliable OS score yet.
-        </p>
+        <h1 style="margin:0 0 4px;font-size:24px;line-height:1.1;color:#2f2f2f;">New Diagnostic Submission</h1>
+        <p style="margin:0;color:#6f6f69;font-size:14px;">${clientCompany || "Unknown"} · ${clientName || ""} · ${clientEmail || ""}</p>
       </div>
 
-      <div style="padding:24px 28px;">
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
+      <div style="padding:20px 28px;">
 
-        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
-          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Company</p>
-          <p style="margin:0;font-size:18px;font-weight:700;">${clientCompany || "Your organization"}</p>
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:16px;background:#fbfaf6;margin-bottom:16px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <p style="margin:0 0 4px;font-size:11px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">OS Score</p>
+              <p style="margin:0;font-size:24px;font-weight:700;color:#2f2f2f;">${osScored.brand_to_gtm_os_score}/100</p>
+            </div>
+            <div>
+              <p style="margin:0 0 4px;font-size:11px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Band</p>
+              <p style="margin:0;font-size:14px;font-weight:700;color:#2f2f2f;">${osScored.interpretation_band}</p>
+            </div>
+            <div>
+              <p style="margin:0 0 4px;font-size:11px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
+              <p style="margin:0;font-size:14px;font-weight:700;color:#c67b5c;">${niceConstraint}</p>
+            </div>
+            <div>
+              <p style="margin:0 0 4px;font-size:11px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Confidence</p>
+              <p style="margin:0;font-size:14px;font-weight:700;color:#2f2f2f;">${osScored.confidence || "Moderate"}</p>
+            </div>
+          </div>
         </div>
 
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          To produce a reliable diagnostic, I need a bit more information about your current go-to-market system.
-        </p>
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:16px;background:#fff;margin-bottom:16px;">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6f6f69;">5-Pillar Breakdown</p>
+          <table style="width:100%;border-collapse:collapse;">
+            ${pillarRows}
+          </table>
+        </div>
 
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
-          Reply with additional detail or resubmit the form, and I’ll generate an updated summary.
-        </p>
+        <div style="border:1px solid #e6dfcf;border-left:4px solid #c67b5c;border-radius:14px;padding:16px;background:#fffdfa;margin-bottom:16px;">
+          <p style="margin:0 0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6f6f69;">Operating Tensions</p>
+          ${tensionRows}
+        </div>
 
-        <a href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%20Follow-Up"
-           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
-          Reply with More Detail
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:16px;background:#fbfaf6;margin-bottom:16px;">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6f6f69;">Client Snapshot</p>
+          ${snapshotItems}
+        </div>
+
+        <div style="border:1px solid #e6dfcf;border-radius:14px;padding:16px;background:#fff;margin-bottom:20px;">
+          <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6f6f69;">Report Links</p>
+          <p style="margin:0 0 8px;font-size:13px;">
+            <strong>Client report:</strong>
+            <a href="${auditReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Audit Report →</a>
+          </p>
+          <p style="margin:0;font-size:13px;">
+            <strong>Internal brief:</strong>
+            <a href="${hiddenReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Client Briefing →</a>
+          </p>
+        </div>
+
+        <a href="${hiddenReportUrl || ""}"
+           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:12px;font-size:14px;">
+          Open Full Internal Brief
         </a>
+
       </div>
 
-      <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">
-        Once more input is available, the model will generate a fuller diagnostic view.
+      <div style="padding:16px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:12px;line-height:1.6;">
+        Vallenwood Consulting · Internal use only
       </div>
+
     </div>
   </div>
   `;
+
+  const bodyText = `New Diagnostic Submission — ${clientCompany || "Unknown"}
+
+Contact: ${clientName || ""} (${clientEmail || ""})
+Score: ${osScored.brand_to_gtm_os_score}/100 — ${osScored.interpretation_band}
+Primary Constraint: ${niceConstraint}
+Confidence: ${osScored.confidence || "Moderate"}
+
+Client report: ${auditReportUrl || ""}
+Internal brief: ${hiddenReportUrl || ""}
+
+— Vallenwood Consulting
+`;
 
   return { subject, bodyText, bodyHtml };
 }
@@ -1733,10 +1818,27 @@ export default async function handler(req, res) {
         : renderExecSummary({ osScored, clientName, clientCompany, execReportUrl });
     L.step("render", tRender);
 
+    const internalContent = renderInternalEmail({
+      osScored,
+      clientName,
+      clientCompany,
+      clientEmail,
+      clientWebsite,
+      auditReportUrl,
+      hiddenReportUrl,
+      answers,
+    });
+
     report.deliverables.email = {
       subject: content.subject,
       body_text: content.bodyText,
       body_html: content.bodyHtml || null,
+    };
+
+    report.deliverables.internal_email = {
+      subject: internalContent.subject,
+      body_text: internalContent.bodyText,
+      body_html: internalContent.bodyHtml || null,
     };
 
     L.finish(200);
@@ -1764,6 +1866,8 @@ export default async function handler(req, res) {
       email_body_text: content.bodyText,
       email_body_html: content.bodyHtml || null,
       client_email: clientEmail,
+      internal_email_subject: internalContent.subject,
+      internal_email_body_html: internalContent.bodyHtml || null,
 
       exec_report_url: execReportUrl,
       audit_report_url: auditReportUrl,
