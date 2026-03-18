@@ -1649,13 +1649,6 @@ export default async function handler(req, res) {
       confidence: osScored.confidence,
     });
 
-    const tRender = L.mark();
-    const content =
-      tier === "audit"
-        ? renderAudit({ osScored, clientName, clientCompany })
-        : renderExecSummary({ osScored, clientName, clientCompany });
-    L.step("render", tRender);
-
     const tBuild = L.mark();
     const report = buildReport({
       tier,
@@ -1666,7 +1659,7 @@ export default async function handler(req, res) {
       answers,
       osScored,
       legacyScored,
-      content,
+      content: { subject: "", bodyText: "", bodyHtml: "" },
     });
 
     report.scoring.insufficient_data = false;
@@ -1732,6 +1725,19 @@ export default async function handler(req, res) {
       tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
 
     const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
+
+    const tRender = L.mark();
+    const content =
+      tier === "audit"
+        ? renderAudit({ osScored, clientName, clientCompany, auditReportUrl })
+        : renderExecSummary({ osScored, clientName, clientCompany, execReportUrl });
+    L.step("render", tRender);
+
+    report.deliverables.email = {
+      subject: content.subject,
+      body_text: content.bodyText,
+      body_html: content.bodyHtml || null,
+    };
 
     L.finish(200);
 
