@@ -464,7 +464,7 @@ Vallenwood Consulting
           The next step is a short review call to pressure-test the diagnosis and identify the highest-leverage priorities.
         </p>
 
-        <a href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%20Review%20Call"
+        <a href="https://vallenwoodconsultingllc.hbportal.co/schedule/68e972a4097e7b0027a71406"
            style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
           Book Your Review Call
         </a>
@@ -542,7 +542,7 @@ Vallenwood Consulting
           The next step is a 60-minute strategic review to validate the diagnosis, pressure-test the assumptions, and prioritize the strongest next moves.
         </p>
 
-        <a href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%2060-Minute%20Strategic%20Review"
+        <a href="https://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007"
            style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
           Schedule 60-Min Review
         </a>
