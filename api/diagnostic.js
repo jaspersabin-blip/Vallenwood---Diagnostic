@@ -401,7 +401,6 @@ function getRadarLabels() {
    Email Copy (OS-first)
 ========================================================= */
 
-function renderExecSummary({ osScored, clientName, clientCompany }) {
 function renderExecSummary({ osScored, clientName, clientCompany, execReportUrl }) {
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
   const subject = `Your Brand-to-GTM OS Executive Summary — ${clientCompany || "Your Organization"}`;
@@ -1755,7 +1754,7 @@ export default async function handler(req, res) {
     L.step("buildReport", tBuild);
 
     const llmEnabled = process.env.LLM_ENRICH === "1";
-    const llmModel = process.env.LLM_MODEL || "gpt-5";
+    const llmModel = process.env.LLM_MODEL || "gpt-4o";
 
     if (llmEnabled && tier === "audit") {
       const tEnrich = L.mark();
