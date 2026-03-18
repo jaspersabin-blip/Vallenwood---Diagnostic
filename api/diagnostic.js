@@ -480,31 +480,14 @@ Vallenwood Consulting
   return { subject, bodyText, bodyHtml };
 }
 
-function renderAudit({ osScored, clientName, clientCompany }) {
-  const subject = "Your Brand-to-GTM OS Strategic Audit";
+function renderAudit({ osScored, clientName, clientCompany, auditReportUrl }) {
+  const subject = `Your Brand-to-GTM OS Strategic Audit — ${clientCompany || "Your Organization"}`;
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
-
-  const bodyText = `Hi ${clientName || "there"},
-
-Your Brand-to-GTM OS Strategic Audit is ready.
-
-Company: ${clientCompany || "Your organization"}
-OS alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
-Primary constraint: ${niceConstraint}
-Confidence: ${osScored.confidence || "Moderate"}
-
-Your audit is ready to review.
-
-Next step:
-Book your 60-minute strategic review session to walk through the findings, validate the diagnosis, and align on the highest-leverage actions.
-
-— Jasper
-Vallenwood Consulting
-`;
 
   const bodyHtml = `
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
     <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
+
       <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">
           Vallenwood Consulting
@@ -513,7 +496,7 @@ Vallenwood Consulting
           Your Brand-to-GTM OS Strategic Audit
         </h1>
         <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">
-          A deeper strategic read on the operating constraint shaping positioning, pricing power, and go-to-market performance.
+          A deeper strategic read on the operating constraints shaping positioning, pricing power, and go-to-market performance.
         </p>
       </div>
 
@@ -521,7 +504,7 @@ Vallenwood Consulting
         <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
 
         <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
-          Your audit is complete. Here is the headline view of what the model surfaced:
+          Thank you for completing the Brand-to-GTM OS Diagnostic for <strong>${clientCompany || "your organization"}</strong>. Your Strategic Audit has been generated and is ready to review.
         </p>
 
         <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
@@ -538,22 +521,54 @@ Vallenwood Consulting
           <p style="margin:0;font-size:18px;font-weight:700;">${osScored.confidence || "Moderate"}</p>
         </div>
 
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+          The diagnostic has identified the operating constraint most likely to be limiting growth, pricing power, and GTM efficiency. Your full report includes a strategic SWOT, competitive context, pricing audit, and a 30/60/90-day action roadmap.
+        </p>
+
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+          <strong>View your full report:</strong><br>
+          <a href="${auditReportUrl || "https://vallenwoodconsulting.com"}" style="color:#6f875f;font-weight:600;text-decoration:none;">
+            Brand-to-GTM OS Strategic Audit &rarr;
+          </a>
+        </p>
+
         <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">
-          The next step is a 60-minute strategic review to validate the diagnosis, pressure-test the assumptions, and prioritize the strongest next moves.
+          Included with your audit is a <strong>60-minute Brand-to-GTM Strategy Session</strong> where we walk through the findings, validate the diagnosis, and align on the highest-leverage next moves.
         </p>
 
         <a href="https://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007"
-           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 18px;border-radius:12px;">
-          Schedule 60-Min Review
+           style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 20px;border-radius:12px;font-size:15px;">
+          Book Your 60-Minute Strategy Session
         </a>
       </div>
 
       <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">
-        This audit is designed to convert diagnosis into a focused action plan.
+        This audit is designed to convert diagnosis into a focused action plan. Reports may take a few minutes to fully generate after submission.
       </div>
+
     </div>
   </div>
   `;
+
+  const bodyText = `Hi ${clientName || "there"},
+
+Thank you for completing the Brand-to-GTM OS Diagnostic for ${clientCompany || "your organization"}.
+
+Your Strategic Audit is ready to review.
+
+OS Alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)
+Primary Constraint: ${niceConstraint}
+Confidence: ${osScored.confidence || "Moderate"}
+
+View your full report:
+${auditReportUrl || ""}
+
+Book your 60-minute Strategy Session:
+https://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007
+
+— Jasper
+Vallenwood Consulting
+`;
 
   return { subject, bodyText, bodyHtml };
 }
