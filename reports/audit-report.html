@@ -1181,7 +1181,7 @@
             <span class="score-denom">/100</span>
           </div>
           <div class="score-band" id="score-band">—</div>
-          <div class="score-conf" id="score-conf">Confidence: —</div>
+
 
           <div style="margin-top:4px;">
             <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">How this compares</div>
@@ -1513,7 +1513,7 @@ set("cover-date", date);
 // ── Score slide
 set("big-score", score);
 set("score-band", d.score_band || "");
-set("score-conf", `Confidence: ${d.confidence || "Moderate"}`);
+// confidence removed from client reports
 
 // Benchmarks
 const bmEl = document.getElementById("benchmarks");
