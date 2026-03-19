@@ -1103,6 +1103,15 @@ function buildExecReportData(report) {
     executive_headline:
       report?.narrative?.executive_summary?.headline || "",
 
+    headline_diagnosis: report?.narrative?.headline_diagnosis ||
+      report?.narrative?.executive_summary?.headline || "",
+    what_this_means_in_practice:
+      report?.narrative?.what_this_means_in_practice || [],
+    the_operating_tension:
+      report?.narrative?.the_operating_tension || "",
+    upgrade_bridge:
+      report?.narrative?.upgrade_bridge || [],
+
     diagnosis_implications:
       report?.scoring?.primary_constraint?.downstream_impacts?.slice(0, 3) || [],
 
