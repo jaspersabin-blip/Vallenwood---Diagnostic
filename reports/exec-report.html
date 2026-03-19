@@ -170,16 +170,17 @@
 
     /* ══ SLIDE 4: DIAGNOSIS ══ */
     .diagnosis-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
-    .diag-left { display: flex; flex-direction: column; gap: 16px; }
-    .diag-headline { font-size: 16px; line-height: 1.65; color: var(--text); font-weight: 400; }
-    .tension-card { border-left: 3px solid var(--warning); padding: 14px 18px; background: rgba(198,123,92,0.07); border-radius: 0 10px 10px 0; }
-    .tension-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warning); margin-bottom: 6px; }
-    .tension-body { font-size: 13px; line-height: 1.6; color: var(--text); }
-    .diag-right { display: flex; flex-direction: column; gap: 8px; }
-    .practice-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
-    .practice-item { display: flex; gap: 12px; align-items: flex-start; padding: 11px 14px; background: white; border: 1px solid var(--line); border-radius: 10px; }
-    .practice-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-dark); margin-top: 5px; flex-shrink: 0; }
-    .practice-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+    .diag-left { display: flex; flex-direction: column; gap: 14px; }
+    .diag-headline { font-size: 18px; line-height: 1.7; color: var(--text); font-weight: 400; flex-shrink: 0; }
+    .tension-card { border-left: 4px solid var(--warning); padding: 24px 22px; background: rgba(198,123,92,0.07); border-radius: 0 12px 12px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .tension-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warning); margin-bottom: 12px; }
+    .tension-body { font-size: 15px; line-height: 1.7; color: var(--text); }
+    .diag-right { display: flex; flex-direction: column; }
+    .practice-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; flex-shrink: 0; }
+    .practice-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .practice-item { display: flex; gap: 14px; align-items: center; padding: 0 18px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; }
+    .practice-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-dark); flex-shrink: 0; }
+    .practice-text { font-size: 14px; line-height: 1.55; color: var(--text); }
 
     /* ══ SLIDE 5: PRIMARY CONSTRAINT ══ */
     .constraint-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
