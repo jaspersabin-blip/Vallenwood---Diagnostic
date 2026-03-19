@@ -388,7 +388,17 @@
         </div>
       </div>
     </section>
-
+    <section class="card" id="headline-section" style="display:none;">
+      <p id="headline-diagnosis" style="font-size:18px;line-height:1.6;margin:0 0 16px;color:var(--text);font-weight:500;"></p>
+      <div id="operating-tension-box" style="border-left:4px solid var(--warning);padding:14px 18px;background:#fffdfa;border-radius:0 14px 14px 0;margin-bottom:16px;display:none;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">The tension worth paying attention to</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:var(--text);" id="operating-tension"></p>
+      </div>
+      <div id="practice-list-box" style="display:none;">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">What this looks like in your business</p>
+        <ul class="list" id="what-this-means-list"></ul>
+      </div>
+    </section>
     <section class="grid-2">
       <div class="card">
         <h2>OS Alignment Score</h2>
@@ -419,8 +429,12 @@
           <h3 id="primary-constraint-label">—</h3>
           <p id="primary-constraint-why"></p>
           <p id="summary-paragraph" class="muted"></p>
-        </div>
       </div>
+      <div id="root-cause-box" style="margin-top:16px;display:none;">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">Most likely root causes</p>
+        <div id="root-cause-list"></div>
+      </div>
+    </div>
     </section>
 
     <section class="card">
@@ -463,7 +477,17 @@
         </div>
       </div>
     </section>
+    <section class="card" id="constraint-chain-section" style="display:none;">
+      <h2>How this constraint compounds</h2>
+      <div class="box-soft">
+        <ul class="list" id="constraint-chain-list"></ul>
+      </div>
+    </section>
 
+    <section class="card" id="what-good-section" style="display:none;">
+      <h2>What good looks like</h2>
+      <p id="what-good-looks-like" style="font-size:15px;line-height:1.6;margin:0;"></p>
+    </section>
     <section class="card">
       <h2>30 / 60 / 90-Day Action Outline</h2>
       <div class="roadmap-grid">
@@ -535,7 +559,7 @@
             The review session is where this audit becomes an action plan.
           </p>
         </div>
-        <a class="cta-button" href="https://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007" target="_blank">
+        <a class="cta-button" href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%2060-Minute%20Strategic%20Review">
           Schedule 60-Min Review
         </a>
       </div>
@@ -857,6 +881,75 @@
     }
 
     renderRadarChart();
+    // Headline diagnosis
+    const headlineDiag = d.headline_diagnosis || d.executive_headline || "";
+    if (headlineDiag) {
+      setText("headline-diagnosis", headlineDiag, "");
+      document.getElementById("headline-section").style.display = "block";
+    }
+
+    // Operating tension
+    const opTension = d.the_operating_tension || "";
+    if (opTension) {
+      setText("operating-tension", opTension, "");
+      document.getElementById("operating-tension-box").style.display = "block";
+    }
+
+    // What this means in practice
+    const practiceItems = d.what_this_means_in_practice || [];
+    if (practiceItems.length) {
+      document.getElementById("practice-list-box").style.display = "block";
+      const practiceEl = document.getElementById("what-this-means-list");
+      practiceEl.innerHTML = "";
+      practiceItems.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        practiceEl.appendChild(li);
+      });
+    }
+
+    // Root cause hypotheses
+    const rootCauses = d.root_cause_hypotheses || [];
+    if (rootCauses.length) {
+      document.getElementById("root-cause-box").style.display = "block";
+      const rcEl = document.getElementById("root-cause-list");
+      rcEl.innerHTML = "";
+      rootCauses.forEach(rc => {
+        const div = document.createElement("div");
+        div.style.cssText = "border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;";
+        const prob = rc.probability || "";
+        const probColor = prob === "High" ? "var(--warning)" : "var(--muted)";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <span style="font-weight:600;font-size:14px;color:var(--text);">${escapeHtml(rc.hypothesis || "")}</span>
+            <span style="font-size:12px;font-weight:700;color:${probColor};white-space:nowrap;margin-left:12px;">${escapeHtml(prob)}</span>
+          </div>
+          ${rc.what_it_looks_like ? `<p style="margin:0 0 6px;font-size:13px;color:var(--muted);line-height:1.5;">${escapeHtml(rc.what_it_looks_like)}</p>` : ""}
+          ${rc.first_test ? `<p style="margin:0;font-size:12px;color:var(--accent-dark);line-height:1.5;"><strong>First test:</strong> ${escapeHtml(rc.first_test)}</p>` : ""}
+        `;
+        rcEl.appendChild(div);
+      });
+    }
+
+    // Constraint chain
+    const chain = d.constraint_chain || [];
+    if (chain.length) {
+      document.getElementById("constraint-chain-section").style.display = "block";
+      const chainEl = document.getElementById("constraint-chain-list");
+      chainEl.innerHTML = "";
+      chain.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        chainEl.appendChild(li);
+      });
+    }
+
+    // What good looks like
+    const whatGood = d.what_good_looks_like || "";
+    if (whatGood) {
+      document.getElementById("what-good-section").style.display = "block";
+      setText("what-good-looks-like", whatGood, "");
+    }
   </script>
 </body>
 </html>

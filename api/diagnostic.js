@@ -1799,9 +1799,6 @@ export default async function handler(req, res) {
         });
 
         if (enriched?.full_tier) report.full_tier = enriched.full_tier;
-        if (enriched?.narrative) report.narrative = enriched.narrative;
-
-        // Also map top-level enrichment keys into full_tier
         if (enriched?.swot) report.full_tier.swot = enriched.swot;
         if (enriched?.roadmap) report.full_tier.roadmap = { ...report.full_tier.roadmap, ...enriched.roadmap };
         if (enriched?.pricing_insight) report.full_tier.pricing_packaging_audit = { ...report.full_tier.pricing_packaging_audit, ...enriched.pricing_insight };
@@ -1809,19 +1806,38 @@ export default async function handler(req, res) {
         if (enriched?.root_cause_hypotheses) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
         if (enriched?.constraint_chain) report.full_tier.constraint_chain = enriched.constraint_chain;
         if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
+
         if (enriched?.narrative) {
+          const n = enriched.narrative;
           report.narrative = {
             ...report.narrative,
-            headline_diagnosis: enriched.narrative?.headline_diagnosis || report.narrative?.executive_summary?.headline,
-            what_this_means_in_practice: enriched.narrative?.what_this_means_in_practice || [],
-            the_operating_tension: enriched.narrative?.the_operating_tension || "",
-            what_good_looks_like: enriched.narrative?.what_good_looks_like || "",
-            upgrade_bridge: enriched.narrative?.upgrade_bridge || "",
-            executive_summary: enriched.narrative?.executive_summary || report.narrative?.executive_summary,
-            pillar_interpretations: enriched.narrative?.pillar_interpretations || report.narrative?.pillar_interpretations,
-            operating_tensions: enriched.narrative?.operating_tensions || report.narrative?.operating_tensions,
+            headline_diagnosis: n?.headline_diagnosis || report.narrative?.executive_summary?.headline || "",
+            what_this_means_in_practice: n?.what_this_means_in_practice || [],
+            the_operating_tension: n?.the_operating_tension || "",
+            what_good_looks_like: n?.what_good_looks_like || "",
+            upgrade_bridge: n?.upgrade_bridge || "",
+            executive_summary: n?.executive_summary || report.narrative?.executive_summary,
+            pillar_interpretations: n?.pillar_interpretations || report.narrative?.pillar_interpretations,
+            operating_tensions: n?.operating_tensions || report.narrative?.operating_tensions,
           };
-        } 
+        }
+
+        if (!report.narrative.headline_diagnosis && enriched?.headline_diagnosis) {
+          report.narrative.headline_diagnosis = enriched.headline_diagnosis;
+        }
+        if (!report.narrative.what_this_means_in_practice?.length && enriched?.what_this_means_in_practice?.length) {
+          report.narrative.what_this_means_in_practice = enriched.what_this_means_in_practice;
+        }
+        if (!report.narrative.the_operating_tension && enriched?.the_operating_tension) {
+          report.narrative.the_operating_tension = enriched.the_operating_tension;
+        }
+        if (!report.narrative.what_good_looks_like && enriched?.what_good_looks_like) {
+          report.narrative.what_good_looks_like = enriched.what_good_looks_like;
+        }
+        if (!report.narrative.upgrade_bridge && enriched?.upgrade_bridge) {
+          report.narrative.upgrade_bridge = enriched.upgrade_bridge;
+        }
+        
         if (report?.disclaimer) report.disclaimer.ai_assisted = true;
       } catch (err) {
         L.step("enrichAuditReport FAIL", tEnrich, {
