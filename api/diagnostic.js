@@ -1275,6 +1275,10 @@ function buildAuditReportData(report) {
     ? report.scoring.pillar_scores
     : [];
 
+  const fullTier = report?.full_tier || {};
+  const narrative = report?.narrative || {};
+  const execSummary = narrative?.executive_summary || {};
+
   return {
     company_name: report?.client?.company_name || "Company",
     contact_name: report?.client?.contact_name || "Client",
@@ -1294,10 +1298,20 @@ function buildAuditReportData(report) {
     primary_constraint_why_it_matters:
       report?.scoring?.primary_constraint?.why_it_matters || "",
 
+    // Narrative fields — new value leakage framework
+    headline_diagnosis: narrative?.headline_diagnosis ||
+      execSummary?.headline || "",
     executive_summary_paragraph:
-      report?.narrative?.executive_summary?.summary_paragraph || "",
-    executive_headline:
-      report?.narrative?.executive_summary?.headline || "",
+      execSummary?.summary_paragraph || "",
+    executive_headline: execSummary?.headline || "",
+    what_this_means_in_practice:
+      narrative?.what_this_means_in_practice || [],
+    the_operating_tension:
+      narrative?.the_operating_tension || "",
+    what_good_looks_like:
+      narrative?.what_good_looks_like || "",
+    upgrade_bridge:
+      narrative?.upgrade_bridge || "",
 
     pillar_scores: {
       positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
@@ -1317,15 +1331,32 @@ function buildAuditReportData(report) {
     },
 
     operating_tensions:
-      report?.narrative?.operating_tensions?.slice(0, 5) ||
+      narrative?.operating_tensions?.slice(0, 5) ||
       report?.scoring?.operating_tensions?.slice(0, 5) ||
       [],
 
-    swot: report?.full_tier?.swot || null,
-    competitive_context: report?.full_tier?.competitive_context || null,
-    pricing_packaging_audit: report?.full_tier?.pricing_packaging_audit || null,
-    roadmap: report?.full_tier?.roadmap || null,
-    first_sprint_plan: report?.full_tier?.first_sprint_plan || null,
+    // SWOT
+    swot: fullTier?.swot || null,
+
+    // Root cause hypotheses — new field
+    root_cause_hypotheses: fullTier?.root_cause_hypotheses || [],
+
+    // Constraint chain — new field
+    constraint_chain: fullTier?.constraint_chain || [],
+
+    // Competitive context
+    competitive_context: fullTier?.competitive_context || null,
+
+    // Pricing audit
+    pricing_packaging_audit: fullTier?.pricing_packaging_audit || null,
+
+    // Roadmap
+    roadmap: fullTier?.roadmap || null,
+
+    // Constraint analysis — new field
+    constraint_analysis: fullTier?.constraint_analysis || null,
+
+    first_sprint_plan: fullTier?.first_sprint_plan || null,
   };
 }
 
@@ -1775,6 +1806,22 @@ export default async function handler(req, res) {
         if (enriched?.roadmap) report.full_tier.roadmap = { ...report.full_tier.roadmap, ...enriched.roadmap };
         if (enriched?.pricing_insight) report.full_tier.pricing_packaging_audit = { ...report.full_tier.pricing_packaging_audit, ...enriched.pricing_insight };
         if (enriched?.competitive_context) report.full_tier.competitive_context = { ...report.full_tier.competitive_context, ...enriched.competitive_context };
+        if (enriched?.root_cause_hypotheses) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
+        if (enriched?.constraint_chain) report.full_tier.constraint_chain = enriched.constraint_chain;
+        if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
+        if (enriched?.narrative) {
+          report.narrative = {
+            ...report.narrative,
+            headline_diagnosis: enriched.narrative?.headline_diagnosis || report.narrative?.executive_summary?.headline,
+            what_this_means_in_practice: enriched.narrative?.what_this_means_in_practice || [],
+            the_operating_tension: enriched.narrative?.the_operating_tension || "",
+            what_good_looks_like: enriched.narrative?.what_good_looks_like || "",
+            upgrade_bridge: enriched.narrative?.upgrade_bridge || "",
+            executive_summary: enriched.narrative?.executive_summary || report.narrative?.executive_summary,
+            pillar_interpretations: enriched.narrative?.pillar_interpretations || report.narrative?.pillar_interpretations,
+            operating_tensions: enriched.narrative?.operating_tensions || report.narrative?.operating_tensions,
+          };
+        } 
         if (report?.disclaimer) report.disclaimer.ai_assisted = true;
       } catch (err) {
         L.step("enrichAuditReport FAIL", tEnrich, {
