@@ -708,7 +708,18 @@ if (bmEl) {
   keys.forEach((key,i)=>{const outer=pt(i,20,20,r);const line=document.createElementNS(SVG,"line");line.setAttribute("x1",cx);line.setAttribute("y1",cy);line.setAttribute("x2",outer.x);line.setAttribute("y2",outer.y);line.setAttribute("stroke","#d0c8b8");line.setAttribute("stroke-width","1");axes.appendChild(line);const lp=pt(i,20,20,lr);const labelLines=splitLabel(radarLabels[key]||key);const text=document.createElementNS(SVG,"text");text.setAttribute("x",lp.x);text.setAttribute("y",lp.y);text.setAttribute("text-anchor",anchor(lp.x));text.setAttribute("dominant-baseline","middle");text.setAttribute("class","radar-label");const lh=13,start=-((labelLines.length-1)*lh)/2;labelLines.forEach((ln,li)=>{const ts=document.createElementNS(SVG,"tspan");ts.setAttribute("x",lp.x);ts.setAttribute("dy",li===0?start:lh);ts.textContent=ln;text.appendChild(ts);});labelsG.appendChild(text);});
   targetPoly.setAttribute("points",keys.map((k,i)=>{const p=pt(i,targetScores[k]||15,20,r);return`${p.x},${p.y}`;}).join(" "));
   areaPoly.setAttribute("points",keys.map((k,i)=>{const p=pt(i,pillarScores[k]||0,20,r);return`${p.x},${p.y}`;}).join(" "));
-  keys.forEach((k,i)=>{const p=pt(i,pillarScores[k]||0,20,r);const c=document.createElementNS(SVG,"circle");c.setAttribute("cx",p.x);c.setAttribute("cy",p.y);c.setAttribute("r","4");c.setAttribute("fill","#6f875f");dotsG.appendChild(c);});
+  keys.forEach((k,i)=>{const p=pt(i,pillarScores[k]||0,20,r);const c=document.createElementNS(SVG,"circle");c.setAttribute("cx",p.x);c.setAttribute("cy",p.y);c.setAttribute("r","5");c.setAttribute("fill","#6f875f");c.setAttribute("stroke","white");c.setAttribute("stroke-width","1.5");dotsG.appendChild(c);});
+
+  // Add legend below radar
+  const legendG=document.createElementNS(SVG,"g");
+  const lgY=340;
+  // Your score swatch
+  const r1=document.createElementNS(SVG,"rect");r1.setAttribute("x","60");r1.setAttribute("y",lgY);r1.setAttribute("width","12");r1.setAttribute("height","12");r1.setAttribute("rx","2");r1.setAttribute("fill","rgba(138,166,119,0.4)");r1.setAttribute("stroke","#6f875f");r1.setAttribute("stroke-width","2");legendG.appendChild(r1);
+  const t1=document.createElementNS(SVG,"text");t1.setAttribute("x","78");t1.setAttribute("y",lgY+10);t1.setAttribute("font-size","10");t1.setAttribute("fill","#6b6b65");t1.setAttribute("font-family","DM Sans, sans-serif");t1.textContent="Your score";legendG.appendChild(t1);
+  // Target swatch
+  const l2=document.createElementNS(SVG,"line");l2.setAttribute("x1","170");l2.setAttribute("y1",lgY+6);l2.setAttribute("x2","190");l2.setAttribute("y2",lgY+6);l2.setAttribute("stroke","#c9a84c");l2.setAttribute("stroke-width","1.5");l2.setAttribute("stroke-dasharray","5 4");legendG.appendChild(l2);
+  const t2=document.createElementNS(SVG,"text");t2.setAttribute("x","196");t2.setAttribute("y",lgY+10);t2.setAttribute("font-size","10");t2.setAttribute("fill","#6b6b65");t2.setAttribute("font-family","DM Sans, sans-serif");t2.textContent="Target threshold";legendG.appendChild(t2);
+  document.getElementById("radar-labels").appendChild(legendG);
 })();
 
 // Pillars

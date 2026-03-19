@@ -1511,9 +1511,9 @@ const bmEl = document.getElementById("benchmarks");
 if (bmEl) {
   const bmarks = [
     { label: "Your score", val: score, color: "var(--accent-dark)" },
-    { label: "Avg B2B SaaS", val: 62, color: "var(--line)" },
-    { label: "Top quartile", val: 78, color: "var(--line)" },
-    { label: "Elite alignment", val: 85, color: "var(--line)" },
+    { label: "Avg B2B SaaS", val: 62, color: "#b8ad95" },
+    { label: "Top quartile", val: 78, color: "#9e9278" },
+    { label: "Elite alignment", val: 85, color: "#837861" },
   ];
   bmarks.forEach(b => {
     const pct = Math.min(b.val / 100 * 100, 100);
