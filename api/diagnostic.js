@@ -994,10 +994,10 @@ function safeJsonParse(text) {
 
 function validateAuditEnrichment(obj) {
   if (!obj || typeof obj !== "object") return false;
-  if (!obj.full_tier || typeof obj.full_tier !== "object") return false;
-  if (!obj.full_tier.swot) return false;
-  if (!obj.full_tier.roadmap) return false;
-  return true;
+  // Accept either new schema (swot at top level) or old schema (swot in full_tier)
+  const hasNewSchema = obj.swot || obj.narrative || obj.root_cause_hypotheses;
+  const hasOldSchema = obj.full_tier?.swot && obj.full_tier?.roadmap;
+  return hasNewSchema || hasOldSchema;
 }
 
 async function enrichAuditReport(report) {

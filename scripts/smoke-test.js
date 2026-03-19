@@ -15,7 +15,7 @@ const payload = {
   client_email: "smoke@example.com",
   client_company: "Smoke Test Co",
   client_website: "smoketest.com",
-  tier: "exec",
+  tier: "audit",
   answers: {
     "Annual Revenue": "$10-25M",
     "Primary Revenue Model": "Subscription (SaaS)",
