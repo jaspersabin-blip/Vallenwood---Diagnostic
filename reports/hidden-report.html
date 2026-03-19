@@ -3,835 +3,718 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Client Diagnostic Briefing</title>
+  <title>Brand-to-GTM OS — Internal Client Brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #f7f4ea;
       --card: #ffffff;
-      --text: #2f2f2f;
-      --muted: #6f6f69;
-      --line: #e6dfcf;
+      --text: #1e1e1e;
+      --muted: #6b6b65;
+      --line: #e4dccb;
       --accent: #8aa677;
       --accent-dark: #6f875f;
       --warning: #c67b5c;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-      --radius: 18px;
+      --dark-bg: #181815;
+      --dark-card: #222220;
+      --dark-line: #2e2e2b;
+      --dark-muted: #7a7a72;
+      --gold: #c9a84c;
+      --slide-w: 1280px;
+      --slide-h: 720px;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
+      background: #0e0e0c;
+      font-family: 'DM Sans', sans-serif;
       color: var(--text);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
-    .page {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 36px 20px 64px;
+    .deck { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+
+    .slide { width: var(--slide-w); height: var(--slide-h); position: relative; overflow: hidden; flex-shrink: 0; page-break-after: always; break-after: page; }
+    .slide-light { background: var(--bg); display: flex; flex-direction: column; }
+
+    /* ── CHROME ── */
+    .slide-chrome { display: flex; justify-content: space-between; align-items: center; padding: 16px 48px; border-bottom: 1px solid var(--line); flex-shrink: 0; background: white; }
+    .chrome-left { display: flex; align-items: center; gap: 14px; }
+    .chrome-logo { height: 22px; opacity: 0.9; }
+    .chrome-divider { width: 1px; height: 16px; background: var(--line); }
+    .chrome-section { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent-dark); }
+    .chrome-right { display: flex; align-items: center; gap: 16px; }
+    .chrome-company { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .chrome-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 10px; background: var(--dark-bg); color: white; border-radius: 20px; }
+    .chrome-page { font-size: 11px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; }
+
+    .slide-body { flex: 1; padding: 28px 48px 24px; display: flex; flex-direction: column; overflow: hidden; }
+    .slide-title { font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.15; margin-bottom: 4px; flex-shrink: 0; }
+    .slide-rule { width: 36px; height: 3px; background: var(--accent-dark); border-radius: 2px; margin-bottom: 18px; flex-shrink: 0; }
+
+    /* ══ COVER ══ */
+    .slide-cover { background: var(--dark-bg); display: flex; flex-direction: column; justify-content: space-between; padding: 0; }
+    .cover-glow-tr { position: absolute; top: 0; right: 0; width: 520px; height: 520px; background: radial-gradient(circle at top right, rgba(201,168,76,0.1), transparent 62%); pointer-events: none; z-index: 1; }
+    .cover-glow-bl { position: absolute; bottom: 0; left: 0; width: 360px; height: 360px; background: radial-gradient(circle at bottom left, rgba(138,166,119,0.07), transparent 62%); pointer-events: none; z-index: 1; }
+    .cover-top-bar { display: flex; justify-content: space-between; align-items: center; padding: 28px 52px; position: relative; z-index: 2; }
+    .cover-logo { height: 28px; filter: brightness(0) invert(1); opacity: 0.85; }
+    .cover-internal-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); border: 1px solid rgba(201,168,76,0.4); padding: 5px 14px; border-radius: 20px; }
+    .cover-hero { padding: 0 52px; position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .cover-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; }
+    .cover-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 50px; font-weight: 700; line-height: 1.06; color: #ffffff; margin-bottom: 18px; max-width: 700px; }
+    .cover-sub { font-size: 16px; font-weight: 300; color: var(--dark-muted); line-height: 1.65; max-width: 520px; }
+    .cover-metrics { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--dark-line); position: relative; z-index: 2; }
+    .cover-metric { padding: 20px 28px; border-right: 1px solid var(--dark-line); }
+    .cover-metric:last-child { border-right: none; }
+    .cm-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dark-muted); margin-bottom: 6px; }
+    .cm-value { font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.1; }
+    .cm-value.score { color: var(--accent); font-size: 28px; }
+    .cm-value.warn { color: var(--warning); font-size: 16px; }
+    .cm-value.gold { color: var(--gold); font-size: 16px; }
+
+    /* ══ SLIDE 2: SCORE + CLIENT SNAPSHOT ══ */
+    .snapshot-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+
+    .score-block { display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+    .score-big { font-family: 'Playfair Display', Georgia, serif; font-size: 96px; font-weight: 700; line-height: 1; color: var(--text); }
+    .score-denom { font-size: 20px; color: var(--muted); }
+    .score-band-text { font-size: 17px; font-weight: 600; color: var(--warning); }
+    .score-conf-text { font-size: 12px; color: var(--muted); }
+
+    .pillar-mini-list { display: flex; flex-direction: column; gap: 8px; }
+    .pillar-mini-row { display: grid; grid-template-columns: 160px 1fr 52px; align-items: center; gap: 12px; }
+    .pillar-mini-name { font-size: 12px; font-weight: 500; color: var(--text); }
+    .pillar-mini-name.primary { color: var(--warning); font-weight: 700; }
+    .pillar-mini-bar-track { height: 8px; background: #e8e0cf; border-radius: 99px; position: relative; }
+    .pillar-mini-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); }
+    .pillar-mini-fill.weak { background: linear-gradient(90deg, #d4856a, var(--warning)); }
+    .pillar-mini-score { font-size: 12px; font-weight: 600; color: var(--muted); text-align: right; }
+    .pillar-mini-score.weak { color: var(--warning); }
+
+    .snapshot-right { display: flex; flex-direction: column; gap: 10px; }
+
+    .snapshot-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
     }
 
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 28px;
-      margin-bottom: 20px;
-    }
-
-    .logo {
-      position: absolute;
-      top: 24px;
-      right: 28px;
-      height: 44px;
-      opacity: 0.95;
-      z-index: 2;
-    }
-
-    .logo img {
-      display: block;
-      height: 100%;
-      width: auto;
-    }
-
-    .hero {
-      position: relative;
-      padding: 36px 180px 36px 32px;
-      background:
-        radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
-        linear-gradient(135deg, #ffffff, #fbfaf6);
-    }
-
-    .eyebrow {
-      font-size: 12px;
+    .snapshot-card-title {
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
-      color: var(--accent-dark);
+      color: var(--muted);
       margin-bottom: 10px;
     }
 
-    h1 {
-      margin: 0 0 10px;
-      font-size: 38px;
-      line-height: 1.08;
-      letter-spacing: -0.02em;
-    }
-
-    h2 {
-      margin: 0 0 16px;
-      font-size: 24px;
-      line-height: 1.15;
-    }
-
-    h3 {
-      margin: 0 0 10px;
-      font-size: 17px;
-      line-height: 1.2;
-    }
-
-    p {
-      margin: 0 0 12px;
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .muted { color: var(--muted); }
-
-    .hero-meta {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 22px;
-    }
-
-    .meta-box {
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.75);
-    }
-
-    .meta-label {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .meta-value {
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .grid-2 {
+    .snapshot-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    .chart-wrap {
-      display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 22px;
-      align-items: center;
-    }
-
-    .chart-box {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: visible;
-    }
-
-    .score-summary .big-score {
-      font-size: 46px;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .score-summary .score-label {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
-
-    .box-soft {
-      background: #fbfaf6;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
-    }
-
-    .constraint-box {
-      border: 1px solid var(--line);
-      border-left: 6px solid var(--warning);
-      border-radius: 14px;
-      padding: 18px 18px 16px;
-      background: #fffdfa;
-    }
-
-    .pillars {
-      display: grid;
-      gap: 14px;
-    }
-
-    .pillar-row {
-      display: grid;
       gap: 8px;
     }
 
-    .pillar-top {
+    .snapshot-item { }
+    .snapshot-item-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+    .snapshot-item-value { font-size: 13px; font-weight: 600; color: var(--text); }
+
+    /* ══ SLIDE 3: CONSTRAINT HYPOTHESIS ══ */
+    .hypothesis-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+
+    .hyp-summary {
+      background: var(--dark-bg);
+      border-radius: 14px;
+      padding: 24px;
       display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: baseline;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
     }
 
-    .pillar-label {
-      font-weight: 600;
+    .hyp-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+    .hyp-summary-text { font-size: 16px; font-weight: 300; line-height: 1.7; color: rgba(255,255,255,0.85); }
+
+    .hyp-list { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+
+    .hyp-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .hyp-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--dark-bg);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .hyp-text {
+      font-size: 13px;
+      line-height: 1.55;
       color: var(--text);
     }
 
-    .pillar-score {
-      font-size: 14px;
-      color: var(--muted);
-      white-space: nowrap;
+    /* ══ SLIDE 4: DISCOVERY QUESTIONS ══ */
+    .questions-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+
+    .questions-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .question-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 16px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
     }
 
-    .bar {
-      width: 100%;
-      height: 12px;
-      background: #eee7d9;
-      border-radius: 999px;
-      overflow: hidden;
+    .q-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-dark);
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-      border-radius: 999px;
+    .q-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+
+    .friction-col { display: flex; flex-direction: column; gap: 10px; }
+
+    .friction-title { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+
+    .friction-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      background: white;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--warning);
+      border-radius: 0 10px 10px 0;
     }
 
-    ul {
-      margin: 0;
-      padding-left: 20px;
+    .friction-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+
+    /* ══ SLIDE 5: CONVERSATION STRATEGY ══ */
+    .strategy-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+
+    .strategy-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .strategy-card {
+      padding: 14px 16px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
     }
 
-    li {
-      margin-bottom: 10px;
-      line-height: 1.5;
+    .strategy-phase {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: 5px;
     }
 
-    .radar {
-      overflow: visible;
+    .strategy-text { font-size: 13px; line-height: 1.55; color: var(--text); }
+
+    .engagement-col { display: flex; flex-direction: column; gap: 12px; }
+
+    .engagement-title { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+
+    .engagement-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
     }
 
-    .radar text,
-    .radar-label {
-      font-size: 11px;
-      fill: var(--muted);
-      font-weight: 600;
+    .engagement-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--accent-dark);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
-    @media (max-width: 900px) {
-      .hero-meta,
-      .grid-2,
-      .chart-wrap {
-        grid-template-columns: 1fr;
-      }
+    .engagement-text { font-size: 13px; line-height: 1.5; color: var(--text); }
 
-      .chart-box {
-        justify-content: flex-start;
-      }
+    .readiness-bar {
+      margin-top: auto;
+      padding: 14px 16px;
+      background: var(--dark-bg);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
 
-      h1 { font-size: 32px; }
+    .readiness-label { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+    .readiness-value { font-size: 14px; font-weight: 600; color: white; }
+    .readiness-rationale { font-size: 12px; color: var(--dark-muted); font-weight: 300; }
 
-      .page {
-        padding-left: 14px;
-        padding-right: 14px;
-      }
+    /* ══ CLOSING ══ */
+    .slide-closing { background: var(--dark-bg); display: flex; flex-direction: column; }
+    .closing-glow { position: absolute; top: 0; right: 0; width: 480px; height: 480px; background: radial-gradient(circle at top right, rgba(201,168,76,0.09), transparent 60%); pointer-events: none; }
+    .closing-top { padding: 28px 52px; border-bottom: 1px solid var(--dark-line); display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; flex-shrink: 0; }
+    .closing-logo { height: 26px; filter: brightness(0) invert(1); opacity: 0.7; }
+    .closing-badge { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dark-muted); }
+    .closing-body { flex: 1; padding: 0 52px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 2; }
+    .closing-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; }
+    .closing-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 44px; font-weight: 700; color: #ffffff; line-height: 1.08; margin-bottom: 18px; max-width: 640px; }
+    .closing-desc { font-size: 16px; font-weight: 300; color: var(--dark-muted); line-height: 1.65; max-width: 580px; }
+    .closing-footer { padding: 20px 52px 28px; display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 2; flex-shrink: 0; }
+    .closing-meta { font-size: 12px; color: rgba(255,255,255,0.28); line-height: 1.9; }
 
-      .card,
-      .hero {
-        padding: 22px;
-      }
+    @media print {
+      body { background: white; }
+      .slide { page-break-after: always; break-after: page; }
+      .deck { gap: 0; background: white; }
+    }
 
-      .logo {
-        position: static;
-        margin: 0 0 12px auto;
-        display: flex;
-        justify-content: flex-end;
-        height: 36px;
-      }
+    @media (max-width: 1300px) {
+      :root { --slide-w: 100vw; --slide-h: calc(100vw * 0.5625); }
+      .cover-headline { font-size: 40px; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <section class="card hero">
-      <div class="logo">
-        <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
+<div class="deck">
+
+  <!-- ══ SLIDE 1 — COVER ══ -->
+  <div class="slide slide-cover">
+    <div class="cover-glow-tr"></div>
+    <div class="cover-glow-bl"></div>
+    <div class="cover-top-bar">
+      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="cover-logo">
+      <div class="cover-internal-badge">Internal · Confidential</div>
+    </div>
+    <div class="cover-hero">
+      <div class="cover-eyebrow">Vallenwood Consulting · Pre-Call Brief</div>
+      <h1 class="cover-headline" id="cover-headline">Client Briefing</h1>
+      <p class="cover-sub">Internal diagnostic summary and conversation strategy. For consulting use only — not for distribution to the client.</p>
+    </div>
+    <div class="cover-metrics">
+      <div class="cover-metric">
+        <div class="cm-label">Company</div>
+        <div class="cm-value" id="cover-company">—</div>
       </div>
-
-      <div class="eyebrow">Vallenwood Consulting · Internal</div>
-      <h1>Client Diagnostic Briefing</h1>
-      <p class="muted">
-        Internal pre-call brief designed to help frame the live conversation, validate the constraint, and identify the strongest engagement path.
-      </p>
-
-      <div class="hero-meta">
-        <div class="meta-box">
-          <div class="meta-label">Company</div>
-          <div class="meta-value" id="company-name">Company</div>
-        </div>
-        <div class="meta-box">
-          <div class="meta-label">Report Date</div>
-          <div class="meta-value" id="report-date">—</div>
-        </div>
-        <div class="meta-box">
-          <div class="meta-label">Primary Constraint</div>
-          <div class="meta-value" id="primary-constraint-top">—</div>
-        </div>
-        <div class="meta-box">
-          <div class="meta-label">OS Score</div>
-          <div class="meta-value" id="overall-score-top">—</div>
-        </div>
+      <div class="cover-metric">
+        <div class="cm-label">OS Score</div>
+        <div class="cm-value score" id="cover-score">—</div>
       </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="card">
-        <h2>OS Alignment Snapshot</h2>
-        <div class="chart-wrap">
-          <div class="chart-box">
-            <svg class="radar" id="radar-chart" width="400" height="360" viewBox="0 0 400 360">
-              <g id="radar-grid"></g>
-              <g id="radar-axes"></g>
-              <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
-              <polygon id="radar-area" fill="rgba(138,166,119,0.22)" stroke="#6f875f" stroke-width="3"></polygon>
-              <g id="radar-points"></g>
-              <g id="radar-labels"></g>
-            </svg>
-          </div>
-
-          <div class="score-summary">
-            <div class="big-score" id="overall-score">0</div>
-            <div class="score-label">out of 100</div>
-            <h3 id="score-band" style="font-size:28px; margin-bottom:10px;">—</h3>
-            <p id="constraint-hypothesis-summary" class="muted"></p>
-          </div>
-        </div>
+      <div class="cover-metric">
+        <div class="cm-label">Primary Constraint</div>
+        <div class="cm-value warn" id="cover-constraint">—</div>
       </div>
-
-      <div class="card">
-        <h2>Constraint Hypothesis</h2>
-        <div class="constraint-box">
-          <h3 id="primary-constraint-label">—</h3>
-          <p id="primary-constraint-why"></p>
-          <ul id="constraint-hypothesis-list"></ul>
-        </div>
+      <div class="cover-metric">
+        <div class="cm-label">Upsell Readiness</div>
+        <div class="cm-value gold" id="cover-readiness">—</div>
       </div>
-    </section>
-
-    <section class="card">
-      <h2>5-Pillar Breakdown</h2>
-      <div class="pillars" id="pillar-list"></div>
-    </section>
-
-    <section class="grid-2">
-      <div class="card">
-        <h2>Commercial Friction Signals</h2>
-        <div class="box-soft">
-          <ul id="commercial-friction-list"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Likely Objections / Tensions</h2>
-        <div class="box-soft">
-          <ul id="likely-objections-list"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="card">
-        <h2>Discovery Questions</h2>
-        <div class="box-soft">
-          <ul id="discovery-questions-list"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Conversation Strategy</h2>
-        <div class="box-soft">
-          <ul id="conversation-strategy-list"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="card">
-        <h2>Engagement Opportunity Map</h2>
-        <div class="box-soft">
-          <ul id="engagement-opportunities-list"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Recommended Engagement Angle</h2>
-        <div class="box-soft">
-          <p><strong>Priority angle:</strong> <span id="engagement-angle"></span></p>
-          <p><strong>Upsell readiness:</strong> <span id="upsell-readiness"></span></p>
-          <ul id="likely-needs-list"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="card">
-        <h2>Diagnostic Snapshot</h2>
-        <div class="box-soft">
-          <ul id="snapshot-list"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Live Validation Priorities</h2>
-        <div class="box-soft">
-          <ul id="validate-live-list"></ul>
-        </div>
-      </div>
-    </section>
+    </div>
   </div>
 
-  <script>
-    const d = window.REPORT_DATA || {};
-
-    function setText(id, value, fallback = "—") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const finalValue =
-        value !== undefined && value !== null && value !== "" ? value : fallback;
-      el.textContent = finalValue;
-    }
-
-    function chooseList(items, fallback) {
-      return Array.isArray(items) && items.length > 0 ? items : fallback;
-    }
-
-    function fillList(id, items, formatter = null, fallback = "Further validation recommended during the live review.") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.innerHTML = "";
-
-      if (!items || !items.length) {
-        const li = document.createElement("li");
-        li.style.color = "#6f6f69";
-        li.style.fontStyle = "italic";
-        li.textContent = fallback;
-        el.appendChild(li);
-        return;
-      }
-
-      items.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = formatter ? formatter(item) : String(item);
-        el.appendChild(li);
-      });
-    }
-
-    function escapeHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    function splitLabel(label) {
-      const text = String(label || "").trim();
-      if (!text) return [""];
-      if (Array.isArray(label)) return label;
-      if (text.length <= 12) return [text];
-      if (text.includes(" & ")) {
-        const parts = text.split(" & ");
-        if (parts.length === 2) return [`${parts[0]} &`, parts[1]];
-      }
-      const words = text.split(/\s+/);
-      if (words.length === 1) return [text];
-      if (words.length === 2) return words;
-      const midpoint = Math.ceil(words.length / 2);
-      return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")];
-    }
-
-    function firstDefined(...values) {
-      for (const value of values) {
-        if (value !== undefined && value !== null && value !== "") return value;
-      }
-      return undefined;
-    }
-
-    function num(value, fallback = 0) {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : fallback;
-    }
-
-    function getScoresFromObject(obj) {
-      if (!obj || Array.isArray(obj)) return null;
-      return {
-        positioning: num(obj.positioning),
-        value_architecture: num(obj.value_architecture),
-        pricing_packaging: num(obj.pricing_packaging),
-        gtm_focus: num(obj.gtm_focus),
-        measurement: num(obj.measurement)
-      };
-    }
-
-    function getScoresFromArray(arr) {
-      if (!Array.isArray(arr)) return null;
-      return {
-        positioning: num(arr.find((p) => p.key === "positioning")?.score),
-        value_architecture: num(arr.find((p) => p.key === "value_architecture")?.score),
-        pricing_packaging: num(arr.find((p) => p.key === "pricing_packaging")?.score),
-        gtm_focus: num(arr.find((p) => p.key === "gtm_focus")?.score),
-        measurement: num(arr.find((p) => p.key === "measurement")?.score)
-      };
-    }
-
-    function getScoresFromChartArray(arr) {
-      if (!Array.isArray(arr) || arr.length < 5) return null;
-      return {
-        positioning: num(arr[0]),
-        value_architecture: num(arr[1]),
-        pricing_packaging: num(arr[2]),
-        gtm_focus: num(arr[3]),
-        measurement: num(arr[4])
-      };
-    }
-
-    function resolvePillarScores() {
-      return (
-        getScoresFromObject(d.pillar_scores) ||
-        getScoresFromObject(d.scoring?.pillar_scores) ||
-        getScoresFromArray(d.pillar_scores) ||
-        getScoresFromArray(d.scoring?.pillar_scores) ||
-        getScoresFromChartArray(d.chart?.actual_scores) ||
-        getScoresFromChartArray(d.scoring?.chart?.actual_scores) || {
-          positioning: 0,
-          value_architecture: 0,
-          pricing_packaging: 0,
-          gtm_focus: 0,
-          measurement: 0
-        }
-      );
-    }
-
-    function resolveTargetScores() {
-      return (
-        getScoresFromObject(d.target_pillar_scores) ||
-        getScoresFromObject(d.scoring?.target_pillar_scores) ||
-        getScoresFromChartArray(d.chart?.target_scores) ||
-        getScoresFromChartArray(d.scoring?.chart?.target_scores) || {
-          positioning: 16,
-          value_architecture: 15,
-          pricing_packaging: 15,
-          gtm_focus: 16,
-          measurement: 15
-        }
-      );
-    }
-
-    function resolveRadarLabels() {
-      return firstDefined(d.radar_labels, d.scoring?.radar_labels) || {
-        positioning: "Positioning",
-        value_architecture: "Value Architecture",
-        pricing_packaging: "Pricing & Packaging",
-        gtm_focus: "GTM Focus",
-        measurement: "Measurement"
-      };
-    }
-
-    const overallScore = firstDefined(d.overall_score, d.scoring?.overall_score, 0);
-    const scoreBand = firstDefined(d.score_band, d.scoring?.score_band, "—");
-    const primaryConstraintLabel = firstDefined(
-      d.primary_constraint_label,
-      d.scoring?.primary_constraint?.label,
-      "—"
-    );
-
-    const pillarScores = resolvePillarScores();
-    const targetScores = resolveTargetScores();
-    const radarLabels = resolveRadarLabels();
-
-    setText("company-name", d.company_name);
-    setText("report-date", d.report_date);
-    setText("primary-constraint-top", primaryConstraintLabel);
-    setText("overall-score-top", overallScore);
-    setText("overall-score", overallScore);
-    setText("score-band", scoreBand);
-    setText("primary-constraint-label", primaryConstraintLabel);
-    setText(
-      "primary-constraint-why",
-      d.primary_constraint_why_it_matters || "This pillar appears to be the most likely system constraint based on the current intake."
-    );
-    setText(
-      "constraint-hypothesis-summary",
-      d.constraint_hypothesis_summary,
-      "Use this briefing to validate whether the diagnosed constraint is also visible in active pipeline behavior."
-    );
-    setText(
-      "engagement-angle",
-      d.consulting_opportunity?.priority_engagement_angle || "To be confirmed in the call"
-    );
-    setText(
-      "upsell-readiness",
-      d.consulting_opportunity?.upsell_readiness || "Moderate"
-    );
-
-    const snapshot = d.diagnostic_snapshot || {};
-    fillList(
-      "snapshot-list",
-      Object.entries(snapshot),
-      ([k, v]) => {
-        const label = k.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
-        const value = Array.isArray(v) ? v.join(", ") : v;
-        return `${label}: ${value ?? ""}`;
-      }
-    );
-
-    fillList(
-      "constraint-hypothesis-list",
-      chooseList(d.constraint_hypothesis, [
-        "The current signals suggest the diagnosed constraint is likely affecting more than one commercial lever at once.",
-        "Use the live conversation to confirm whether this issue is showing up in deal progression, pricing pressure, or internal message consistency.",
-        "If the diagnosis holds, this should become the focal point for the first consulting intervention."
-      ])
-    );
-
-    fillList(
-      "commercial-friction-list",
-      chooseList(d.commercial_friction, [
-        "Pricing pressure may be surfacing before value is fully established.",
-        "Internal message consistency may vary across buyer-facing conversations.",
-        "The current system may be creating avoidable friction in conversion quality or deal velocity."
-      ])
-    );
-
-    fillList(
-      "likely-objections-list",
-      chooseList(d.likely_objections, [
-        "The client may believe the issue is executional when it is actually structural.",
-        "They may frame the problem as pricing pressure rather than value articulation.",
-        "They may underestimate how much cross-functional message inconsistency is affecting commercial performance."
-      ])
-    );
-
-    fillList(
-      "discovery-questions-list",
-      chooseList(d.discovery_questions, [
-        "Where do deals most often slow down or become harder to advance?",
-        "How often do pricing objections appear before value is clearly established?",
-        "What proof points do buyers typically need before they are comfortable moving forward?",
-        "Where do prospects most often compare your solution to alternatives or internal options?"
-      ])
-    );
-
-    fillList(
-      "conversation-strategy-list",
-      chooseList(d.conversation_strategy, [
-        "Start by confirming whether the diagnosed constraint feels consistent with lived commercial reality.",
-        "Use recent deal examples to test whether the issue is systemic or isolated.",
-        "Move the discussion from symptoms to system design as early as possible.",
-        "Steer toward the highest-leverage intervention rather than a broad transformation discussion."
-      ])
-    );
-
-    fillList(
-      "engagement-opportunities-list",
-      chooseList(d.engagement_opportunities, [
-        "Value architecture refinement",
-        "Pricing and packaging strategy",
-        "Messaging system alignment",
-        "Focused GTM operating-system sprint"
-      ])
-    );
-
-    fillList(
-      "likely-needs-list",
-      chooseList(d.consulting_opportunity?.likely_needs, [
-        "Clarify the underlying commercial constraint",
-        "Prioritize the highest-confidence intervention",
-        "Translate diagnosis into a focused sprint scope"
-      ])
-    );
-
-    fillList(
-      "validate-live-list",
-      chooseList(d.call_briefing?.areas_to_validate_live, [
-        "Whether the primary constraint is visible in active pipeline behavior",
-        "Whether internal teams describe value consistently",
-        "Whether pricing friction is actually rooted in value clarity or packaging design",
-        "Whether the client is already feeling urgency around this issue"
-      ])
-    );
-
-    const pillarOrder = [
-      ["positioning", "Positioning & Category"],
-      ["value_architecture", "Value Architecture"],
-      ["pricing_packaging", "Pricing & Packaging"],
-      ["gtm_focus", "GTM Focus"],
-      ["measurement", "Measurement"]
-    ];
-
-    const pillarList = document.getElementById("pillar-list");
-    pillarList.innerHTML = "";
-    pillarOrder.forEach(([key, label]) => {
-      const scoreVal = num(pillarScores[key]);
-      const targetVal = num(targetScores[key]);
-      const row = document.createElement("div");
-      row.className = "pillar-row";
-      row.innerHTML = `
-        <div class="pillar-top">
-          <div class="pillar-label">${escapeHtml(label)}</div>
-          <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
+  <!-- ══ SLIDE 2 — SCORE + CLIENT SNAPSHOT ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Diagnostic Overview</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-2">—</span>
+        <span class="chrome-badge">Internal</span>
+        <span class="chrome-page">2 / 6</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">Score, pillars, and client snapshot</div>
+      <div class="slide-rule"></div>
+      <div class="snapshot-layout">
+        <div class="score-block">
+          <div>
+            <span class="score-big" id="big-score">0</span>
+            <span class="score-denom">/100</span>
+            <div class="score-band-text" id="score-band" style="margin-top:6px;">—</div>
+            <div class="score-conf-text" id="score-conf">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Pillar scores</div>
+            <div class="pillar-mini-list" id="pillar-mini-list"></div>
+          </div>
         </div>
-        <div class="bar">
-          <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
+        <div class="snapshot-right">
+          <div class="snapshot-card">
+            <div class="snapshot-card-title">Client Snapshot</div>
+            <div class="snapshot-grid" id="snapshot-grid"></div>
+          </div>
+          <div class="snapshot-card" id="tensions-card">
+            <div class="snapshot-card-title">Operating Tensions</div>
+            <div id="tensions-list"></div>
+          </div>
         </div>
-      `;
-      pillarList.appendChild(row);
-    });
+      </div>
+    </div>
+  </div>
 
-    function renderRadarChart() {
-      const grid = document.getElementById("radar-grid");
-      const axes = document.getElementById("radar-axes");
-      const labels = document.getElementById("radar-labels");
-      const targetArea = document.getElementById("radar-target-area");
-      const area = document.getElementById("radar-area");
-      const pointsGroup = document.getElementById("radar-points");
+  <!-- ══ SLIDE 3 — CONSTRAINT HYPOTHESIS ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Constraint Hypothesis</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-3">—</span>
+        <span class="chrome-badge">Internal</span>
+        <span class="chrome-page">3 / 6</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">What is really going on in this revenue system</div>
+      <div class="slide-rule"></div>
+      <div class="hypothesis-layout">
+        <div class="hyp-summary">
+          <div class="hyp-kicker">Consultant's point of view</div>
+          <p class="hyp-summary-text" id="hyp-summary"></p>
+        </div>
+        <div class="hyp-list" id="hyp-list"></div>
+      </div>
+    </div>
+  </div>
 
-      grid.innerHTML = "";
-      axes.innerHTML = "";
-      labels.innerHTML = "";
-      pointsGroup.innerHTML = "";
+  <!-- ══ SLIDE 4 — DISCOVERY QUESTIONS + COMMERCIAL FRICTION ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Discovery & Friction</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-4">—</span>
+        <span class="chrome-badge">Internal</span>
+        <span class="chrome-page">4 / 6</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">Questions to ask — and friction points to surface</div>
+      <div class="slide-rule"></div>
+      <div class="questions-layout">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Discovery questions</div>
+          <div class="questions-list" id="discovery-list"></div>
+        </div>
+        <div class="friction-col">
+          <div class="friction-title">Commercial friction in active deals</div>
+          <div id="friction-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      const cx = 200;
-      const cy = 178;
-      const radius = 96;
-      const labelRadius = 136;
+  <!-- ══ SLIDE 5 — CONVERSATION STRATEGY + ENGAGEMENT ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Conversation Strategy</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-5">—</span>
+        <span class="chrome-badge">Internal</span>
+        <span class="chrome-page">5 / 6</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">How to run the conversation</div>
+      <div class="slide-rule"></div>
+      <div class="strategy-layout">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Conversation strategy</div>
+          <div class="strategy-list" id="strategy-list"></div>
+        </div>
+        <div class="engagement-col">
+          <div class="engagement-title">Engagement opportunities</div>
+          <div id="engagement-list"></div>
+          <div class="readiness-bar" id="readiness-bar">
+            <span class="readiness-label">Upsell Readiness</span>
+            <span class="readiness-value" id="readiness-value">—</span>
+            <span class="readiness-rationale" id="readiness-rationale"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      const data = [
-        { key: "positioning", label: radarLabels.positioning, value: num(pillarScores.positioning) },
-        { key: "value_architecture", label: radarLabels.value_architecture, value: num(pillarScores.value_architecture) },
-        { key: "pricing_packaging", label: radarLabels.pricing_packaging, value: num(pillarScores.pricing_packaging) },
-        { key: "gtm_focus", label: radarLabels.gtm_focus, value: num(pillarScores.gtm_focus) },
-        { key: "measurement", label: radarLabels.measurement, value: num(pillarScores.measurement) }
-      ];
+  <!-- ══ SLIDE 6 — AREAS TO VALIDATE ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Validation Checklist</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-6">—</span>
+        <span class="chrome-badge">Internal</span>
+        <span class="chrome-page">6 / 6</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">What to confirm in the first 30 minutes</div>
+      <div class="slide-rule"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Areas to validate live</div>
+          <div id="validate-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Likely objections to anticipate</div>
+          <div id="objections-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      const levels = 4;
-      const totalAxes = data.length;
-      const svgNS = "http://www.w3.org/2000/svg";
+  <!-- ══ CLOSING ══ -->
+  <div class="slide slide-closing">
+    <div class="closing-glow"></div>
+    <div class="closing-top">
+      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="closing-logo">
+      <span class="closing-badge">Internal Brief · Confidential</span>
+    </div>
+    <div class="closing-body">
+      <div class="closing-eyebrow">Vallenwood Consulting</div>
+      <h2 class="closing-headline">Walk in with<br>a point of view.</h2>
+      <p class="closing-desc">This brief is generated from the Brand-to-GTM OS diagnostic and is intended to prepare you for the client conversation — not to replace your judgment. The hypotheses here are starting points. What you hear in the first 15 minutes will sharpen or redirect them.</p>
+    </div>
+    <div class="closing-footer">
+      <div class="closing-meta">
+        <div id="closing-company">—</div>
+        <div id="closing-date">—</div>
+        <div>Internal use only · Vallenwood Consulting</div>
+      </div>
+    </div>
+  </div>
 
-      function pointFor(index, value, max = 20, customRadius = radius) {
-        const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
-        const r = (value / max) * customRadius;
-        return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
-      }
+</div>
 
-      function labelAnchor(x) {
-        if (Math.abs(x - cx) < 14) return "middle";
-        return x < cx ? "end" : "start";
-      }
+<script>
+const d = window.REPORT_DATA || {};
 
-      function labelLineOffset(point) {
-        if (Math.abs(point.x - cx) < 14) return 0;
-        return point.x < cx ? -2 : 2;
-      }
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function set(id, val, fb) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val || fb || "—";
+}
 
-      for (let level = 1; level <= levels; level++) {
-        const r = (radius / levels) * level;
-        const pts = data.map((_, i) => {
-          const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
-          return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
-        }).join(" ");
-        const poly = document.createElementNS(svgNS, "polygon");
-        poly.setAttribute("points", pts);
-        poly.setAttribute("fill", "none");
-        poly.setAttribute("stroke", "#e6dfcf");
-        poly.setAttribute("stroke-width", "1");
-        grid.appendChild(poly);
-      }
+const company = d.company_name || "";
+const score = d.scoring?.overall_score ?? d.overall_score ?? 0;
+const band = d.scoring?.score_band ?? d.score_band ?? "";
+const confidence = d.scoring?.confidence ?? d.confidence ?? "Moderate";
+const constraint = d.scoring?.primary_constraint?.label ?? d.primary_constraint_label ?? "—";
+const date = d.report_date ?? (d.scoring ? new Date().toLocaleDateString("en-US",{year:"numeric",month:"long"}) : "");
+const pillarScores = d.scoring?.pillar_scores
+  ? Object.fromEntries((d.scoring.pillar_scores||[]).map(p=>[p.key,p.score]))
+  : d.pillar_scores || {};
+const targetScores = d.target_pillar_scores || {positioning:16,value_architecture:15,pricing_packaging:15,gtm_focus:16,measurement:15};
+const snapshot = d.diagnostic_snapshot || {};
+const co = d.consulting_opportunity || {};
+const readiness = co.upsell_readiness || "—";
 
-      data.forEach((item, i) => {
-        const outer = pointFor(i, 20, 20);
-        const line = document.createElementNS(svgNS, "line");
-        line.setAttribute("x1", cx);
-        line.setAttribute("y1", cy);
-        line.setAttribute("x2", outer.x);
-        line.setAttribute("y2", outer.y);
-        line.setAttribute("stroke", "#ddd4c3");
-        line.setAttribute("stroke-width", "1.2");
-        axes.appendChild(line);
+// Cover
+set("cover-headline", company ? `${company} — Client Brief` : "Client Brief");
+set("cover-company", company);
+set("cover-score", score + "/100");
+set("cover-constraint", constraint);
+set("cover-readiness", typeof readiness === "string" ? readiness.split("—")[0].trim() : readiness);
+[2,3,4,5,6].forEach(n => set(`chrome-company-${n}`, company));
 
-        const labelPoint = pointFor(i, 20, 20, labelRadius);
-        const labelLines = splitLabel(item.label);
-        const text = document.createElementNS(svgNS, "text");
-        text.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
-        text.setAttribute("y", labelPoint.y);
-        text.setAttribute("text-anchor", labelAnchor(labelPoint.x));
-        text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("class", "radar-label");
+// Score slide
+set("big-score", score);
+set("score-band", band);
+set("score-conf", `${confidence} confidence`);
 
-        const lineHeight = 13;
-        const startDy = -((labelLines.length - 1) * lineHeight) / 2;
+// Pillar mini list
+(function(){
+  const el = document.getElementById("pillar-mini-list");
+  if (!el) return;
+  const pillars=[["positioning","Positioning"],["value_architecture","Value Architecture"],["pricing_packaging","Pricing & Packaging"],["gtm_focus","GTM Focus"],["measurement","Measurement"]];
+  const minScore = Math.min(...pillars.map(([k])=>Number(pillarScores[k]||0)));
+  pillars.forEach(([key,label])=>{
+    const val=Number(pillarScores[key]||0),tgt=Number(targetScores[key]||15),pct=val/20*100,weak=val<tgt,isPrimary=val===minScore;
+    const row=document.createElement("div");row.className="pillar-mini-row";
+    row.innerHTML=`<div class="pillar-mini-name${isPrimary?" primary":""}">${esc(label)}${isPrimary?" ★":""}</div><div class="pillar-mini-bar-track"><div class="pillar-mini-fill${weak?" weak":""}" style="width:${pct}%"></div></div><div class="pillar-mini-score${weak?" weak":""}">${val}/20</div>`;
+    el.appendChild(row);
+  });
+})();
 
-        labelLines.forEach((lineText, lineIndex) => {
-          const tspan = document.createElementNS(svgNS, "tspan");
-          tspan.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
-          tspan.setAttribute("dy", lineIndex === 0 ? startDy : lineHeight);
-          tspan.textContent = lineText;
-          text.appendChild(tspan);
-        });
+// Snapshot grid
+(function(){
+  const el = document.getElementById("snapshot-grid");
+  if (!el) return;
+  const items = [
+    ["Revenue", snapshot.annual_revenue || d.inputs?.normalized_answers?.annual_revenue],
+    ["ACV", snapshot.acv || d.inputs?.normalized_answers?.acv],
+    ["Sales Cycle", snapshot.sales_cycle || d.inputs?.normalized_answers?.sales_cycle],
+    ["Close Rate", snapshot.close_rate || d.inputs?.normalized_answers?.close_rate],
+    ["Growth", snapshot.growth_status || d.inputs?.normalized_answers?.growth_status],
+    ["Measurement", snapshot.measurement_model || d.inputs?.normalized_answers?.marketing_measured_by],
+  ].filter(([,v])=>v);
+  items.forEach(([label,value])=>{
+    const div=document.createElement("div");div.className="snapshot-item";
+    div.innerHTML=`<div class="snapshot-item-label">${esc(label)}</div><div class="snapshot-item-value">${esc(value)}</div>`;
+    el.appendChild(div);
+  });
+})();
 
-        labels.appendChild(text);
-      });
+// Tensions
+(function(){
+  const el = document.getElementById("tensions-list");
+  if (!el) return;
+  const tensions = d.scoring?.operating_tensions || d.signal_analysis?.operating_tensions || [];
+  tensions.slice(0,2).forEach(t=>{
+    const div=document.createElement("div");
+    div.style.cssText="font-size:12px;line-height:1.5;color:var(--text);padding:6px 0;border-bottom:1px solid var(--line);";
+    div.innerHTML=`<strong>${esc(t.tension||"")}</strong><br><span style="color:var(--muted)">${esc(t.implication||"")}</span>`;
+    el.appendChild(div);
+  });
+  if (!tensions.length) document.getElementById("tensions-card").style.display="none";
+})();
 
-      const targetPolygonPoints = data.map((item, i) => {
-        const targetVal = num(targetScores[item.key]);
-        const p = pointFor(i, targetVal, 20);
-        return `${p.x},${p.y}`;
-      }).join(" ");
-      targetArea.setAttribute("points", targetPolygonPoints);
+// Constraint hypothesis
+set("hyp-summary", d.constraint_hypothesis_summary || d.interpretation?.executive_readout || "");
+(function(){
+  const el = document.getElementById("hyp-list");
+  if (!el) return;
+  const hyps = d.constraint_hypothesis || d.interpretation?.root_cause_hypotheses || [];
+  hyps.slice(0,3).forEach((h,i)=>{
+    const div=document.createElement("div");div.className="hyp-card";
+    div.innerHTML=`<div class="hyp-num">${i+1}</div><span class="hyp-text">${esc(h)}</span>`;
+    el.appendChild(div);
+  });
+})();
 
-      const polygonPoints = data.map((item, i) => {
-        const p = pointFor(i, item.value, 20);
-        return `${p.x},${p.y}`;
-      }).join(" ");
-      area.setAttribute("points", polygonPoints);
+// Discovery questions
+(function(){
+  const el = document.getElementById("discovery-list");
+  if (!el) return;
+  const qs = d.discovery_questions || d.call_briefing?.top_questions_to_ask || [];
+  qs.slice(0,4).forEach((q,i)=>{
+    const div=document.createElement("div");div.className="question-card";
+    div.innerHTML=`<div class="q-num">${i+1}</div><span class="q-text">${esc(q)}</span>`;
+    el.appendChild(div);
+  });
+})();
 
-      data.forEach((item, i) => {
-        const p = pointFor(i, item.value, 20);
-        const circle = document.createElementNS(svgNS, "circle");
-        circle.setAttribute("cx", p.x);
-        circle.setAttribute("cy", p.y);
-        circle.setAttribute("r", "4.5");
-        circle.setAttribute("fill", "#6f875f");
-        pointsGroup.appendChild(circle);
-      });
-    }
+// Commercial friction
+(function(){
+  const el = document.getElementById("friction-list");
+  if (!el) return;
+  const items = d.commercial_friction || [];
+  items.slice(0,3).forEach(f=>{
+    const div=document.createElement("div");div.className="friction-item";
+    div.innerHTML=`<span class="friction-text">${esc(f)}</span>`;
+    el.appendChild(div);
+  });
+})();
 
-    renderRadarChart();
-  </script>
+// Conversation strategy
+(function(){
+  const el = document.getElementById("strategy-list");
+  if (!el) return;
+  const phases = ["Open the call","Introduce the constraint","Bridge to engagement","Handle objections"];
+  const items = d.conversation_strategy || [];
+  items.slice(0,4).forEach((s,i)=>{
+    const div=document.createElement("div");div.className="strategy-card";
+    div.innerHTML=`<div class="strategy-phase">${esc(phases[i]||`Step ${i+1}`)}</div><div class="strategy-text">${esc(s)}</div>`;
+    el.appendChild(div);
+  });
+})();
+
+// Engagement opportunities
+(function(){
+  const el = document.getElementById("engagement-list");
+  if (!el) return;
+  const items = d.engagement_opportunities || co.likely_needs || [];
+  items.slice(0,3).forEach((e,i)=>{
+    const div=document.createElement("div");div.className="engagement-item";
+    div.innerHTML=`<div class="engagement-num">${i+1}</div><span class="engagement-text">${esc(e)}</span>`;
+    el.appendChild(div);
+  });
+})();
+
+// Readiness
+const readinessStr = typeof readiness === "string" ? readiness : "";
+const readinessParts = readinessStr.split(/[—–-]/);
+set("readiness-value", readinessParts[0]?.trim() || readinessStr);
+set("readiness-rationale", readinessParts[1]?.trim() || co.priority_engagement_angle || "");
+
+// Validate live
+(function(){
+  const el = document.getElementById("validate-list");
+  if (!el) return;
+  const items = d.call_briefing?.areas_to_validate_live || [];
+  items.slice(0,3).forEach(v=>{
+    const div=document.createElement("div");
+    div.style.cssText="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:white;border:1px solid var(--line);border-radius:10px;";
+    div.innerHTML=`<div style="width:6px;height:6px;border-radius:50%;background:var(--accent-dark);margin-top:5px;flex-shrink:0;"></div><span style="font-size:13px;line-height:1.5;color:var(--text);">${esc(v)}</span>`;
+    el.appendChild(div);
+  });
+})();
+
+// Objections
+(function(){
+  const el = document.getElementById("objections-list");
+  if (!el) return;
+  const items = d.likely_objections || [];
+  items.slice(0,3).forEach(o=>{
+    const div=document.createElement("div");
+    div.style.cssText="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:white;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;";
+    div.innerHTML=`<span style="font-size:13px;line-height:1.5;color:var(--text);">${esc(o)}</span>`;
+    el.appendChild(div);
+  });
+})();
+
+set("closing-company", company);
+set("closing-date", date);
+</script>
 </body>
 </html>
