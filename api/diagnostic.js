@@ -7,6 +7,7 @@ import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
 import { makeReportId, saveReport } from "../lib/reportStore.js";
 import { scoreDiagnostic } from "../lib/scoring.js";
+import { enrichAuditReport } from "../lib/enrichAudit.js";
 
 /* =========================================================
    Helpers
@@ -976,129 +977,6 @@ function buildFullTierPlaceholder({ answers, osScored }) {
 }
 
 /* =========================================================
-   LLM Enrichment
-========================================================= */
-
-function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
-
-function safeJsonParse(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function validateAuditEnrichment(obj) {
-  if (!obj || typeof obj !== "object") return false;
-  // Accept either new schema (swot at top level) or old schema (swot in full_tier)
-  const hasNewSchema = obj.swot || obj.narrative || obj.root_cause_hypotheses;
-  const hasOldSchema = obj.full_tier?.swot && obj.full_tier?.roadmap;
-  return hasNewSchema || hasOldSchema;
-}
-
-async function enrichAuditReport(report) {
-  const client = getOpenAIClient();
-  const model = process.env.LLM_MODEL || "gpt-4o";
-
-  const compactInput = {
-    tier: report.tier,
-    scoring: report.scoring,
-    normalized_answers: report.inputs?.normalized_answers,
-  };
-
-  const systemPrompt =
-    "You are a senior B2B brand and go-to-market strategist. Return ONLY valid JSON. No markdown. No commentary. Do not fabricate market data. Use hypotheses when information is missing. Identify cross-pillar contradictions where one part of the GTM system appears more mature than another. Favor consultant-style interpretation over generic summaries.";
-
-  const userPrompt = `
-Using the diagnostic data below, return ONLY valid JSON with this shape:
-
-{
-  "narrative": {
-    "executive_summary": {
-      "headline": "",
-      "summary_paragraph": "",
-      "key_observations": [],
-      "what_to_do_next": []
-    },
-    "pillar_interpretations": [
-      {
-        "pillar_key": "",
-        "interpretation": "",
-        "quick_wins": [],
-        "questions_to_answer": []
-      }
-    ],
-    "operating_tensions": [
-      {
-        "tension": "",
-        "implication": "",
-        "pillar": "",
-        "severity": 1
-      }
-    ]
-  },
-  "full_tier": {
-    "swot": {
-      "strengths": [{"point":"","evidence":[]}],
-      "weaknesses": [{"point":"","evidence":[]}],
-      "opportunities": [{"point":"","evidence":[]}],
-      "threats": [{"point":"","evidence":[]}]
-    },
-    "competitive_context": {
-      "category": null,
-      "most_compared_to": [],
-      "competitive_archetypes": [],
-      "positioning_hypotheses": []
-    },
-    "pricing_packaging_audit": {
-      "current_state_signals": [],
-      "pricing_power_risks": [],
-      "discounting_diagnosis": "",
-      "packaging_issues": [],
-      "hypotheses_to_test": [],
-      "what_to_validate": [],
-      "first_fixes": []
-    },
-    "roadmap": {
-      "north_star": "",
-      "principles": [],
-      "thirty_day": [],
-      "ninety_day": [],
-      "six_to_twelve_month": []
-    },
-    "operating_tensions": []
-  }
-}
-
-Diagnostic data:
-${JSON.stringify(compactInput)}
-`.trim();
-
-  const response = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    temperature: 0.4,
-    max_tokens: 2000,
-  });
-
-  const text = response.choices[0]?.message?.content || "";
-  const parsed = safeJsonParse(text);
-
-  if (!validateAuditEnrichment(parsed)) {
-    throw new Error("Invalid LLM enrichment output");
-  }
-
-  return parsed;
-}
-
-/* =========================================================
    Auth helper
 ========================================================= */
 
@@ -1837,7 +1715,7 @@ export default async function handler(req, res) {
         if (!report.narrative.upgrade_bridge && enriched?.upgrade_bridge) {
           report.narrative.upgrade_bridge = enriched.upgrade_bridge;
         }
-        
+
         if (report?.disclaimer) report.disclaimer.ai_assisted = true;
       } catch (err) {
         L.step("enrichAuditReport FAIL", tEnrich, {
