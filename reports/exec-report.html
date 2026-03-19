@@ -721,37 +721,13 @@ if (bmEl) {
 
 // Diagnosis
 set("headline-diagnosis", d.headline_diagnosis || d.executive_headline || "");
-
-// Operating tension — use enrichment field or fall back to first scoring tension
-const ot = d.the_operating_tension
-  || d.operating_tensions?.[0]?.tension
-  || d.risks?.[0]
-  || "";
-const otImplication = d.operating_tensions?.[0]?.implication || "";
-const otFull = ot && otImplication ? `${ot} — ${otImplication}` : ot;
-if (otFull) {
-  const tc = document.getElementById("tension-card");
-  if (tc) tc.style.display = "block";
-  set("operating-tension", otFull);
-}
-
-// What this means in practice — use enrichment or fall back to scoring implications
-const practiceItems = (d.what_this_means_in_practice?.length
-  ? d.what_this_means_in_practice
-  : d.diagnosis_implications?.length
-    ? d.diagnosis_implications
-    : (d.operating_tensions||[]).map(t => t.implication).filter(Boolean)
-).slice(0, 4);
-
-const pl = document.getElementById("practice-list");
-if (pl) {
-  practiceItems.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "practice-item";
-    div.innerHTML = `<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;
-    pl.appendChild(div);
-  });
-}
+const ot = d.the_operating_tension || "";
+if (ot) { const tc=document.getElementById("tension-card"); if(tc) tc.style.display="block"; set("operating-tension",ot); }
+(d.what_this_means_in_practice||[]).slice(0,4).forEach(item=>{
+  const div=document.createElement("div");div.className="practice-item";
+  div.innerHTML=`<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;
+  document.getElementById("practice-list")?.appendChild(div);
+});
 
 // Primary constraint
 set("constraint-name", constraint);
@@ -769,15 +745,9 @@ if (dlEl) {
   });
 }
 
-/// Upgrade bridge — use enrichment or generate from operating tensions
-const bridge = d.upgrade_bridge?.length
-  ? d.upgrade_bridge
-  : [
-      `Where exactly in the sales process is ${d.primary_constraint_label || "this constraint"} creating the most friction?`,
-      "Is the issue in how value is communicated, how pricing is structured, or how deals are run?",
-      "Which root cause is most likely — and what's the fastest way to test it?",
-      "What's the sequenced fix plan for the next 30, 60, and 90 days?"
-    ];
+// Upgrade bridge
+const ubEl = document.getElementById("upgrade-questions");
+const bridge = d.upgrade_bridge || [];
 if (ubEl) {
   (Array.isArray(bridge) ? bridge : [bridge]).slice(0,4).forEach((q,i)=>{
     const div=document.createElement("div");div.className="upgrade-q";
