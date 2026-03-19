@@ -4,952 +4,1828 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Brand-to-GTM OS Strategic Audit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #f7f4ea;
       --card: #ffffff;
-      --text: #2f2f2f;
-      --muted: #6f6f69;
-      --line: #e6dfcf;
+      --text: #1e1e1e;
+      --muted: #6b6b65;
+      --line: #e4dccb;
       --accent: #8aa677;
       --accent-dark: #6f875f;
       --warning: #c67b5c;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-      --radius: 18px;
+      --dark-bg: #181815;
+      --dark-card: #222220;
+      --dark-line: #2e2e2b;
+      --dark-muted: #7a7a72;
+      --gold: #c9a84c;
+      --slide-w: 1280px;
+      --slide-h: 720px;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
+      background: #0e0e0c;
+      font-family: 'DM Sans', sans-serif;
       color: var(--text);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
-    .page {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 36px 20px 64px;
+    .deck {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
     }
 
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 28px;
-      margin-bottom: 20px;
-    }
-
-    .hero {
+    /* ── SLIDE BASE ── */
+    .slide {
+      width: var(--slide-w);
+      height: var(--slide-h);
       position: relative;
-      padding: 36px 220px 36px 32px;
-      background:
-        radial-gradient(circle at top right, rgba(138, 166, 119, 0.18), transparent 30%),
-        linear-gradient(135deg, #ffffff, #fbfaf6);
+      overflow: hidden;
+      flex-shrink: 0;
+      page-break-after: always;
+      break-after: page;
     }
 
-    .logo {
+    /* ── SHARED LIGHT SLIDE ── */
+    .slide-light {
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── SLIDE CHROME (top bar on every light slide) ── */
+    .slide-chrome {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 48px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+      background: white;
+    }
+
+    .chrome-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .chrome-logo {
+      height: 22px;
+      opacity: 0.9;
+    }
+
+    .chrome-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--line);
+    }
+
+    .chrome-section {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+    }
+
+    .chrome-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .chrome-company {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .chrome-page {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+
+    /* ── SLIDE BODY ── */
+    .slide-body {
+      flex: 1;
+      padding: 28px 48px 24px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .slide-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.15;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+
+    .slide-rule {
+      width: 36px;
+      height: 3px;
+      background: var(--accent-dark);
+      border-radius: 2px;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 1 — DARK COVER
+    ════════════════════════════════════ */
+    .slide-cover {
+      background: var(--dark-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0;
+    }
+
+    .cover-glow-tr {
       position: absolute;
-      top: 24px;
-      right: 28px;
-      height: 52px;
-      opacity: 0.98;
+      top: 0; right: 0;
+      width: 520px; height: 520px;
+      background: radial-gradient(circle at top right, rgba(138,166,119,0.13), transparent 62%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cover-glow-bl {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 360px; height: 360px;
+      background: radial-gradient(circle at bottom left, rgba(201,168,76,0.07), transparent 62%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cover-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 28px 52px;
+      position: relative;
       z-index: 2;
     }
 
-    .logo img {
-      display: block;
-      height: 100%;
-      width: auto;
+    .cover-logo {
+      height: 28px;
+      filter: brightness(0) invert(1);
+      opacity: 0.85;
     }
 
-    .eyebrow {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+    .cover-badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--accent-dark);
-      margin-bottom: 10px;
+      color: var(--gold);
+      border: 1px solid rgba(201,168,76,0.3);
+      padding: 5px 14px;
+      border-radius: 20px;
     }
 
-    h1 {
-      margin: 0 0 10px;
-      font-size: 38px;
-      line-height: 1.08;
-      letter-spacing: -0.02em;
-    }
-
-    h2 {
-      margin: 0 0 16px;
-      font-size: 24px;
-      line-height: 1.15;
-    }
-
-    h3 {
-      margin: 0 0 10px;
-      font-size: 17px;
-      line-height: 1.2;
-    }
-
-    p {
-      margin: 0 0 12px;
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .muted { color: var(--muted); }
-
-    .hero-meta {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 22px;
-    }
-
-    .meta-box {
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.75);
-    }
-
-    .meta-label {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .meta-value {
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 20px;
-    }
-
-    .chart-wrap {
-      display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 22px;
-      align-items: center;
-    }
-
-    .chart-box {
+    .cover-hero {
+      padding: 0 52px;
+      position: relative;
+      z-index: 2;
+      flex: 1;
       display: flex;
+      flex-direction: column;
       justify-content: center;
-      align-items: center;
-      overflow: visible;
     }
 
-    .score-summary .big-score {
-      font-size: 46px;
-      font-weight: 800;
-      line-height: 1;
+    .cover-eyebrow {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .cover-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 54px;
+      font-weight: 700;
+      line-height: 1.04;
+      color: #ffffff;
+      margin-bottom: 18px;
+      max-width: 740px;
+    }
+
+    .cover-sub {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--dark-muted);
+      line-height: 1.65;
+      max-width: 520px;
+    }
+
+    .cover-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--dark-line);
+      position: relative;
+      z-index: 2;
+    }
+
+    .cover-metric {
+      padding: 20px 28px;
+      border-right: 1px solid var(--dark-line);
+    }
+
+    .cover-metric:last-child {
+      border-right: none;
+    }
+
+    .cm-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dark-muted);
       margin-bottom: 6px;
     }
 
-    .score-summary .score-label {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 14px;
+    .cm-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.1;
     }
 
-    .constraint-box {
-      border: 1px solid var(--line);
-      border-left: 6px solid var(--warning);
-      border-radius: 14px;
-      padding: 18px 18px 16px;
-      background: #fffdfa;
-    }
+    .cm-value.score { color: var(--accent); font-size: 28px; }
+    .cm-value.warn { color: var(--warning); font-size: 16px; }
 
-    .pillars {
+    /* ════════════════════════════════════
+       SLIDE 2 — OS SCORE
+    ════════════════════════════════════ */
+    .score-layout {
       display: grid;
-      gap: 14px;
+      grid-template-columns: 380px 1fr;
+      gap: 32px;
+      flex: 1;
+    }
+
+    .score-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .score-number {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 100px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .score-denom {
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .score-band {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--warning);
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .score-conf {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 24px;
+    }
+
+    .benchmark-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .benchmark-label {
+      font-size: 11px;
+      color: var(--muted);
+      width: 160px;
+      flex-shrink: 0;
+    }
+
+    .benchmark-track {
+      flex: 1;
+      height: 6px;
+      background: #e8e0cf;
+      border-radius: 99px;
+      position: relative;
+    }
+
+    .benchmark-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--line);
+    }
+
+    .benchmark-marker {
+      position: absolute;
+      top: -3px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent-dark);
+      transform: translateX(-50%);
+    }
+
+    .benchmark-val {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      width: 28px;
+      text-align: right;
+    }
+
+    .score-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-wrap {
+      width: 360px;
+      height: 360px;
+    }
+
+    .radar { overflow: visible; }
+
+    .radar text, .radar-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      fill: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 3 — 5-PILLAR BREAKDOWN
+    ════════════════════════════════════ */
+    .pillars-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex: 1;
+      justify-content: center;
     }
 
     .pillar-row {
       display: grid;
-      gap: 8px;
+      grid-template-columns: 190px 1fr 90px;
+      align-items: center;
+      gap: 16px;
     }
 
-    .pillar-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: baseline;
-    }
-
-    .pillar-label {
+    .pillar-name {
+      font-size: 13px;
       font-weight: 600;
       color: var(--text);
     }
 
-    .pillar-score {
-      font-size: 14px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
+    .pillar-name.primary { color: var(--warning); }
 
-    .bar {
-      width: 100%;
-      height: 12px;
-      background: #eee7d9;
-      border-radius: 999px;
-      overflow: hidden;
+    .bar-track {
+      position: relative;
+      height: 10px;
+      background: #e8e0cf;
+      border-radius: 99px;
     }
 
     .bar-fill {
       height: 100%;
+      border-radius: 99px;
       background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-      border-radius: 999px;
     }
 
-    .section-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    .bar-fill.weak {
+      background: linear-gradient(90deg, #d4856a, var(--warning));
     }
 
-    .box-soft {
-      background: #fbfaf6;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
+    .bar-target {
+      position: absolute;
+      top: -4px;
+      width: 2px;
+      height: 18px;
+      background: var(--gold);
+      border-radius: 1px;
     }
 
-    .swot-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    ul {
-      margin: 0;
-      padding-left: 20px;
-    }
-
-    li {
-      margin-bottom: 10px;
-      line-height: 1.5;
-    }
-
-    .roadmap-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .phase-card {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 18px;
-      background: #fff;
-    }
-
-    .phase-kicker {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--accent-dark);
-      margin-bottom: 8px;
-    }
-
-    .cta {
-      background:
-        radial-gradient(circle at bottom left, rgba(138, 166, 119, 0.16), transparent 28%),
-        linear-gradient(135deg, #fbfaf6, #ffffff);
-      border: 1px solid var(--line);
-    }
-
-    .cta-box {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .cta-text {
-      max-width: 720px;
-    }
-
-    .cta-button {
-      display: inline-block;
-      text-decoration: none;
-      background: var(--accent-dark);
-      color: white;
-      font-weight: 700;
-      padding: 14px 20px;
-      border-radius: 12px;
-      white-space: nowrap;
-    }
-
-    .footer-note {
+    .pillar-score {
       font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .pillar-score.weak { color: var(--warning); }
+
+    .pillar-legend {
+      display: flex;
+      gap: 20px;
+      padding-left: 206px;
+      padding-top: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
       color: var(--muted);
     }
 
-    .radar {
-      overflow: visible;
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
     }
 
-    .radar text,
-    .radar-label {
-      font-size: 11px;
-      fill: var(--muted);
+    .legend-tick {
+      width: 14px;
+      height: 2px;
+      background: var(--gold);
+      border-radius: 1px;
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 4 — DIAGNOSIS
+    ════════════════════════════════════ */
+    .diagnosis-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .diag-left { display: flex; flex-direction: column; gap: 16px; }
+
+    .diag-headline {
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text);
+      font-weight: 400;
+    }
+
+    .tension-card {
+      border-left: 3px solid var(--warning);
+      padding: 14px 18px;
+      background: rgba(198,123,92,0.07);
+      border-radius: 0 10px 10px 0;
+    }
+
+    .tension-kicker {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warning);
+      margin-bottom: 6px;
+    }
+
+    .tension-body {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .diag-right { display: flex; flex-direction: column; gap: 8px; }
+
+    .practice-kicker {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .practice-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 11px 14px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .practice-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-dark);
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .practice-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 5 — ROOT CAUSES
+    ════════════════════════════════════ */
+    .root-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .root-card {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .root-prob {
+      background: var(--bg);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 8px;
+      gap: 4px;
+    }
+
+    .root-prob-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .root-prob-value {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .root-prob-value.high { color: var(--warning); }
+    .root-prob-value.medium { color: var(--gold); }
+    .root-prob-value.lower { color: var(--muted); }
+
+    .root-content {
+      padding: 14px 18px;
+    }
+
+    .root-hyp {
+      font-size: 14px;
       font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 5px;
     }
 
-    .empty {
+    .root-looks {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+
+    .root-test {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-dark);
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 6 — SWOT
+    ════════════════════════════════════ */
+    .swot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .swot-cell {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow: hidden;
+    }
+
+    .swot-cell-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swot-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .swot-cell.s .swot-cell-title { color: var(--accent-dark); }
+    .swot-cell.s .swot-icon { background: var(--accent-dark); }
+    .swot-cell.w .swot-cell-title { color: var(--warning); }
+    .swot-cell.w .swot-icon { background: var(--warning); }
+    .swot-cell.o .swot-cell-title { color: #5180a2; }
+    .swot-cell.o .swot-icon { background: #5180a2; }
+    .swot-cell.t .swot-cell-title { color: #7d6496; }
+    .swot-cell.t .swot-icon { background: #7d6496; }
+
+    .swot-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 7px;
+    }
+
+    .swot-bullet {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    .swot-cell.s .swot-bullet { background: var(--accent-dark); }
+    .swot-cell.w .swot-bullet { background: var(--warning); }
+    .swot-cell.o .swot-bullet { background: #5180a2; }
+    .swot-cell.t .swot-bullet { background: #7d6496; }
+
+    .swot-text {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 7 — CONSTRAINT CHAIN + WHAT GOOD
+    ════════════════════════════════════ */
+    .chain-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .chain-col { display: flex; flex-direction: column; gap: 0; }
+
+    .chain-step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .chain-left-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .chain-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--dark-bg);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chain-connector-line {
+      width: 1px;
+      flex: 1;
+      background: var(--line);
+      min-height: 16px;
+    }
+
+    .chain-text-block {
+      padding: 4px 0 20px;
+    }
+
+    .chain-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .what-good-card {
+      background: var(--dark-bg);
+      border-radius: 14px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .wg-kicker {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .wg-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .wg-text {
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.78);
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 8 — COMPETITIVE + PRICING
+    ════════════════════════════════════ */
+    .two-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .panel-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      color: var(--text);
+    }
+
+    .comp-hyp {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text);
+      padding: 10px 14px;
+      background: var(--bg);
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .comp-frame-block {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      line-height: 1.55;
       color: var(--muted);
       font-style: italic;
     }
 
-    @media (max-width: 900px) {
-      .hero-meta,
-      .grid-2,
-      .section-grid,
-      .chart-wrap,
-      .swot-grid,
-      .roadmap-grid {
-        grid-template-columns: 1fr;
-      }
+    .panel-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 9px;
+    }
 
-      .chart-box {
-        justify-content: flex-start;
-      }
+    .panel-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-dark);
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
 
-      h1 { font-size: 32px; }
+    .panel-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
 
-      .page {
-        padding-left: 14px;
-        padding-right: 14px;
-      }
+    .panel-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
 
-      .card,
-      .hero {
-        padding: 22px;
-      }
+    /* ════════════════════════════════════
+       SLIDE 9 — ROADMAP
+    ════════════════════════════════════ */
+    .roadmap-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
 
-      .hero {
-        padding-right: 22px;
-      }
+    .roadmap-phases {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      flex: 1;
+    }
 
-      .logo {
-        position: static;
-        margin: 0 0 12px auto;
-        height: 40px;
-        display: flex;
-        justify-content: flex-end;
+    .phase-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phase-kicker {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      margin-bottom: 5px;
+    }
+
+    .phase-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    .phase-items {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      flex: 1;
+    }
+
+    .phase-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .phase-num {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .phase-num-text {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--accent-dark);
+    }
+
+    .phase-item-text {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .north-star-bar {
+      background: var(--dark-bg);
+      border-radius: 10px;
+      padding: 13px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .ns-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .ns-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    /* ════════════════════════════════════
+       SLIDE 10 — CLOSING (dark)
+    ════════════════════════════════════ */
+    .slide-closing {
+      background: var(--dark-bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .closing-glow {
+      position: absolute;
+      top: 0; right: 0;
+      width: 480px; height: 480px;
+      background: radial-gradient(circle at top right, rgba(138,166,119,0.11), transparent 60%);
+      pointer-events: none;
+    }
+
+    .closing-top {
+      padding: 28px 52px;
+      border-bottom: 1px solid var(--dark-line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+
+    .closing-logo {
+      height: 26px;
+      filter: brightness(0) invert(1);
+      opacity: 0.7;
+    }
+
+    .closing-badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dark-muted);
+    }
+
+    .closing-body {
+      flex: 1;
+      padding: 0 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .closing-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .closing-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 44px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.08;
+      margin-bottom: 18px;
+      max-width: 640px;
+    }
+
+    .closing-desc {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--dark-muted);
+      line-height: 1.65;
+      max-width: 580px;
+    }
+
+    .closing-footer {
+      padding: 20px 52px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+
+    .closing-meta {
+      font-size: 12px;
+      color: rgba(255,255,255,0.28);
+      line-height: 1.9;
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: white; }
+      .slide { page-break-after: always; break-after: page; }
+      .deck { gap: 0; background: white; }
+    }
+
+    @media (max-width: 1300px) {
+      :root {
+        --slide-w: 100vw;
+        --slide-h: calc(100vw * 0.5625);
       }
+      .cover-headline { font-size: 42px; }
+      .score-number { font-size: 80px; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <section class="card hero">
-      <div class="logo">
-        <img src="/vallenwood-logo.png" alt="Vallenwood Consulting">
-      </div>
+<div class="deck">
 
-      <div class="eyebrow">Vallenwood Consulting</div>
-      <h1>Brand-to-GTM OS Strategic Audit</h1>
-      <p class="muted">
-        A deeper strategic read on the operating constraints shaping positioning, pricing power, and go-to-market performance.
-      </p>
+  <!-- ══ SLIDE 1 — COVER ══ -->
+  <div class="slide slide-cover">
+    <div class="cover-glow-tr"></div>
+    <div class="cover-glow-bl"></div>
 
-      <div class="hero-meta">
-        <div class="meta-box">
-          <div class="meta-label">Company</div>
-          <div class="meta-value" id="company-name">Company</div>
-        </div>
-        <div class="meta-box">
-          <div class="meta-label">Report Date</div>
-          <div class="meta-value" id="report-date">—</div>
-        </div>
-        <div class="meta-box">
-          <div class="meta-label">Primary Constraint</div>
-          <div class="meta-value" id="primary-constraint-top">—</div>
-        </div>
-        <div class="meta-box">
-          <div class="meta-label">OS Score</div>
-          <div class="meta-value" id="overall-score-top">—</div>
-        </div>
+    <div class="cover-top-bar">
+      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="cover-logo">
+      <div class="cover-badge">Strategic Audit Report</div>
+    </div>
+
+    <div class="cover-hero">
+      <div class="cover-eyebrow">Brand-to-GTM Operating System</div>
+      <h1 class="cover-headline" id="cover-headline">Strategic Audit</h1>
+      <p class="cover-sub">A complete diagnostic of the operating constraints limiting positioning, pricing power, and go-to-market performance.</p>
+    </div>
+
+    <div class="cover-metrics">
+      <div class="cover-metric">
+        <div class="cm-label">Company</div>
+        <div class="cm-value" id="cover-company">—</div>
       </div>
-    </section>
-    <section class="card" id="headline-section" style="display:none;">
-      <p id="headline-diagnosis" style="font-size:18px;line-height:1.6;margin:0 0 16px;color:var(--text);font-weight:500;"></p>
-      <div id="operating-tension-box" style="border-left:4px solid var(--warning);padding:14px 18px;background:#fffdfa;border-radius:0 14px 14px 0;margin-bottom:16px;display:none;">
-        <p style="margin:0 0 6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">The tension worth paying attention to</p>
-        <p style="margin:0;font-size:15px;line-height:1.6;color:var(--text);" id="operating-tension"></p>
+      <div class="cover-metric">
+        <div class="cm-label">OS Score</div>
+        <div class="cm-value score" id="cover-score">—</div>
       </div>
-      <div id="practice-list-box" style="display:none;">
-        <p style="margin:0 0 10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">What this looks like in your business</p>
-        <ul class="list" id="what-this-means-list"></ul>
+      <div class="cover-metric">
+        <div class="cm-label">Primary Constraint</div>
+        <div class="cm-value warn" id="cover-constraint">—</div>
       </div>
-    </section>
-    <section class="grid-2">
-      <div class="card">
-        <h2>OS Alignment Score</h2>
-        <div class="chart-wrap">
-          <div class="chart-box">
-            <svg class="radar" id="radar-chart" width="400" height="360" viewBox="0 0 400 360">
+      <div class="cover-metric">
+        <div class="cm-label">Report Date</div>
+        <div class="cm-value" id="cover-date">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 2 — OS SCORE ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">OS Alignment Score</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-2">—</span>
+        <span class="chrome-page">2 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">How aligned is the revenue system?</div>
+      <div class="slide-rule"></div>
+      <div class="score-layout">
+        <div class="score-left">
+          <div>
+            <span class="score-number" id="big-score">0</span>
+            <span class="score-denom">/100</span>
+          </div>
+          <div class="score-band" id="score-band">—</div>
+          <div class="score-conf" id="score-conf">Confidence: —</div>
+
+          <div style="margin-top:4px;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">How this compares</div>
+            <div id="benchmarks"></div>
+          </div>
+        </div>
+        <div class="score-right">
+          <div class="radar-wrap">
+            <svg class="radar" id="radar-chart" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
               <g id="radar-grid"></g>
               <g id="radar-axes"></g>
-              <polygon id="radar-target-area" fill="none" stroke="#d1a646" stroke-width="2.5" stroke-dasharray="6 6"></polygon>
-              <polygon id="radar-area" fill="rgba(138,166,119,0.22)" stroke="#6f875f" stroke-width="3"></polygon>
-              <g id="radar-points"></g>
+              <polygon id="radar-target" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="5 4"></polygon>
+              <polygon id="radar-area" fill="rgba(138,166,119,0.2)" stroke="#6f875f" stroke-width="2.5"></polygon>
+              <g id="radar-dots"></g>
               <g id="radar-labels"></g>
             </svg>
           </div>
-
-          <div class="score-summary">
-            <div class="big-score" id="overall-score">0</div>
-            <div class="score-label">out of 100</div>
-            <h3 id="score-band" style="font-size:28px; margin-bottom:10px;">—</h3>
-            <p id="executive-headline" class="muted"></p>
-          </div>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>Primary Constraint</h2>
-        <div class="constraint-box">
-          <h3 id="primary-constraint-label">—</h3>
-          <p id="primary-constraint-why"></p>
-          <p id="summary-paragraph" class="muted"></p>
-      </div>
-      <div id="root-cause-box" style="margin-top:16px;display:none;">
-        <p style="margin:0 0 10px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">Most likely root causes</p>
-        <div id="root-cause-list"></div>
       </div>
     </div>
-    </section>
-
-    <section class="card">
-      <h2>5-Pillar Breakdown</h2>
-      <div class="pillars" id="pillar-list"></div>
-    </section>
-
-    <section class="section-grid">
-      <div class="card">
-        <h2>Strategic SWOT</h2>
-        <div class="swot-grid">
-          <div class="box-soft">
-            <h3>Strengths</h3>
-            <ul id="swot-strengths"></ul>
-          </div>
-          <div class="box-soft">
-            <h3>Weaknesses</h3>
-            <ul id="swot-weaknesses"></ul>
-          </div>
-          <div class="box-soft">
-            <h3>Opportunities</h3>
-            <ul id="swot-opportunities"></ul>
-          </div>
-          <div class="box-soft">
-            <h3>Threats</h3>
-            <ul id="swot-threats"></ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Roadmap Foundation</h2>
-        <div class="box-soft" style="margin-bottom:14px;">
-          <h3>North Star</h3>
-          <p id="roadmap-north-star"></p>
-        </div>
-        <div class="box-soft">
-          <h3>Principles</h3>
-          <ul id="roadmap-principles"></ul>
-        </div>
-      </div>
-    </section>
-    <section class="card" id="constraint-chain-section" style="display:none;">
-      <h2>How this constraint compounds</h2>
-      <div class="box-soft">
-        <ul class="list" id="constraint-chain-list"></ul>
-      </div>
-    </section>
-
-    <section class="card" id="what-good-section" style="display:none;">
-      <h2>What good looks like</h2>
-      <p id="what-good-looks-like" style="font-size:15px;line-height:1.6;margin:0;"></p>
-    </section>
-    <section class="card">
-      <h2>30 / 60 / 90-Day Action Outline</h2>
-      <div class="roadmap-grid">
-        <div class="phase-card">
-          <div class="phase-kicker">30 Days</div>
-          <h3>Clarify the constraint</h3>
-          <ul id="thirty-day-list"></ul>
-        </div>
-        <div class="phase-card">
-          <div class="phase-kicker">60 Days</div>
-          <h3>Operationalize the fix</h3>
-          <ul id="sixty-day-list"></ul>
-        </div>
-        <div class="phase-card">
-          <div class="phase-kicker">90 Days</div>
-          <h3>Scale the new system</h3>
-          <ul id="ninety-day-list"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-grid">
-      <div class="card">
-        <h2>Competitive Context</h2>
-        <div class="box-soft">
-          <p><strong>Category:</strong> <span id="category"></span></p>
-          <h3 style="margin-top:14px;">Most Compared To</h3>
-          <ul id="most-compared-to"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Pricing & Packaging Audit</h2>
-        <div class="box-soft">
-          <h3>Current State Signals</h3>
-          <ul id="pricing-current-state"></ul>
-          <h3 style="margin-top:14px;">First Fixes</h3>
-          <ul id="pricing-first-fixes"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="section-grid">
-      <div class="card">
-        <h2>Validate Live in the Review Session</h2>
-        <div class="box-soft">
-          <ul id="validate-live-list"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>What the Review Should Resolve</h2>
-        <div class="box-soft">
-          <ul id="review-outcomes-list"></ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="card cta">
-      <div class="cta-box">
-        <div class="cta-text">
-          <h2 style="margin-bottom:10px;">Schedule your 60-minute strategic review</h2>
-          <p>
-            This audit is designed to surface the system constraint most likely to be suppressing growth,
-            pricing power, and go-to-market efficiency. The next step is a 60-minute review session to
-            validate the diagnosis, challenge assumptions, and align on the highest-leverage actions.
-          </p>
-          <p class="footer-note" style="margin-top:10px;">
-            The review session is where this audit becomes an action plan.
-          </p>
-        </div>
-        <a class="cta-button" href="mailto:jasper@vallenwoodconsulting.com?subject=Brand-to-GTM%20OS%2060-Minute%20Strategic%20Review">
-          Schedule 60-Min Review
-        </a>
-      </div>
-    </section>
   </div>
 
-  <script>
-    const d = window.REPORT_DATA || {};
-
-    function setText(id, value, fallback = "—") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = value || fallback;
-    }
-
-    function escapeHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-
-    function fillList(id, items, field = null, fallback = "We will review this area together in the next step.") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.innerHTML = "";
-
-      if (!items || !items.length) {
-        const li = document.createElement("li");
-        li.className = "empty";
-        li.textContent = fallback;
-        el.appendChild(li);
-        return;
-      }
-
-      items.forEach((item) => {
-        const li = document.createElement("li");
-        if (field && item && typeof item === "object") {
-          li.textContent = item[field] || "";
-        } else if (typeof item === "string") {
-          li.textContent = item;
-        } else if (item && typeof item === "object") {
-          li.textContent = item.point || JSON.stringify(item);
-        } else {
-          li.textContent = String(item);
-        }
-        el.appendChild(li);
-      });
-    }
-
-    function chooseList(items, fallback) {
-      return Array.isArray(items) && items.length > 0 ? items : fallback;
-    }
-
-    function splitLabel(label) {
-      const text = String(label || "").trim();
-      if (!text) return [""];
-      if (Array.isArray(label)) return label;
-      if (text.length <= 12) return [text];
-      if (text.includes(" & ")) {
-        const parts = text.split(" & ");
-        if (parts.length === 2) return [`${parts[0]} &`, parts[1]];
-      }
-      const words = text.split(/\s+/);
-      if (words.length === 1) return [text];
-      if (words.length === 2) return words;
-      const midpoint = Math.ceil(words.length / 2);
-      return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")];
-    }
-
-    setText("company-name", d.company_name);
-    setText("report-date", d.report_date);
-    setText("primary-constraint-top", d.primary_constraint_label);
-    setText("overall-score-top", d.overall_score || 0);
-    setText("overall-score", d.overall_score || 0);
-    setText("score-band", d.score_band);
-    setText("executive-headline", d.executive_headline, "");
-    setText("primary-constraint-label", d.primary_constraint_label);
-    setText("primary-constraint-why", d.primary_constraint_why_it_matters, "");
-    setText("summary-paragraph", d.executive_summary_paragraph, "");
-    setText("roadmap-north-star", d.roadmap?.north_star || "The current assessment suggests the next priority is to improve clarity, value articulation, and go-to-market efficiency around the primary constraint.");
-    setText("category", d.competitive_context?.category, "We were not able to determine a clear competitive category from the intake alone.");
-
-    const radarLabels = d.radar_labels || {
-      positioning: "Positioning",
-      value_architecture: "Value Architecture",
-      pricing_packaging: "Pricing & Packaging",
-      gtm_focus: "GTM Focus",
-      measurement: "Measurement"
-    };
-
-    const pillarScores = d.pillar_scores || {};
-    const targetScores = d.target_pillar_scores || {
-      positioning: 16,
-      value_architecture: 15,
-      pricing_packaging: 15,
-      gtm_focus: 16,
-      measurement: 15
-    };
-
-    const pillarOrder = [
-      ["positioning", "Positioning & Category"],
-      ["value_architecture", "Value Architecture"],
-      ["pricing_packaging", "Pricing & Packaging"],
-      ["gtm_focus", "GTM Focus"],
-      ["measurement", "Measurement"]
-    ];
-
-    const pillarList = document.getElementById("pillar-list");
-    pillarList.innerHTML = "";
-    pillarOrder.forEach(([key, label]) => {
-      const scoreVal = Number(pillarScores[key] || 0);
-      const targetVal = Number(targetScores[key] || 0);
-      const row = document.createElement("div");
-      row.className = "pillar-row";
-      row.innerHTML = `
-        <div class="pillar-top">
-          <div class="pillar-label">${escapeHtml(label)}</div>
-          <div class="pillar-score">${scoreVal}/20 · target ${targetVal}/20</div>
+  <!-- ══ SLIDE 3 — 5-PILLAR BREAKDOWN ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">5-Pillar Breakdown</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-3">—</span>
+        <span class="chrome-page">3 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">Where the value system is strong — and where it breaks down</div>
+      <div class="slide-rule"></div>
+      <div class="pillars-grid" id="pillar-list"></div>
+      <div class="pillar-legend">
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:var(--accent-dark)"></div>
+          <span>Current score (out of 20)</span>
         </div>
-        <div class="bar">
-          <div class="bar-fill" style="width:${Math.max(0, Math.min(scoreVal / 20 * 100, 100))}%"></div>
+        <div class="legend-item">
+          <div class="legend-tick"></div>
+          <span>Target threshold</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch" style="background:var(--warning)"></div>
+          <span>Primary constraint</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4 — DIAGNOSIS ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Diagnosis</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-4">—</span>
+        <span class="chrome-page">4 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">What the diagnostic found</div>
+      <div class="slide-rule"></div>
+      <div class="diagnosis-layout">
+        <div class="diag-left">
+          <p class="diag-headline" id="headline-diagnosis"></p>
+          <div class="tension-card" id="tension-card" style="display:none">
+            <div class="tension-kicker">The tension worth paying attention to</div>
+            <p class="tension-body" id="operating-tension"></p>
+          </div>
+        </div>
+        <div class="diag-right">
+          <div class="practice-kicker">What this looks like in your business</div>
+          <div id="practice-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5 — ROOT CAUSES ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Root Cause Analysis</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-5">—</span>
+        <span class="chrome-page">5 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">Most likely root causes — ranked by probability</div>
+      <div class="slide-rule"></div>
+      <div class="root-list" id="root-cause-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6 — STRATEGIC SWOT ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Strategic SWOT</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-6">—</span>
+        <span class="chrome-page">6 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">Commercial position at a glance</div>
+      <div class="slide-rule"></div>
+      <div class="swot-grid">
+        <div class="swot-cell s">
+          <div class="swot-cell-title">
+            <div class="swot-icon">S</div>
+            Strengths
+          </div>
+          <div id="swot-s"></div>
+        </div>
+        <div class="swot-cell w">
+          <div class="swot-cell-title">
+            <div class="swot-icon">W</div>
+            Weaknesses
+          </div>
+          <div id="swot-w"></div>
+        </div>
+        <div class="swot-cell o">
+          <div class="swot-cell-title">
+            <div class="swot-icon">O</div>
+            Opportunities
+          </div>
+          <div id="swot-o"></div>
+        </div>
+        <div class="swot-cell t">
+          <div class="swot-cell-title">
+            <div class="swot-icon">T</div>
+            Threats
+          </div>
+          <div id="swot-t"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7 — CONSTRAINT CHAIN + WHAT GOOD LOOKS LIKE ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Constraint Dynamics</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-7">—</span>
+        <span class="chrome-page">7 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">How this constraint compounds over time</div>
+      <div class="slide-rule"></div>
+      <div class="chain-layout">
+        <div class="chain-col" id="constraint-chain"></div>
+        <div class="chain-col">
+          <div class="what-good-card">
+            <div class="wg-kicker">What good looks like</div>
+            <div class="wg-headline">When this constraint is resolved</div>
+            <p class="wg-text" id="what-good-text"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 8 — COMPETITIVE + PRICING ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Competitive & Pricing Context</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-8">—</span>
+        <span class="chrome-page">8 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">Market position and pricing signals</div>
+      <div class="slide-rule"></div>
+      <div class="two-panel">
+        <div class="panel-card">
+          <div class="panel-header">Competitive Context</div>
+          <div class="tag-row" id="comp-tags"></div>
+          <div id="comp-hypotheses"></div>
+          <div class="comp-frame-block" id="comp-frame"></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-header">Pricing & Packaging Signals</div>
+          <div id="pricing-signals"></div>
+          <div class="panel-section-label">First Fixes</div>
+          <div id="pricing-fixes"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 9 — ROADMAP ══ -->
+  <div class="slide slide-light">
+    <div class="slide-chrome">
+      <div class="chrome-left">
+        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
+        <div class="chrome-divider"></div>
+        <span class="chrome-section">Action Roadmap</span>
+      </div>
+      <div class="chrome-right">
+        <span class="chrome-company" id="chrome-company-9">—</span>
+        <span class="chrome-page">9 / 10</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="slide-title">30 / 60 / 90-day priorities</div>
+      <div class="slide-rule"></div>
+      <div class="roadmap-layout">
+        <div class="roadmap-phases">
+          <div class="phase-card">
+            <div class="phase-kicker">First 30 Days</div>
+            <div class="phase-title">Clarify the constraint</div>
+            <div class="phase-items" id="thirty-day"></div>
+          </div>
+          <div class="phase-card">
+            <div class="phase-kicker">Days 31–60</div>
+            <div class="phase-title">Operationalize the fix</div>
+            <div class="phase-items" id="sixty-day"></div>
+          </div>
+          <div class="phase-card">
+            <div class="phase-kicker">Days 61–90</div>
+            <div class="phase-title">Embed and scale</div>
+            <div class="phase-items" id="ninety-day"></div>
+          </div>
+        </div>
+        <div class="north-star-bar">
+          <span class="ns-label">North Star</span>
+          <span class="ns-text" id="north-star-text">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 10 — CLOSING ══ -->
+  <div class="slide slide-closing">
+    <div class="closing-glow"></div>
+    <div class="closing-top">
+      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="closing-logo">
+      <span class="closing-badge">Brand-to-GTM OS · Strategic Audit</span>
+    </div>
+    <div class="closing-body">
+      <div class="closing-eyebrow">Vallenwood Consulting</div>
+      <h2 class="closing-headline">Diagnostic complete.<br>The work starts here.</h2>
+      <p class="closing-desc">This report was generated using the Brand-to-GTM Operating System — a diagnostic framework developed over 20 years of global brand, product, and go-to-market strategy at Intel and Dell Technologies. Every finding is specific to the inputs provided and calibrated to your company's stage, revenue model, and competitive context.</p>
+    </div>
+    <div class="closing-footer">
+      <div class="closing-meta">
+        <div id="closing-company">—</div>
+        <div id="closing-date">—</div>
+        <div>vallenwoodconsultant.com</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const d = window.REPORT_DATA || {};
+
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function set(id, val, fb) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val || fb || "—";
+}
+
+function splitLabel(label) {
+  const t = String(label || "").trim();
+  if (!t) return [""];
+  if (Array.isArray(label)) return label;
+  if (t.length <= 12) return [t];
+  if (t.includes(" & ")) { const [a,b] = t.split(" & "); return [`${a} &`, b]; }
+  const w = t.split(/\s+/);
+  if (w.length <= 2) return w;
+  const m = Math.ceil(w.length / 2);
+  return [w.slice(0,m).join(" "), w.slice(m).join(" ")];
+}
+
+const company = d.company_name || "";
+const score = d.overall_score ?? 0;
+const constraint = d.primary_constraint_label || "—";
+const date = d.report_date || "";
+const pillarScores = d.pillar_scores || {};
+const targetScores = d.target_pillar_scores || { positioning:16, value_architecture:15, pricing_packaging:15, gtm_focus:16, measurement:15 };
+const radarLabels = d.radar_labels || { positioning:"Positioning", value_architecture:"Value", pricing_packaging:"Pricing", gtm_focus:"GTM", measurement:"Measurement" };
+
+// ── Cover
+set("cover-headline", company ? `${company}` : "Strategic Audit");
+set("cover-company", company);
+set("cover-score", score + "/100");
+set("cover-constraint", constraint);
+set("cover-date", date);
+
+// ── Company headers
+[2,3,4,5,6,7,8,9].forEach(n => set(`chrome-company-${n}`, company));
+
+// ── Score slide
+set("big-score", score);
+set("score-band", d.score_band || "");
+set("score-conf", `Confidence: ${d.confidence || "Moderate"}`);
+
+// Benchmarks
+const bmEl = document.getElementById("benchmarks");
+if (bmEl) {
+  const bmarks = [
+    { label: "Your score", val: score, color: "var(--accent-dark)" },
+    { label: "Avg B2B SaaS", val: 62, color: "var(--line)" },
+    { label: "Top quartile", val: 78, color: "var(--line)" },
+    { label: "Elite alignment", val: 85, color: "var(--line)" },
+  ];
+  bmarks.forEach(b => {
+    const pct = Math.min(b.val / 100 * 100, 100);
+    const row = document.createElement("div");
+    row.className = "benchmark-item";
+    row.innerHTML = `
+      <span class="benchmark-label">${esc(b.label)}</span>
+      <div class="benchmark-track">
+        <div class="benchmark-fill" style="width:${pct}%;background:${b.color}"></div>
+        ${b.label === "Your score" ? `<div class="benchmark-marker" style="left:${pct}%"></div>` : ""}
+      </div>
+      <span class="benchmark-val">${b.val}</span>
+    `;
+    bmEl.appendChild(row);
+  });
+}
+
+// ── Radar chart
+(function() {
+  const grid = document.getElementById("radar-grid");
+  const axes = document.getElementById("radar-axes");
+  const labelsG = document.getElementById("radar-labels");
+  const targetPoly = document.getElementById("radar-target");
+  const areaPoly = document.getElementById("radar-area");
+  const dotsG = document.getElementById("radar-dots");
+
+  if (!grid) return;
+
+  const cx = 180, cy = 180, r = 110, lr = 152;
+  const keys = ["positioning","value_architecture","pricing_packaging","gtm_focus","measurement"];
+  const SVG = "http://www.w3.org/2000/svg";
+  const N = keys.length;
+
+  function pt(i, val, max, rad) {
+    const angle = -Math.PI/2 + i*(2*Math.PI/N);
+    const rr = (val/max)*rad;
+    return { x: cx + Math.cos(angle)*rr, y: cy + Math.sin(angle)*rr };
+  }
+
+  function anchor(x) {
+    if (Math.abs(x - cx) < 10) return "middle";
+    return x < cx ? "end" : "start";
+  }
+
+  // Grid rings
+  [4,3,2,1].forEach(level => {
+    const pts = keys.map((_,i) => { const p = pt(i, (20/4)*level, 20, r); return `${p.x},${p.y}`; }).join(" ");
+    const poly = document.createElementNS(SVG, "polygon");
+    poly.setAttribute("points", pts);
+    poly.setAttribute("fill", "none");
+    poly.setAttribute("stroke", "#ddd5c0");
+    poly.setAttribute("stroke-width", "1");
+    grid.appendChild(poly);
+  });
+
+  // Axes + labels
+  keys.forEach((key, i) => {
+    const outer = pt(i, 20, 20, r);
+    const line = document.createElementNS(SVG, "line");
+    line.setAttribute("x1", cx); line.setAttribute("y1", cy);
+    line.setAttribute("x2", outer.x); line.setAttribute("y2", outer.y);
+    line.setAttribute("stroke", "#d0c8b8"); line.setAttribute("stroke-width", "1");
+    axes.appendChild(line);
+
+    const lp = pt(i, 20, 20, lr);
+    const labelLines = splitLabel(radarLabels[key] || key);
+    const text = document.createElementNS(SVG, "text");
+    text.setAttribute("x", lp.x);
+    text.setAttribute("y", lp.y);
+    text.setAttribute("text-anchor", anchor(lp.x));
+    text.setAttribute("dominant-baseline", "middle");
+    text.setAttribute("class", "radar-label");
+    const lh = 13;
+    const start = -((labelLines.length-1)*lh)/2;
+    labelLines.forEach((ln, li) => {
+      const ts = document.createElementNS(SVG, "tspan");
+      ts.setAttribute("x", lp.x);
+      ts.setAttribute("dy", li===0 ? start : lh);
+      ts.textContent = ln;
+      text.appendChild(ts);
+    });
+    labelsG.appendChild(text);
+  });
+
+  // Target polygon
+  targetPoly.setAttribute("points", keys.map((k,i) => { const p = pt(i, targetScores[k]||15, 20, r); return `${p.x},${p.y}`; }).join(" "));
+
+  // Score polygon
+  areaPoly.setAttribute("points", keys.map((k,i) => { const p = pt(i, pillarScores[k]||0, 20, r); return `${p.x},${p.y}`; }).join(" "));
+
+  // Dots
+  keys.forEach((k,i) => {
+    const p = pt(i, pillarScores[k]||0, 20, r);
+    const c = document.createElementNS(SVG, "circle");
+    c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); c.setAttribute("r", "4");
+    c.setAttribute("fill", "#6f875f");
+    dotsG.appendChild(c);
+  });
+})();
+
+// ── Pillar bars
+(function() {
+  const el = document.getElementById("pillar-list");
+  if (!el) return;
+  const pillars = [
+    ["positioning","Positioning & Category"],
+    ["value_architecture","Value Architecture"],
+    ["pricing_packaging","Pricing & Packaging"],
+    ["gtm_focus","GTM Focus"],
+    ["measurement","Measurement"],
+  ];
+  const primaryKey = (d.primary_constraint_label || "").toLowerCase().replace(/[^a-z]/g,"_");
+
+  pillars.forEach(([key, label]) => {
+    const val = Number(pillarScores[key]||0);
+    const tgt = Number(targetScores[key]||15);
+    const pct = val/20*100;
+    const tpct = tgt/20*100;
+    const isPrimary = key === d.primary_constraint_label?.toLowerCase().replace(/\s+/g,"_")
+      || val === Math.min(...Object.values(pillarScores||{}));
+    const weak = val < tgt;
+
+    const row = document.createElement("div");
+    row.className = "pillar-row";
+    row.innerHTML = `
+      <div class="pillar-name${isPrimary ? " primary" : ""}">${esc(label)}${isPrimary ? " ★" : ""}</div>
+      <div class="bar-track">
+        <div class="bar-fill${weak ? " weak" : ""}" style="width:${pct}%"></div>
+        <div class="bar-target" style="left:${tpct}%"></div>
+      </div>
+      <div class="pillar-score${weak ? " weak" : ""}">${val}/20</div>
+    `;
+    el.appendChild(row);
+  });
+})();
+
+// ── Diagnosis slide
+(function() {
+  const hd = d.headline_diagnosis || d.executive_headline || "";
+  set("headline-diagnosis", hd, "Diagnosis not available.");
+
+  const ot = d.the_operating_tension || "";
+  if (ot) {
+    const tc = document.getElementById("tension-card");
+    if (tc) tc.style.display = "block";
+    set("operating-tension", ot);
+  }
+
+  const items = d.what_this_means_in_practice || [];
+  const pl = document.getElementById("practice-list");
+  if (pl) {
+    items.slice(0, 4).forEach(item => {
+      const div = document.createElement("div");
+      div.className = "practice-item";
+      div.innerHTML = `<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;
+      pl.appendChild(div);
+    });
+  }
+})();
+
+// ── Root causes
+(function() {
+  const el = document.getElementById("root-cause-list");
+  if (!el) return;
+  const rcs = d.root_cause_hypotheses || [];
+  rcs.slice(0,3).forEach(rc => {
+    const probClass = (rc.probability||"").toLowerCase();
+    const div = document.createElement("div");
+    div.className = "root-card";
+    div.innerHTML = `
+      <div class="root-prob">
+        <div class="root-prob-label">Probability</div>
+        <div class="root-prob-value ${probClass}">${esc(rc.probability||"")}</div>
+      </div>
+      <div class="root-content">
+        <div class="root-hyp">${esc(rc.hypothesis||"")}</div>
+        ${rc.what_it_looks_like ? `<div class="root-looks">${esc(rc.what_it_looks_like)}</div>` : ""}
+        ${rc.first_test ? `<div class="root-test">First test: ${esc(rc.first_test)}</div>` : ""}
+      </div>
+    `;
+    el.appendChild(div);
+  });
+})();
+
+// ── SWOT
+(function() {
+  function fillSwot(id, items) {
+    const el = document.getElementById(id);
+    if (!el || !items) return;
+    items.slice(0,3).forEach(item => {
+      const text = item.point || item || "";
+      const div = document.createElement("div");
+      div.className = "swot-item";
+      div.innerHTML = `<div class="swot-bullet"></div><span class="swot-text">${esc(text)}</span>`;
+      el.appendChild(div);
+    });
+  }
+  fillSwot("swot-s", d.swot?.strengths);
+  fillSwot("swot-w", d.swot?.weaknesses);
+  fillSwot("swot-o", d.swot?.opportunities);
+  fillSwot("swot-t", d.swot?.threats);
+})();
+
+// ── Constraint chain + what good
+(function() {
+  const el = document.getElementById("constraint-chain");
+  const chain = d.constraint_chain || [];
+  if (el) {
+    chain.slice(0,3).forEach((item, i) => {
+      const isLast = i === chain.slice(0,3).length - 1;
+      const step = document.createElement("div");
+      step.className = "chain-step";
+      step.innerHTML = `
+        <div class="chain-left-col">
+          <div class="chain-num">${i+1}</div>
+          ${!isLast ? '<div class="chain-connector-line"></div>' : ""}
+        </div>
+        <div class="chain-text-block">
+          <div class="chain-text">${esc(item)}</div>
         </div>
       `;
-      pillarList.appendChild(row);
+      el.appendChild(step);
     });
+  }
+  set("what-good-text", d.what_good_looks_like, "When this constraint is resolved, the revenue system operates with clear commercial intent — value reaches buyers efficiently, pricing holds, and the commercial motion compounds.");
+})();
 
-    fillList("swot-strengths", chooseList(d.swot?.strengths, [
-      { point: "The submission suggests there may be existing strengths in the business, but additional evidence is needed to confirm which ones are most commercially meaningful." },
-      { point: "We will use the review session to identify where the business is already creating trust, traction, or pricing power." }
-    ]), "point");
+// ── Competitive + Pricing
+(function() {
+  const cc = d.competitive_context || {};
+  const pa = d.pricing_packaging_audit || {};
 
-    fillList("swot-weaknesses", chooseList(d.swot?.weaknesses, [
-      { point: "The intake indicates at least one structural constraint is present, but more context is needed to isolate the underlying weakness with confidence." },
-      { point: "The review session will help determine whether the core issue is positioning clarity, value articulation, pricing design, or GTM execution." }
-    ]), "point");
-
-    fillList("swot-opportunities", chooseList(d.swot?.opportunities, [
-      { point: "The diagnostic suggests there is likely unlockable upside, but the intake alone does not provide enough evidence to define the opportunity set precisely." },
-      { point: "We will use the review to identify the highest-leverage near-term opportunity." }
-    ]), "point");
-
-    fillList("swot-threats", chooseList(d.swot?.threats, [
-      { point: "No specific external threats could be validated from the current inputs alone." },
-      { point: "In the review session, we will identify whether competitive pressure, buyer confusion, pricing compression, or internal misalignment poses the most immediate risk." }
-    ]), "point");
-
-    fillList("roadmap-principles", chooseList(d.roadmap?.principles, [
-      "Clarity over breadth.",
-      "Proof over promises.",
-      "Focus over fragmentation."
-    ]));
-
-    fillList("most-compared-to", chooseList(d.competitive_context?.most_compared_to, [
-      "We were not able to identify a reliable comparison set from the submitted inputs alone.",
-      "In the review session, we will clarify which competitors or alternatives prospects most often benchmark against.",
-      "This matters because comparison context shapes positioning, pricing pressure, and win/loss dynamics."
-    ]));
-
-    fillList("pricing-current-state", chooseList(d.pricing_packaging_audit?.current_state_signals, [
-      "We were not able to assess pricing-state signals with confidence from the intake alone.",
-      "In the review session, we will validate where pricing friction appears and whether discounting is tied to value clarity, packaging, or buyer alignment.",
-      "This step helps distinguish a pricing problem from a positioning or value-communication problem."
-    ]));
-
-    fillList("pricing-first-fixes", chooseList(d.pricing_packaging_audit?.first_fixes, [
-      "Based on the current submission, the first priority is to clarify where buyer confusion or pricing resistance is entering the process.",
-      "From there, we can determine whether the best next move is packaging refinement, stronger value articulation, or pricing-structure simplification.",
-      "We will use the review session to identify the highest-confidence first fix."
-    ]));
-
-    fillList("thirty-day-list", chooseList(d.roadmap?.thirty_day, [
-      "Confirm the primary constraint through live review and internal evidence.",
-      "Sharpen the core positioning and value articulation used in active deals.",
-      "Identify 1–2 immediate friction points suppressing win rate or pricing power."
-    ]));
-
-    fillList("sixty-day-list", chooseList(d.roadmap?.sixty_day, [
-      "Translate the agreed strategy into messaging, packaging, and team adoption.",
-      "Standardize the highest-value changes across sales and marketing workflows.",
-      "Instrument the leading indicators that show whether the new system is working."
-    ]));
-
-    fillList("ninety-day-list", chooseList(d.roadmap?.ninety_day, [
-      "Scale the strongest changes into a repeatable GTM operating rhythm.",
-      "Tighten prioritization, measurement, and pricing discipline.",
-      "Pressure-test whether the next constraint is emerging elsewhere in the system."
-    ]));
-
-    fillList("validate-live-list", chooseList(d.pricing_packaging_audit?.what_to_validate, [
-      "Confirm whether the diagnosed constraint is showing up in active pipeline behavior.",
-      "Clarify where prospects hesitate, compare alternatives, or push back on value.",
-      "Validate whether the issue is primarily positioning, pricing, packaging, or internal message consistency."
-    ]));
-
-    fillList("review-outcomes-list", [
-      "Validate or refine the primary constraint diagnosis.",
-      "Agree on the highest-leverage 30-day actions.",
-      "Decide whether deeper strategic intervention is warranted across pricing, positioning, or GTM design."
-    ]);
-
-    function renderRadarChart() {
-      const grid = document.getElementById("radar-grid");
-      const axes = document.getElementById("radar-axes");
-      const labels = document.getElementById("radar-labels");
-      const targetArea = document.getElementById("radar-target-area");
-      const area = document.getElementById("radar-area");
-      const pointsGroup = document.getElementById("radar-points");
-
-      grid.innerHTML = "";
-      axes.innerHTML = "";
-      labels.innerHTML = "";
-      pointsGroup.innerHTML = "";
-
-      const cx = 200;
-      const cy = 178;
-      const radius = 96;
-      const labelRadius = 136;
-      const data = [
-        { key: "positioning", label: radarLabels.positioning, value: Number(pillarScores.positioning || 0) },
-        { key: "value_architecture", label: radarLabels.value_architecture, value: Number(pillarScores.value_architecture || 0) },
-        { key: "pricing_packaging", label: radarLabels.pricing_packaging, value: Number(pillarScores.pricing_packaging || 0) },
-        { key: "gtm_focus", label: radarLabels.gtm_focus, value: Number(pillarScores.gtm_focus || 0) },
-        { key: "measurement", label: radarLabels.measurement, value: Number(pillarScores.measurement || 0) }
-      ];
-
-      const levels = 4;
-      const totalAxes = data.length;
-      const svgNS = "http://www.w3.org/2000/svg";
-
-      function pointFor(index, value, max = 20, customRadius = radius) {
-        const angle = (-Math.PI / 2) + (index * (2 * Math.PI / totalAxes));
-        const r = (value / max) * customRadius;
-        return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
-      }
-
-      function labelAnchor(x) {
-        if (Math.abs(x - cx) < 14) return "middle";
-        return x < cx ? "end" : "start";
-      }
-
-      function labelLineOffset(point) {
-        if (Math.abs(point.x - cx) < 14) return 0;
-        return point.x < cx ? -2 : 2;
-      }
-
-      for (let level = 1; level <= levels; level++) {
-        const r = (radius / levels) * level;
-        const pts = data.map((_, i) => {
-          const angle = (-Math.PI / 2) + (i * (2 * Math.PI / totalAxes));
-          return `${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`;
-        }).join(" ");
-        const poly = document.createElementNS(svgNS, "polygon");
-        poly.setAttribute("points", pts);
-        poly.setAttribute("fill", "none");
-        poly.setAttribute("stroke", "#e6dfcf");
-        poly.setAttribute("stroke-width", "1");
-        grid.appendChild(poly);
-      }
-
-      data.forEach((item, i) => {
-        const outer = pointFor(i, 20, 20);
-        const line = document.createElementNS(svgNS, "line");
-        line.setAttribute("x1", cx);
-        line.setAttribute("y1", cy);
-        line.setAttribute("x2", outer.x);
-        line.setAttribute("y2", outer.y);
-        line.setAttribute("stroke", "#ddd4c3");
-        line.setAttribute("stroke-width", "1.2");
-        axes.appendChild(line);
-
-        const labelPoint = pointFor(i, 20, 20, labelRadius);
-        const labelLines = splitLabel(item.label);
-        const text = document.createElementNS(svgNS, "text");
-        text.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
-        text.setAttribute("y", labelPoint.y);
-        text.setAttribute("text-anchor", labelAnchor(labelPoint.x));
-        text.setAttribute("dominant-baseline", "middle");
-        text.setAttribute("class", "radar-label");
-
-        const lineHeight = 13;
-        const startDy = -((labelLines.length - 1) * lineHeight) / 2;
-
-        labelLines.forEach((lineText, lineIndex) => {
-          const tspan = document.createElementNS(svgNS, "tspan");
-          tspan.setAttribute("x", labelPoint.x + labelLineOffset(labelPoint));
-          tspan.setAttribute("dy", lineIndex === 0 ? startDy : lineHeight);
-          tspan.textContent = lineText;
-          text.appendChild(tspan);
-        });
-
-        labels.appendChild(text);
-      });
-
-      const targetPolygonPoints = data.map((item, i) => {
-        const targetVal = Number(targetScores[item.key] || 0);
-        const p = pointFor(i, targetVal, 20);
-        return `${p.x},${p.y}`;
-      }).join(" ");
-      targetArea.setAttribute("points", targetPolygonPoints);
-
-      const polygonPoints = data.map((item, i) => {
-        const p = pointFor(i, item.value, 20);
-        return `${p.x},${p.y}`;
-      }).join(" ");
-      area.setAttribute("points", polygonPoints);
-
-      data.forEach((item, i) => {
-        const p = pointFor(i, item.value, 20);
-        const circle = document.createElementNS(svgNS, "circle");
-        circle.setAttribute("cx", p.x);
-        circle.setAttribute("cy", p.y);
-        circle.setAttribute("r", "4.5");
-        circle.setAttribute("fill", "#6f875f");
-        pointsGroup.appendChild(circle);
-      });
+  const tagsEl = document.getElementById("comp-tags");
+  if (tagsEl) {
+    const comps = cc.most_compared_to || [];
+    if (cc.category) {
+      const t = document.createElement("div");
+      t.className = "tag";
+      t.style.background = "var(--dark-bg)";
+      t.style.color = "white";
+      t.style.border = "none";
+      t.textContent = cc.category;
+      tagsEl.appendChild(t);
     }
+    comps.slice(0,3).forEach(c => {
+      const t = document.createElement("div");
+      t.className = "tag";
+      t.textContent = c;
+      tagsEl.appendChild(t);
+    });
+  }
 
-    renderRadarChart();
-    // Headline diagnosis
-    const headlineDiag = d.headline_diagnosis || d.executive_headline || "";
-    if (headlineDiag) {
-      setText("headline-diagnosis", headlineDiag, "");
-      document.getElementById("headline-section").style.display = "block";
-    }
+  const hypEl = document.getElementById("comp-hypotheses");
+  if (hypEl) {
+    (cc.positioning_hypotheses || []).slice(0,2).forEach(h => {
+      const div = document.createElement("div");
+      div.className = "comp-hyp";
+      div.textContent = h;
+      hypEl.appendChild(div);
+    });
+  }
 
-    // Operating tension
-    const opTension = d.the_operating_tension || "";
-    if (opTension) {
-      setText("operating-tension", opTension, "");
-      document.getElementById("operating-tension-box").style.display = "block";
-    }
+  set("comp-frame", cc.competitive_frame || "");
 
-    // What this means in practice
-    const practiceItems = d.what_this_means_in_practice || [];
-    if (practiceItems.length) {
-      document.getElementById("practice-list-box").style.display = "block";
-      const practiceEl = document.getElementById("what-this-means-list");
-      practiceEl.innerHTML = "";
-      practiceItems.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        practiceEl.appendChild(li);
-      });
-    }
+  const sigEl = document.getElementById("pricing-signals");
+  if (sigEl) {
+    (pa.current_state_signals || []).slice(0,3).forEach(s => {
+      const div = document.createElement("div");
+      div.className = "panel-item";
+      div.innerHTML = `<div class="panel-dot"></div><span class="panel-text">${esc(s)}</span>`;
+      sigEl.appendChild(div);
+    });
+  }
 
-    // Root cause hypotheses
-    const rootCauses = d.root_cause_hypotheses || [];
-    if (rootCauses.length) {
-      document.getElementById("root-cause-box").style.display = "block";
-      const rcEl = document.getElementById("root-cause-list");
-      rcEl.innerHTML = "";
-      rootCauses.forEach(rc => {
-        const div = document.createElement("div");
-        div.style.cssText = "border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;";
-        const prob = rc.probability || "";
-        const probColor = prob === "High" ? "var(--warning)" : "var(--muted)";
-        div.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-            <span style="font-weight:600;font-size:14px;color:var(--text);">${escapeHtml(rc.hypothesis || "")}</span>
-            <span style="font-size:12px;font-weight:700;color:${probColor};white-space:nowrap;margin-left:12px;">${escapeHtml(prob)}</span>
-          </div>
-          ${rc.what_it_looks_like ? `<p style="margin:0 0 6px;font-size:13px;color:var(--muted);line-height:1.5;">${escapeHtml(rc.what_it_looks_like)}</p>` : ""}
-          ${rc.first_test ? `<p style="margin:0;font-size:12px;color:var(--accent-dark);line-height:1.5;"><strong>First test:</strong> ${escapeHtml(rc.first_test)}</p>` : ""}
-        `;
-        rcEl.appendChild(div);
-      });
-    }
+  const fixEl = document.getElementById("pricing-fixes");
+  if (fixEl) {
+    (pa.first_fixes || []).slice(0,3).forEach(f => {
+      const div = document.createElement("div");
+      div.className = "panel-item";
+      div.innerHTML = `<div class="panel-dot" style="background:var(--accent-dark)"></div><span class="panel-text">${esc(f)}</span>`;
+      fixEl.appendChild(div);
+    });
+  }
+})();
 
-    // Constraint chain
-    const chain = d.constraint_chain || [];
-    if (chain.length) {
-      document.getElementById("constraint-chain-section").style.display = "block";
-      const chainEl = document.getElementById("constraint-chain-list");
-      chainEl.innerHTML = "";
-      chain.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        chainEl.appendChild(li);
-      });
-    }
+// ── Roadmap
+(function() {
+  const rm = d.roadmap || {};
 
-    // What good looks like
-    const whatGood = d.what_good_looks_like || "";
-    if (whatGood) {
-      document.getElementById("what-good-section").style.display = "block";
-      setText("what-good-looks-like", whatGood, "");
-    }
-  </script>
+  function fillPhase(id, items) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    (items || []).slice(0,3).forEach((item, i) => {
+      const div = document.createElement("div");
+      div.className = "phase-item";
+      div.innerHTML = `
+        <div class="phase-num"><span class="phase-num-text">${i+1}</span></div>
+        <span class="phase-item-text">${esc(item)}</span>
+      `;
+      el.appendChild(div);
+    });
+  }
+
+  fillPhase("thirty-day", rm.thirty_day);
+  fillPhase("sixty-day", rm.sixty_day);
+  fillPhase("ninety-day", rm.ninety_day);
+  set("north-star-text", rm.north_star, "Reduce value leakage so the commercial motion converts at a rate that reflects the strength of the product and brand.");
+})();
+
+// ── Closing
+set("closing-company", company);
+set("closing-date", date);
+</script>
 </body>
 </html>
