@@ -722,12 +722,21 @@ if (bmEl) {
 
 // Diagnosis — with fallbacks for exec tier
 (function(){
-  set("headline-diagnosis",d.headline_diagnosis||d.executive_headline||"");
-  const tension=d.the_operating_tension||(d.operating_tensions?.[0]?(d.operating_tensions[0].implication?`${d.operating_tensions[0].tension} — ${d.operating_tensions[0].implication}`:d.operating_tensions[0].tension):"");
-  if(tension){const tc=document.getElementById("tension-card");if(tc){tc.style.display="flex";set("operating-tension",tension);}}
-  const items=(d.what_this_means_in_practice?.length?d.what_this_means_in_practice:d.diagnosis_implications?.length?d.diagnosis_implications:(d.operating_tensions||[]).map(t=>t.implication).filter(Boolean)).slice(0,4);
+  const hd = d.headline_diagnosis||d.executive_headline||"";
+  const sub = d.executive_summary_paragraph||"";
+  const hdEl = document.getElementById("headline-diagnosis");
+  if(hdEl) hdEl.textContent = hd;
+  const subEl = document.getElementById("headline-sub");
+  if(subEl && sub && sub !== "This diagnostic reflects alignment across five pillars of the Brand-to-GTM Operating System. The goal is to identify the operating constraint that, if improved, will unlock the most leverage.") subEl.textContent = sub;
+
+  const tensions = d.operating_tensions || [];
+  const tensionText = d.the_operating_tension || (tensions.length ? tensions.map(t => t.implication || t.tension).filter(Boolean).join(" ") : "");
+  if(tensionText){const tc=document.getElementById("tension-card");if(tc){tc.style.display="flex";set("operating-tension",tensionText);}}
+
+  const items=(d.what_this_means_in_practice?.length?d.what_this_means_in_practice:d.diagnosis_implications?.length?d.diagnosis_implications:tensions.map(t=>t.implication).filter(Boolean));
+  const allItems = [...new Set([...items, ...(d.risks||[])])].slice(0,5);
   const pl=document.getElementById("practice-list");
-  if(pl){items.forEach(item=>{const div=document.createElement("div");div.className="practice-item";div.innerHTML=`<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;pl.appendChild(div);});}
+  if(pl){allItems.forEach(item=>{const div=document.createElement("div");div.className="practice-item";div.innerHTML=`<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;pl.appendChild(div);});}
 })();
 
 // Primary constraint
