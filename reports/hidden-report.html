@@ -8,40 +8,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f7f4ea;
-      --card: #ffffff;
-      --text: #1e1e1e;
-      --muted: #6b6b65;
-      --line: #e4dccb;
-      --accent: #8aa677;
-      --accent-dark: #6f875f;
-      --warning: #c67b5c;
-      --dark-bg: #181815;
-      --dark-card: #222220;
-      --dark-line: #2e2e2b;
-      --dark-muted: #7a7a72;
-      --gold: #c9a84c;
-      --slide-w: 1280px;
-      --slide-h: 720px;
+      --bg: #f7f4ea; --card: #ffffff; --text: #1e1e1e; --muted: #6b6b65;
+      --line: #e4dccb; --accent: #8aa677; --accent-dark: #6f875f;
+      --warning: #c67b5c; --dark-bg: #181815; --dark-card: #222220;
+      --dark-line: #2e2e2b; --dark-muted: #7a7a72; --gold: #c9a84c;
+      --slide-w: 1280px; --slide-h: 720px;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: #0e0e0c;
-      font-family: 'DM Sans', sans-serif;
-      color: var(--text);
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-
+    body { background: #0e0e0c; font-family: 'DM Sans', sans-serif; color: var(--text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .deck { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-
     .slide { width: var(--slide-w); height: var(--slide-h); position: relative; overflow: hidden; flex-shrink: 0; page-break-after: always; break-after: page; }
     .slide-light { background: var(--bg); display: flex; flex-direction: column; }
-
-    /* ── CHROME ── */
-    .slide-chrome { display: flex; justify-content: space-between; align-items: center; padding: 16px 48px; border-bottom: 1px solid var(--line); flex-shrink: 0; background: white; }
+    .slide-chrome { display: flex; justify-content: space-between; align-items: center; padding: 14px 48px; border-bottom: 1px solid var(--line); flex-shrink: 0; background: white; }
     .chrome-left { display: flex; align-items: center; gap: 14px; }
     .chrome-logo { height: 22px; opacity: 0.9; }
     .chrome-divider { width: 1px; height: 16px; background: var(--line); }
@@ -50,12 +28,9 @@
     .chrome-company { font-size: 12px; font-weight: 500; color: var(--muted); }
     .chrome-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 10px; background: var(--dark-bg); color: white; border-radius: 20px; }
     .chrome-page { font-size: 11px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 3px 10px; }
-
-    .slide-body { flex: 1; padding: 28px 48px 24px; display: flex; flex-direction: column; overflow: hidden; }
+    .slide-body { flex: 1; padding: 24px 48px 20px; display: flex; flex-direction: column; overflow: hidden; }
     .slide-title { font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.15; margin-bottom: 4px; flex-shrink: 0; }
-    .slide-rule { width: 36px; height: 3px; background: var(--accent-dark); border-radius: 2px; margin-bottom: 18px; flex-shrink: 0; }
-
-    /* ══ COVER ══ */
+    .slide-rule { width: 36px; height: 3px; background: var(--accent-dark); border-radius: 2px; margin-bottom: 16px; flex-shrink: 0; }
     .slide-cover { background: var(--dark-bg); display: flex; flex-direction: column; justify-content: space-between; padding: 0; }
     .cover-glow-tr { position: absolute; top: 0; right: 0; width: 520px; height: 520px; background: radial-gradient(circle at top right, rgba(201,168,76,0.1), transparent 62%); pointer-events: none; z-index: 1; }
     .cover-glow-bl { position: absolute; bottom: 0; left: 0; width: 360px; height: 360px; background: radial-gradient(circle at bottom left, rgba(138,166,119,0.07), transparent 62%); pointer-events: none; z-index: 1; }
@@ -74,217 +49,150 @@
     .cm-value.score { color: var(--accent); font-size: 28px; }
     .cm-value.warn { color: var(--warning); font-size: 16px; }
     .cm-value.gold { color: var(--gold); font-size: 16px; }
-
-    /* ══ SLIDE 2: SCORE + CLIENT SNAPSHOT ══ */
-    .snapshot-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
-
-    .score-block { display: flex; flex-direction: column; justify-content: center; gap: 20px; }
-    .score-big { font-family: 'Playfair Display', Georgia, serif; font-size: 96px; font-weight: 700; line-height: 1; color: var(--text); }
-    .score-denom { font-size: 20px; color: var(--muted); }
-    .score-band-text { font-size: 17px; font-weight: 600; color: var(--warning); }
-    .score-conf-text { font-size: 12px; color: var(--muted); }
-
-    .pillar-mini-list { display: flex; flex-direction: column; gap: 8px; }
-    .pillar-mini-row { display: grid; grid-template-columns: 160px 1fr 52px; align-items: center; gap: 12px; }
-    .pillar-mini-name { font-size: 12px; font-weight: 500; color: var(--text); }
-    .pillar-mini-name.primary { color: var(--warning); font-weight: 700; }
-    .pillar-mini-bar-track { height: 8px; background: #e8e0cf; border-radius: 99px; position: relative; }
-    .pillar-mini-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); }
-    .pillar-mini-fill.weak { background: linear-gradient(90deg, #d4856a, var(--warning)); }
-    .pillar-mini-score { font-size: 12px; font-weight: 600; color: var(--muted); text-align: right; }
-    .pillar-mini-score.weak { color: var(--warning); }
-
-    .snapshot-right { display: flex; flex-direction: column; gap: 10px; }
-
-    .snapshot-card {
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 16px 18px;
-    }
-
-    .snapshot-card-title {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-
-    .snapshot-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .snapshot-item { }
-    .snapshot-item-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
-    .snapshot-item-value { font-size: 13px; font-weight: 600; color: var(--text); }
-
-    /* ══ SLIDE 3: CONSTRAINT HYPOTHESIS ══ */
+    .score-layout { display: grid; grid-template-columns: 380px 1fr; gap: 32px; flex: 1; }
+    .score-left { display: flex; flex-direction: column; justify-content: center; }
+    .score-number { font-family: 'Playfair Display', Georgia, serif; font-size: 100px; font-weight: 700; line-height: 1; color: var(--text); }
+    .score-denom { font-size: 20px; font-weight: 400; color: var(--muted); }
+    .score-band { font-size: 17px; font-weight: 600; color: var(--warning); margin-top: 8px; margin-bottom: 24px; }
+    .benchmark-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .benchmark-label { font-size: 11px; color: var(--muted); width: 160px; flex-shrink: 0; }
+    .benchmark-track { flex: 1; height: 6px; background: #e8e0cf; border-radius: 99px; position: relative; }
+    .benchmark-fill { height: 100%; border-radius: 99px; }
+    .benchmark-marker { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-dark); transform: translateX(-50%); }
+    .benchmark-val { font-size: 11px; font-weight: 600; color: var(--muted); width: 28px; text-align: right; }
+    .score-right { display: flex; align-items: center; justify-content: center; }
+    .radar-wrap { width: 360px; height: 360px; }
+    .radar { overflow: visible; }
+    .radar text, .radar-label { font-family: 'DM Sans', sans-serif; font-size: 11px; fill: var(--muted); font-weight: 500; }
+    .pillars-grid { display: flex; flex-direction: column; flex: 1; }
+    .pillar-row { display: grid; grid-template-columns: 190px 1fr 90px; align-items: center; gap: 16px; flex: 1; border-bottom: 1px solid var(--line); }
+    .pillar-row:last-child { border-bottom: none; }
+    .pillar-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .pillar-name.primary { color: var(--warning); }
+    .bar-track { position: relative; height: 12px; background: #e8e0cf; border-radius: 99px; }
+    .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); }
+    .bar-fill.weak { background: linear-gradient(90deg, #d4856a, var(--warning)); }
+    .bar-target { position: absolute; top: -5px; width: 2px; height: 22px; background: var(--gold); border-radius: 1px; }
+    .pillar-score { font-size: 14px; font-weight: 600; color: var(--muted); text-align: right; }
+    .pillar-score.weak { color: var(--warning); }
+    .pillar-legend { display: flex; gap: 20px; padding-left: 206px; padding-top: 12px; flex-shrink: 0; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .legend-swatch { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-tick { width: 14px; height: 2px; background: var(--gold); border-radius: 1px; }
+    .diagnosis-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+    .diag-left { display: flex; flex-direction: column; gap: 14px; flex: 1; }
+    .diag-headline { font-size: 18px; line-height: 1.7; color: var(--text); font-weight: 400; flex-shrink: 0; }
+    .tension-card { border-left: 4px solid var(--warning); padding: 24px 22px; background: rgba(198,123,92,0.07); border-radius: 0 12px 12px 0; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .tension-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warning); margin-bottom: 12px; }
+    .tension-body { font-size: 15px; line-height: 1.7; color: var(--text); }
+    .diag-right { display: flex; flex-direction: column; }
+    .practice-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; flex-shrink: 0; }
+    .practice-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .practice-item { display: flex; gap: 14px; align-items: center; padding: 0 18px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; }
+    .practice-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-dark); flex-shrink: 0; }
+    .practice-text { font-size: 14px; line-height: 1.55; color: var(--text); }
+    .root-list { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .root-card { display: grid; grid-template-columns: 88px 1fr; background: white; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; flex: 1; min-height: 0; }
+    .root-prob { background: var(--bg); border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; gap: 4px; }
+    .root-prob-label { font-size: 9px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+    .root-prob-value { font-size: 13px; font-weight: 700; }
+    .root-prob-value.high { color: var(--warning); } .root-prob-value.medium { color: var(--gold); } .root-prob-value.lower { color: var(--muted); }
+    .root-content { padding: 16px 20px; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+    .root-hyp { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
+    .root-looks { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .root-test { font-size: 12px; font-weight: 600; color: var(--accent-dark); }
+    .swot-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; flex: 1; }
+    .swot-cell { background: white; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; }
+    .swot-cell-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .swot-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: white; flex-shrink: 0; }
+    .swot-cell.s .swot-cell-title { color: var(--accent-dark); } .swot-cell.s .swot-icon { background: var(--accent-dark); }
+    .swot-cell.w .swot-cell-title { color: var(--warning); } .swot-cell.w .swot-icon { background: var(--warning); }
+    .swot-cell.o .swot-cell-title { color: #5180a2; } .swot-cell.o .swot-icon { background: #5180a2; }
+    .swot-cell.t .swot-cell-title { color: #7d6496; } .swot-cell.t .swot-icon { background: #7d6496; }
+    .swot-items-wrap { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .swot-item { display: flex; gap: 8px; align-items: center; flex: 1; min-height: 0; }
+    .swot-bullet { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .swot-cell.s .swot-bullet { background: var(--accent-dark); } .swot-cell.w .swot-bullet { background: var(--warning); }
+    .swot-cell.o .swot-bullet { background: #5180a2; } .swot-cell.t .swot-bullet { background: #7d6496; }
+    .swot-text { font-size: 12.5px; line-height: 1.5; color: var(--text); }
+    .chain-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+    .chain-col { display: flex; flex-direction: column; }
+    .chain-steps-wrap { display: flex; flex-direction: column; flex: 1; }
+    .chain-step { display: flex; gap: 16px; align-items: flex-start; flex: 1; }
+    .chain-left-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+    .chain-num { width: 30px; height: 30px; border-radius: 50%; background: var(--dark-bg); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .chain-connector-line { width: 1px; flex: 1; background: var(--line); min-height: 12px; }
+    .chain-text-block { padding: 4px 0 0; flex: 1; display: flex; align-items: center; }
+    .chain-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+    .what-good-card { background: var(--dark-bg); border-radius: 14px; padding: 28px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
+    .wg-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .wg-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 600; color: white; margin-bottom: 14px; line-height: 1.2; }
+    .wg-text { font-size: 15px; font-weight: 300; line-height: 1.7; color: rgba(255,255,255,0.78); }
+    .two-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; }
+    .panel-card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; }
+    .panel-header { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; flex-shrink: 0; }
+    .tag { font-size: 12px; font-weight: 500; padding: 4px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 20px; color: var(--text); }
+    .comp-hyp { font-size: 13px; line-height: 1.55; color: var(--text); padding: 10px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px; }
+    .comp-frame-block { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.55; color: var(--muted); font-style: italic; }
+    .panel-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .panel-item { display: flex; gap: 10px; align-items: center; flex: 1; min-height: 0; }
+    .panel-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-dark); flex-shrink: 0; }
+    .panel-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+    .panel-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 10px; margin-bottom: 6px; flex-shrink: 0; }
+    .roadmap-layout { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+    .roadmap-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex: 1; }
+    .phase-card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; }
+    .phase-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-dark); margin-bottom: 5px; }
+    .phase-title { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 12px; line-height: 1.2; flex-shrink: 0; }
+    .phase-items { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .phase-item { display: flex; gap: 10px; align-items: center; flex: 1; min-height: 0; }
+    .phase-num { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent-dark); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .phase-num-text { font-size: 9px; font-weight: 700; color: var(--accent-dark); }
+    .phase-item-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+    .north-star-bar { background: var(--dark-bg); border-radius: 10px; padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .ns-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+    .ns-text { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 300; line-height: 1.5; }
+    .slide-divider { background: var(--dark-bg); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .divider-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
+    .divider-headline { font-family: 'Playfair Display', Georgia, serif; font-size: 52px; font-weight: 700; color: white; line-height: 1.08; text-align: center; margin-bottom: 16px; }
+    .divider-sub { font-size: 16px; font-weight: 300; color: var(--dark-muted); text-align: center; max-width: 560px; line-height: 1.65; }
+    .divider-glow { position: absolute; top: 0; right: 0; width: 480px; height: 480px; background: radial-gradient(circle at top right, rgba(201,168,76,0.09), transparent 60%); pointer-events: none; }
     .hypothesis-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
-
-    .hyp-summary {
-      background: var(--dark-bg);
-      border-radius: 14px;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 16px;
-    }
-
+    .hyp-summary { background: var(--dark-bg); border-radius: 14px; padding: 28px; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
     .hyp-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
     .hyp-summary-text { font-size: 16px; font-weight: 300; line-height: 1.7; color: rgba(255,255,255,0.85); }
-
-    .hyp-list { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
-
-    .hyp-card {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 14px 16px;
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-
-    .hyp-num {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      background: var(--dark-bg);
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    .hyp-text {
-      font-size: 13px;
-      line-height: 1.55;
-      color: var(--text);
-    }
-
-    /* ══ SLIDE 4: DISCOVERY QUESTIONS ══ */
+    .hyp-list { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .hyp-card { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; }
+    .hyp-num { width: 24px; height: 24px; border-radius: 50%; background: var(--dark-bg); color: white; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hyp-text { font-size: 13px; line-height: 1.55; color: var(--text); }
     .questions-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
-
-    .questions-list { display: flex; flex-direction: column; gap: 10px; }
-
-    .question-card {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 12px 16px;
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-
-    .q-num {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      border: 1.5px solid var(--accent-dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--accent-dark);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
+    .questions-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .question-card { display: flex; gap: 14px; align-items: center; padding: 0 16px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; }
+    .q-num { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--accent-dark); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--accent-dark); flex-shrink: 0; }
     .q-text { font-size: 13px; line-height: 1.5; color: var(--text); }
-
-    .friction-col { display: flex; flex-direction: column; gap: 10px; }
-
-    .friction-title { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-
-    .friction-item {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 12px 14px;
-      background: white;
-      border: 1px solid var(--line);
-      border-left: 3px solid var(--warning);
-      border-radius: 0 10px 10px 0;
-    }
-
+    .friction-col { display: flex; flex-direction: column; flex: 1; }
+    .friction-title { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; flex-shrink: 0; }
+    .friction-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .friction-item { display: flex; gap: 12px; align-items: center; padding: 0 14px; background: white; border: 1px solid var(--line); border-left: 3px solid var(--warning); border-radius: 0 10px 10px 0; flex: 1; min-height: 0; }
     .friction-text { font-size: 13px; line-height: 1.5; color: var(--text); }
-
-    /* ══ SLIDE 5: CONVERSATION STRATEGY ══ */
     .strategy-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
-
-    .strategy-list { display: flex; flex-direction: column; gap: 10px; }
-
-    .strategy-card {
-      padding: 14px 16px;
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-
-    .strategy-phase {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--accent-dark);
-      margin-bottom: 5px;
-    }
-
+    .strategy-col { display: flex; flex-direction: column; }
+    .strategy-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .strategy-card { padding: 12px 16px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .strategy-phase { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent-dark); margin-bottom: 5px; }
     .strategy-text { font-size: 13px; line-height: 1.55; color: var(--text); }
-
-    .engagement-col { display: flex; flex-direction: column; gap: 12px; }
-
-    .engagement-title { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-
-    .engagement-item {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 14px 16px;
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-
-    .engagement-num {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: var(--accent-dark);
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .engagement-text { font-size: 13px; line-height: 1.5; color: var(--text); }
-
-    .readiness-bar {
-      margin-top: auto;
-      padding: 14px 16px;
-      background: var(--dark-bg);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
+    .validate-col { display: flex; flex-direction: column; gap: 10px; }
+    .validate-title { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; flex-shrink: 0; }
+    .validate-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .validate-item { display: flex; gap: 12px; align-items: center; padding: 0 14px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; }
+    .validate-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-dark); flex-shrink: 0; }
+    .validate-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+    .objection-item { display: flex; gap: 12px; align-items: center; padding: 0 14px; background: white; border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 0 10px 10px 0; flex: 1; min-height: 0; }
+    .readiness-bar { padding: 14px 16px; background: var(--dark-bg); border-radius: 10px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
     .readiness-label { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
     .readiness-value { font-size: 14px; font-weight: 600; color: white; }
     .readiness-rationale { font-size: 12px; color: var(--dark-muted); font-weight: 300; }
-
-    /* ══ CLOSING ══ */
     .slide-closing { background: var(--dark-bg); display: flex; flex-direction: column; }
     .closing-glow { position: absolute; top: 0; right: 0; width: 480px; height: 480px; background: radial-gradient(circle at top right, rgba(201,168,76,0.09), transparent 60%); pointer-events: none; }
     .closing-top { padding: 28px 52px; border-bottom: 1px solid var(--dark-line); display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; flex-shrink: 0; }
@@ -296,425 +204,179 @@
     .closing-desc { font-size: 16px; font-weight: 300; color: var(--dark-muted); line-height: 1.65; max-width: 580px; }
     .closing-footer { padding: 20px 52px 28px; display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 2; flex-shrink: 0; }
     .closing-meta { font-size: 12px; color: rgba(255,255,255,0.28); line-height: 1.9; }
-
-    @media print {
-      body { background: white; }
-      .slide { page-break-after: always; break-after: page; }
-      .deck { gap: 0; background: white; }
-    }
-
-    @media (max-width: 1300px) {
-      :root { --slide-w: 100vw; --slide-h: calc(100vw * 0.5625); }
-      .cover-headline { font-size: 40px; }
-    }
+    @media print { body { background: white; } .slide { page-break-after: always; break-after: page; } .deck { gap: 0; background: white; } }
+    @media (max-width: 1300px) { :root { --slide-w: 100vw; --slide-h: calc(100vw * 0.5625); } .cover-headline { font-size: 40px; } }
   </style>
 </head>
 <body>
 <div class="deck">
-
-  <!-- ══ SLIDE 1 — COVER ══ -->
   <div class="slide slide-cover">
-    <div class="cover-glow-tr"></div>
-    <div class="cover-glow-bl"></div>
-    <div class="cover-top-bar">
-      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="cover-logo">
-      <div class="cover-internal-badge">Internal · Confidential</div>
-    </div>
-    <div class="cover-hero">
-      <div class="cover-eyebrow">Vallenwood Consulting · Pre-Call Brief</div>
-      <h1 class="cover-headline" id="cover-headline">Client Briefing</h1>
-      <p class="cover-sub">Internal diagnostic summary and conversation strategy. For consulting use only — not for distribution to the client.</p>
-    </div>
+    <div class="cover-glow-tr"></div><div class="cover-glow-bl"></div>
+    <div class="cover-top-bar"><img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="cover-logo"><div class="cover-internal-badge">Internal · Confidential</div></div>
+    <div class="cover-hero"><div class="cover-eyebrow">Vallenwood Consulting · Pre-Call Brief</div><h1 class="cover-headline" id="cover-headline">Client Briefing</h1><p class="cover-sub">Full diagnostic view + internal consulting strategy. For Vallenwood use only — not for distribution to the client.</p></div>
     <div class="cover-metrics">
-      <div class="cover-metric">
-        <div class="cm-label">Company</div>
-        <div class="cm-value" id="cover-company">—</div>
-      </div>
-      <div class="cover-metric">
-        <div class="cm-label">OS Score</div>
-        <div class="cm-value score" id="cover-score">—</div>
-      </div>
-      <div class="cover-metric">
-        <div class="cm-label">Primary Constraint</div>
-        <div class="cm-value warn" id="cover-constraint">—</div>
-      </div>
-      <div class="cover-metric">
-        <div class="cm-label">Upsell Readiness</div>
-        <div class="cm-value gold" id="cover-readiness">—</div>
+      <div class="cover-metric"><div class="cm-label">Company</div><div class="cm-value" id="cover-company">—</div></div>
+      <div class="cover-metric"><div class="cm-label">OS Score</div><div class="cm-value score" id="cover-score">—</div></div>
+      <div class="cover-metric"><div class="cm-label">Primary Constraint</div><div class="cm-value warn" id="cover-constraint">—</div></div>
+      <div class="cover-metric"><div class="cm-label">Upsell Readiness</div><div class="cm-value gold" id="cover-readiness">—</div></div>
+    </div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">OS Alignment Score</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-2">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">2 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">How aligned is the revenue system?</div><div class="slide-rule"></div>
+      <div class="score-layout">
+        <div class="score-left"><div><span class="score-number" id="big-score">0</span><span class="score-denom">/100</span></div><div class="score-band" id="score-band">—</div><div style="margin-top:4px;"><div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">How this compares</div><div id="benchmarks"></div></div></div>
+        <div class="score-right"><div class="radar-wrap"><svg class="radar" id="radar-chart" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg"><g id="radar-grid"></g><g id="radar-axes"></g><polygon id="radar-target" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="5 4"></polygon><polygon id="radar-area" fill="rgba(138,166,119,0.2)" stroke="#6f875f" stroke-width="2.5"></polygon><g id="radar-dots"></g><g id="radar-labels"></g></svg></div></div>
       </div>
     </div>
   </div>
-
-  <!-- ══ SLIDE 2 — SCORE + CLIENT SNAPSHOT ══ -->
   <div class="slide slide-light">
-    <div class="slide-chrome">
-      <div class="chrome-left">
-        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
-        <div class="chrome-divider"></div>
-        <span class="chrome-section">Diagnostic Overview</span>
-      </div>
-      <div class="chrome-right">
-        <span class="chrome-company" id="chrome-company-2">—</span>
-        <span class="chrome-badge">Internal</span>
-        <span class="chrome-page">2 / 6</span>
-      </div>
-    </div>
-    <div class="slide-body">
-      <div class="slide-title">Score, pillars, and client snapshot</div>
-      <div class="slide-rule"></div>
-      <div class="snapshot-layout">
-        <div class="score-block">
-          <div>
-            <span class="score-big" id="big-score">0</span>
-            <span class="score-denom">/100</span>
-            <div class="score-band-text" id="score-band" style="margin-top:6px;">—</div>
-            <div class="score-conf-text" id="score-conf">—</div>
-          </div>
-          <div>
-            <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Pillar scores</div>
-            <div class="pillar-mini-list" id="pillar-mini-list"></div>
-          </div>
-        </div>
-        <div class="snapshot-right">
-          <div class="snapshot-card">
-            <div class="snapshot-card-title">Client Snapshot</div>
-            <div class="snapshot-grid" id="snapshot-grid"></div>
-          </div>
-          <div class="snapshot-card" id="tensions-card">
-            <div class="snapshot-card-title">Operating Tensions</div>
-            <div id="tensions-list"></div>
-          </div>
-        </div>
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">5-Pillar Breakdown</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-3">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">3 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">Where the value system is strong — and where it breaks down</div><div class="slide-rule"></div><div class="pillars-grid" id="pillar-list"></div><div class="pillar-legend"><div class="legend-item"><div class="legend-swatch" style="background:var(--accent-dark)"></div><span>Current score (out of 20)</span></div><div class="legend-item"><div class="legend-tick"></div><span>Target threshold</span></div><div class="legend-item"><div class="legend-swatch" style="background:var(--warning)"></div><span>Primary constraint</span></div></div></div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Diagnosis</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-4">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">4 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">What the diagnostic found</div><div class="slide-rule"></div>
+      <div class="diagnosis-layout">
+        <div class="diag-left"><p class="diag-headline" id="headline-diagnosis"></p><div class="tension-card" id="tension-card" style="display:none"><div class="tension-kicker">The tension worth paying attention to</div><p class="tension-body" id="operating-tension"></p></div></div>
+        <div class="diag-right"><div class="practice-kicker">What this looks like in the business</div><div class="practice-items-wrap" id="practice-list"></div></div>
       </div>
     </div>
   </div>
-
-  <!-- ══ SLIDE 3 — CONSTRAINT HYPOTHESIS ══ -->
   <div class="slide slide-light">
-    <div class="slide-chrome">
-      <div class="chrome-left">
-        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
-        <div class="chrome-divider"></div>
-        <span class="chrome-section">Constraint Hypothesis</span>
-      </div>
-      <div class="chrome-right">
-        <span class="chrome-company" id="chrome-company-3">—</span>
-        <span class="chrome-badge">Internal</span>
-        <span class="chrome-page">3 / 6</span>
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Root Cause Analysis</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-5">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">5 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">Most likely root causes — ranked by probability</div><div class="slide-rule"></div><div class="root-list" id="root-cause-list"></div></div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Strategic SWOT</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-6">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">6 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">Commercial position at a glance</div><div class="slide-rule"></div>
+      <div class="swot-grid">
+        <div class="swot-cell s"><div class="swot-cell-title"><div class="swot-icon">S</div>Strengths</div><div class="swot-items-wrap" id="swot-s"></div></div>
+        <div class="swot-cell w"><div class="swot-cell-title"><div class="swot-icon">W</div>Weaknesses</div><div class="swot-items-wrap" id="swot-w"></div></div>
+        <div class="swot-cell o"><div class="swot-cell-title"><div class="swot-icon">O</div>Opportunities</div><div class="swot-items-wrap" id="swot-o"></div></div>
+        <div class="swot-cell t"><div class="swot-cell-title"><div class="swot-icon">T</div>Threats</div><div class="swot-items-wrap" id="swot-t"></div></div>
       </div>
     </div>
-    <div class="slide-body">
-      <div class="slide-title">What is really going on in this revenue system</div>
-      <div class="slide-rule"></div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Constraint Dynamics</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-7">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">7 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">How this constraint compounds over time</div><div class="slide-rule"></div>
+      <div class="chain-layout">
+        <div class="chain-col"><div class="chain-steps-wrap" id="constraint-chain"></div></div>
+        <div class="chain-col"><div class="what-good-card"><div class="wg-kicker">What good looks like</div><div class="wg-headline">When this constraint is resolved</div><p class="wg-text" id="what-good-text"></p></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Competitive & Pricing Context</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-8">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">8 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">Market position and pricing signals</div><div class="slide-rule"></div>
+      <div class="two-panel">
+        <div class="panel-card"><div class="panel-header">Competitive Context</div><div class="tag-row" id="comp-tags"></div><div id="comp-hypotheses"></div><div class="comp-frame-block" id="comp-frame"></div></div>
+        <div class="panel-card"><div class="panel-header">Pricing & Packaging Signals</div><div class="panel-items-wrap" id="pricing-signals"></div><div class="panel-section-label">First Fixes</div><div class="panel-items-wrap" id="pricing-fixes"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Action Roadmap</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-9">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">9 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">30 / 60 / 90-day priorities</div><div class="slide-rule"></div>
+      <div class="roadmap-layout">
+        <div class="roadmap-phases">
+          <div class="phase-card"><div class="phase-kicker">First 30 Days</div><div class="phase-title">Clarify the constraint</div><div class="phase-items" id="thirty-day"></div></div>
+          <div class="phase-card"><div class="phase-kicker">Days 31–60</div><div class="phase-title">Operationalize the fix</div><div class="phase-items" id="sixty-day"></div></div>
+          <div class="phase-card"><div class="phase-kicker">Days 61–90</div><div class="phase-title">Embed and scale</div><div class="phase-items" id="ninety-day"></div></div>
+        </div>
+        <div class="north-star-bar"><span class="ns-label">North Star</span><span class="ns-text" id="north-star-text">—</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide slide-divider">
+    <div class="divider-glow"></div>
+    <div class="divider-eyebrow">Internal Layer — Consulting Brief</div>
+    <div class="divider-headline">What the client sees<br>ends here.</div>
+    <div class="divider-sub">The following slides are your pre-call preparation — constraint hypotheses, discovery questions, conversation strategy, and validation checklist.</div>
+  </div>
+  <div class="slide slide-light">
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Constraint Hypothesis</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-11">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">11 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">What is really going on in this revenue system</div><div class="slide-rule"></div>
       <div class="hypothesis-layout">
-        <div class="hyp-summary">
-          <div class="hyp-kicker">Consultant's point of view</div>
-          <p class="hyp-summary-text" id="hyp-summary"></p>
-        </div>
+        <div class="hyp-summary"><div class="hyp-kicker">Consultant's point of view</div><p class="hyp-summary-text" id="hyp-summary"></p></div>
         <div class="hyp-list" id="hyp-list"></div>
       </div>
     </div>
   </div>
-
-  <!-- ══ SLIDE 4 — DISCOVERY QUESTIONS + COMMERCIAL FRICTION ══ -->
   <div class="slide slide-light">
-    <div class="slide-chrome">
-      <div class="chrome-left">
-        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
-        <div class="chrome-divider"></div>
-        <span class="chrome-section">Discovery & Friction</span>
-      </div>
-      <div class="chrome-right">
-        <span class="chrome-company" id="chrome-company-4">—</span>
-        <span class="chrome-badge">Internal</span>
-        <span class="chrome-page">4 / 6</span>
-      </div>
-    </div>
-    <div class="slide-body">
-      <div class="slide-title">Questions to ask — and friction points to surface</div>
-      <div class="slide-rule"></div>
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Discovery & Friction</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-12">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">12 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">Questions to ask — and friction points to surface</div><div class="slide-rule"></div>
       <div class="questions-layout">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Discovery questions</div>
-          <div class="questions-list" id="discovery-list"></div>
-        </div>
-        <div class="friction-col">
-          <div class="friction-title">Commercial friction in active deals</div>
-          <div id="friction-list"></div>
-        </div>
+        <div><div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Discovery questions</div><div class="questions-list" id="discovery-list"></div></div>
+        <div class="friction-col"><div class="friction-title">Commercial friction in active deals</div><div class="friction-items-wrap" id="friction-list"></div></div>
       </div>
     </div>
   </div>
-
-  <!-- ══ SLIDE 5 — CONVERSATION STRATEGY + ENGAGEMENT ══ -->
   <div class="slide slide-light">
-    <div class="slide-chrome">
-      <div class="chrome-left">
-        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
-        <div class="chrome-divider"></div>
-        <span class="chrome-section">Conversation Strategy</span>
-      </div>
-      <div class="chrome-right">
-        <span class="chrome-company" id="chrome-company-5">—</span>
-        <span class="chrome-badge">Internal</span>
-        <span class="chrome-page">5 / 6</span>
-      </div>
-    </div>
-    <div class="slide-body">
-      <div class="slide-title">How to run the conversation</div>
-      <div class="slide-rule"></div>
+    <div class="slide-chrome"><div class="chrome-left"><img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo"><div class="chrome-divider"></div><span class="chrome-section">Strategy & Validation</span></div><div class="chrome-right"><span class="chrome-company" id="chrome-company-13">—</span><span class="chrome-badge">Internal</span><span class="chrome-page">13 / 13</span></div></div>
+    <div class="slide-body"><div class="slide-title">How to run the conversation</div><div class="slide-rule"></div>
       <div class="strategy-layout">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Conversation strategy</div>
-          <div class="strategy-list" id="strategy-list"></div>
-        </div>
-        <div class="engagement-col">
-          <div class="engagement-title">Engagement opportunities</div>
-          <div id="engagement-list"></div>
-          <div class="readiness-bar" id="readiness-bar">
-            <span class="readiness-label">Upsell Readiness</span>
-            <span class="readiness-value" id="readiness-value">—</span>
-            <span class="readiness-rationale" id="readiness-rationale"></span>
-          </div>
+        <div class="strategy-col"><div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Conversation strategy</div><div class="strategy-list" id="strategy-list"></div></div>
+        <div class="validate-col">
+          <div class="validate-title">Validate live + anticipate objections</div>
+          <div class="validate-items-wrap" id="validate-list"></div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:10px 0 8px;">Likely objections</div>
+          <div class="validate-items-wrap" id="objections-list"></div>
+          <div class="readiness-bar" style="margin-top:10px;"><span class="readiness-label">Upsell Readiness</span><span class="readiness-value" id="readiness-value">—</span><span class="readiness-rationale" id="readiness-rationale"></span></div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- ══ SLIDE 6 — AREAS TO VALIDATE ══ -->
-  <div class="slide slide-light">
-    <div class="slide-chrome">
-      <div class="chrome-left">
-        <img src="/vallenwood-logo.png" alt="Vallenwood" class="chrome-logo">
-        <div class="chrome-divider"></div>
-        <span class="chrome-section">Validation Checklist</span>
-      </div>
-      <div class="chrome-right">
-        <span class="chrome-company" id="chrome-company-6">—</span>
-        <span class="chrome-badge">Internal</span>
-        <span class="chrome-page">6 / 6</span>
-      </div>
-    </div>
-    <div class="slide-body">
-      <div class="slide-title">What to confirm in the first 30 minutes</div>
-      <div class="slide-rule"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Areas to validate live</div>
-          <div id="validate-list" style="display:flex;flex-direction:column;gap:10px;"></div>
-        </div>
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Likely objections to anticipate</div>
-          <div id="objections-list" style="display:flex;flex-direction:column;gap:10px;"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ CLOSING ══ -->
   <div class="slide slide-closing">
     <div class="closing-glow"></div>
-    <div class="closing-top">
-      <img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="closing-logo">
-      <span class="closing-badge">Internal Brief · Confidential</span>
-    </div>
-    <div class="closing-body">
-      <div class="closing-eyebrow">Vallenwood Consulting</div>
-      <h2 class="closing-headline">Walk in with<br>a point of view.</h2>
-      <p class="closing-desc">This brief is generated from the Brand-to-GTM OS diagnostic and is intended to prepare you for the client conversation — not to replace your judgment. The hypotheses here are starting points. What you hear in the first 15 minutes will sharpen or redirect them.</p>
-    </div>
-    <div class="closing-footer">
-      <div class="closing-meta">
-        <div id="closing-company">—</div>
-        <div id="closing-date">—</div>
-        <div>Internal use only · Vallenwood Consulting</div>
-      </div>
-    </div>
+    <div class="closing-top"><img src="/vallenwood-logo.png" alt="Vallenwood Consulting" class="closing-logo"><span class="closing-badge">Internal Brief · Confidential</span></div>
+    <div class="closing-body"><div class="closing-eyebrow">Vallenwood Consulting</div><h2 class="closing-headline">Walk in with<br>a point of view.</h2><p class="closing-desc">This brief mirrors everything the client sees plus the internal consulting layer — hypotheses, discovery questions, and conversation strategy. The diagnostic is the starting point. What you hear in the first 15 minutes will sharpen or redirect it.</p></div>
+    <div class="closing-footer"><div class="closing-meta"><div id="closing-company">—</div><div id="closing-date">—</div><div>Internal use only · Vallenwood Consulting</div></div></div>
   </div>
-
 </div>
-
 <script>
 const d = window.REPORT_DATA || {};
-
-function esc(s) {
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-}
-function set(id, val, fb) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val || fb || "—";
-}
-
-const company = d.company_name || "";
-const score = d.scoring?.overall_score ?? d.overall_score ?? 0;
-const band = d.scoring?.score_band ?? d.score_band ?? "";
-const confidence = d.scoring?.confidence ?? d.confidence ?? "Moderate";
-const constraint = d.scoring?.primary_constraint?.label ?? d.primary_constraint_label ?? "—";
-const date = d.report_date ?? (d.scoring ? new Date().toLocaleDateString("en-US",{year:"numeric",month:"long"}) : "");
-const pillarScores = d.scoring?.pillar_scores
-  ? Object.fromEntries((d.scoring.pillar_scores||[]).map(p=>[p.key,p.score]))
-  : d.pillar_scores || {};
-const targetScores = d.target_pillar_scores || {positioning:16,value_architecture:15,pricing_packaging:15,gtm_focus:16,measurement:15};
-const snapshot = d.diagnostic_snapshot || {};
-const co = d.consulting_opportunity || {};
-const readiness = co.upsell_readiness || "—";
-
-// Cover
-set("cover-headline", company ? `${company} — Client Brief` : "Client Brief");
-set("cover-company", company);
-set("cover-score", score + "/100");
-set("cover-constraint", constraint);
-set("cover-readiness", typeof readiness === "string" ? readiness.split("—")[0].trim() : readiness);
-[2,3,4,5,6].forEach(n => set(`chrome-company-${n}`, company));
-
-// Score slide
-set("big-score", score);
-set("score-band", band);
-set("score-conf", `${confidence} confidence`);
-
-// Pillar mini list
-(function(){
-  const el = document.getElementById("pillar-mini-list");
-  if (!el) return;
-  const pillars=[["positioning","Positioning"],["value_architecture","Value Architecture"],["pricing_packaging","Pricing & Packaging"],["gtm_focus","GTM Focus"],["measurement","Measurement"]];
-  const minScore = Math.min(...pillars.map(([k])=>Number(pillarScores[k]||0)));
-  pillars.forEach(([key,label])=>{
-    const val=Number(pillarScores[key]||0),tgt=Number(targetScores[key]||15),pct=val/20*100,weak=val<tgt,isPrimary=val===minScore;
-    const row=document.createElement("div");row.className="pillar-mini-row";
-    row.innerHTML=`<div class="pillar-mini-name${isPrimary?" primary":""}">${esc(label)}${isPrimary?" ★":""}</div><div class="pillar-mini-bar-track"><div class="pillar-mini-fill${weak?" weak":""}" style="width:${pct}%"></div></div><div class="pillar-mini-score${weak?" weak":""}">${val}/20</div>`;
-    el.appendChild(row);
-  });
-})();
-
-// Snapshot grid
-(function(){
-  const el = document.getElementById("snapshot-grid");
-  if (!el) return;
-  const items = [
-    ["Revenue", snapshot.annual_revenue || d.inputs?.normalized_answers?.annual_revenue],
-    ["ACV", snapshot.acv || d.inputs?.normalized_answers?.acv],
-    ["Sales Cycle", snapshot.sales_cycle || d.inputs?.normalized_answers?.sales_cycle],
-    ["Close Rate", snapshot.close_rate || d.inputs?.normalized_answers?.close_rate],
-    ["Growth", snapshot.growth_status || d.inputs?.normalized_answers?.growth_status],
-    ["Measurement", snapshot.measurement_model || d.inputs?.normalized_answers?.marketing_measured_by],
-  ].filter(([,v])=>v);
-  items.forEach(([label,value])=>{
-    const div=document.createElement("div");div.className="snapshot-item";
-    div.innerHTML=`<div class="snapshot-item-label">${esc(label)}</div><div class="snapshot-item-value">${esc(value)}</div>`;
-    el.appendChild(div);
-  });
-})();
-
-// Tensions
-(function(){
-  const el = document.getElementById("tensions-list");
-  if (!el) return;
-  const tensions = d.scoring?.operating_tensions || d.signal_analysis?.operating_tensions || [];
-  tensions.slice(0,2).forEach(t=>{
-    const div=document.createElement("div");
-    div.style.cssText="font-size:12px;line-height:1.5;color:var(--text);padding:6px 0;border-bottom:1px solid var(--line);";
-    div.innerHTML=`<strong>${esc(t.tension||"")}</strong><br><span style="color:var(--muted)">${esc(t.implication||"")}</span>`;
-    el.appendChild(div);
-  });
-  if (!tensions.length) document.getElementById("tensions-card").style.display="none";
-})();
-
-// Constraint hypothesis
-set("hyp-summary", d.constraint_hypothesis_summary || d.interpretation?.executive_readout || "");
-(function(){
-  const el = document.getElementById("hyp-list");
-  if (!el) return;
-  const hyps = d.constraint_hypothesis || d.interpretation?.root_cause_hypotheses || [];
-  hyps.slice(0,3).forEach((h,i)=>{
-    const div=document.createElement("div");div.className="hyp-card";
-    div.innerHTML=`<div class="hyp-num">${i+1}</div><span class="hyp-text">${esc(h)}</span>`;
-    el.appendChild(div);
-  });
-})();
-
-// Discovery questions
-(function(){
-  const el = document.getElementById("discovery-list");
-  if (!el) return;
-  const qs = d.discovery_questions || d.call_briefing?.top_questions_to_ask || [];
-  qs.slice(0,4).forEach((q,i)=>{
-    const div=document.createElement("div");div.className="question-card";
-    div.innerHTML=`<div class="q-num">${i+1}</div><span class="q-text">${esc(q)}</span>`;
-    el.appendChild(div);
-  });
-})();
-
-// Commercial friction
-(function(){
-  const el = document.getElementById("friction-list");
-  if (!el) return;
-  const items = d.commercial_friction || [];
-  items.slice(0,3).forEach(f=>{
-    const div=document.createElement("div");div.className="friction-item";
-    div.innerHTML=`<span class="friction-text">${esc(f)}</span>`;
-    el.appendChild(div);
-  });
-})();
-
-// Conversation strategy
-(function(){
-  const el = document.getElementById("strategy-list");
-  if (!el) return;
-  const phases = ["Open the call","Introduce the constraint","Bridge to engagement","Handle objections"];
-  const items = d.conversation_strategy || [];
-  items.slice(0,4).forEach((s,i)=>{
-    const div=document.createElement("div");div.className="strategy-card";
-    div.innerHTML=`<div class="strategy-phase">${esc(phases[i]||`Step ${i+1}`)}</div><div class="strategy-text">${esc(s)}</div>`;
-    el.appendChild(div);
-  });
-})();
-
-// Engagement opportunities
-(function(){
-  const el = document.getElementById("engagement-list");
-  if (!el) return;
-  const items = d.engagement_opportunities || co.likely_needs || [];
-  items.slice(0,3).forEach((e,i)=>{
-    const div=document.createElement("div");div.className="engagement-item";
-    div.innerHTML=`<div class="engagement-num">${i+1}</div><span class="engagement-text">${esc(e)}</span>`;
-    el.appendChild(div);
-  });
-})();
-
-// Readiness
-const readinessStr = typeof readiness === "string" ? readiness : "";
-const readinessParts = readinessStr.split(/[—–-]/);
-set("readiness-value", readinessParts[0]?.trim() || readinessStr);
-set("readiness-rationale", readinessParts[1]?.trim() || co.priority_engagement_angle || "");
-
-// Validate live
-(function(){
-  const el = document.getElementById("validate-list");
-  if (!el) return;
-  const items = d.call_briefing?.areas_to_validate_live || [];
-  items.slice(0,3).forEach(v=>{
-    const div=document.createElement("div");
-    div.style.cssText="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:white;border:1px solid var(--line);border-radius:10px;";
-    div.innerHTML=`<div style="width:6px;height:6px;border-radius:50%;background:var(--accent-dark);margin-top:5px;flex-shrink:0;"></div><span style="font-size:13px;line-height:1.5;color:var(--text);">${esc(v)}</span>`;
-    el.appendChild(div);
-  });
-})();
-
-// Objections
-(function(){
-  const el = document.getElementById("objections-list");
-  if (!el) return;
-  const items = d.likely_objections || [];
-  items.slice(0,3).forEach(o=>{
-    const div=document.createElement("div");
-    div.style.cssText="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:white;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;";
-    div.innerHTML=`<span style="font-size:13px;line-height:1.5;color:var(--text);">${esc(o)}</span>`;
-    el.appendChild(div);
-  });
-})();
-
-set("closing-company", company);
-set("closing-date", date);
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function set(id,val,fb){const el=document.getElementById(id);if(el)el.textContent=val||fb||"—";}
+function splitLabel(label){const t=String(label||"").trim();if(!t)return[""];if(Array.isArray(label))return label;if(t.length<=12)return[t];if(t.includes(" & ")){const[a,b]=t.split(" & ");return[`${a} &`,b];}const w=t.split(/\s+/);if(w.length<=2)return w;const m=Math.ceil(w.length/2);return[w.slice(0,m).join(" "),w.slice(m).join(" ")];}
+const company=d.company_name||"";
+const score=d.scoring?.overall_score??d.overall_score??0;
+const band=d.scoring?.score_band??d.score_band??"";
+const constraint=d.scoring?.primary_constraint?.label??d.primary_constraint_label??"—";
+const date=d.report_date??(d.scoring?new Date().toLocaleDateString("en-US",{year:"numeric",month:"long"}):"");
+const rawPillar=d.scoring?.pillar_scores??d.pillar_scores??{};
+const pillarScores=Array.isArray(rawPillar)?Object.fromEntries(rawPillar.map(p=>[p.key,p.score])):rawPillar;
+const targetScores=d.target_pillar_scores||{positioning:15,value_architecture:15,pricing_packaging:15,gtm_focus:15,measurement:15};
+const radarLabels=d.radar_labels||{positioning:"Positioning",value_architecture:"Value",pricing_packaging:"Pricing",gtm_focus:"GTM",measurement:"Measurement"};
+const co=d.consulting_opportunity||{};
+const readiness=co.upsell_readiness||"—";
+set("cover-headline",company?`${company} — Client Brief`:"Client Brief");
+set("cover-company",company);set("cover-score",score+"/100");set("cover-constraint",constraint);
+set("cover-readiness",typeof readiness==="string"?readiness.split(/[—–]/)[0].trim():readiness);
+[2,3,4,5,6,7,8,9,11,12,13].forEach(n=>set(`chrome-company-${n}`,company));
+set("big-score",score);set("score-band",band);
+(function(){const bmEl=document.getElementById("benchmarks");if(!bmEl)return;[{label:"Your score",val:score,color:"var(--accent-dark)"},{label:"Avg B2B SaaS",val:62,color:"#b8ad95"},{label:"Top quartile",val:78,color:"#9e9278"},{label:"Elite alignment",val:85,color:"#837861"}].forEach(b=>{const pct=Math.min(b.val/100*100,100);const row=document.createElement("div");row.className="benchmark-item";row.innerHTML=`<span class="benchmark-label">${esc(b.label)}</span><div class="benchmark-track"><div class="benchmark-fill" style="width:${pct}%;background:${b.color}"></div>${b.label==="Your score"?`<div class="benchmark-marker" style="left:${pct}%"></div>`:""}</div><span class="benchmark-val">${b.val}</span>`;bmEl.appendChild(row);});})();
+(function(){const grid=document.getElementById("radar-grid"),axes=document.getElementById("radar-axes"),labelsG=document.getElementById("radar-labels"),targetPoly=document.getElementById("radar-target"),areaPoly=document.getElementById("radar-area"),dotsG=document.getElementById("radar-dots");if(!grid)return;const cx=180,cy=180,r=110,lr=152,keys=["positioning","value_architecture","pricing_packaging","gtm_focus","measurement"],SVG="http://www.w3.org/2000/svg",N=keys.length;function pt(i,val,max,rad){const angle=-Math.PI/2+i*(2*Math.PI/N),rr=(val/max)*rad;return{x:cx+Math.cos(angle)*rr,y:cy+Math.sin(angle)*rr};}function anchor(x){if(Math.abs(x-cx)<10)return"middle";return x<cx?"end":"start";}[4,3,2,1].forEach(level=>{const pts=keys.map((_,i)=>{const p=pt(i,(20/4)*level,20,r);return`${p.x},${p.y}`;}).join(" ");const poly=document.createElementNS(SVG,"polygon");poly.setAttribute("points",pts);poly.setAttribute("fill","none");poly.setAttribute("stroke","#ddd5c0");poly.setAttribute("stroke-width","1");grid.appendChild(poly);});keys.forEach((key,i)=>{const outer=pt(i,20,20,r);const line=document.createElementNS(SVG,"line");line.setAttribute("x1",cx);line.setAttribute("y1",cy);line.setAttribute("x2",outer.x);line.setAttribute("y2",outer.y);line.setAttribute("stroke","#d0c8b8");line.setAttribute("stroke-width","1");axes.appendChild(line);const lp=pt(i,20,20,lr);const labelLines=splitLabel(radarLabels[key]||key);const text=document.createElementNS(SVG,"text");text.setAttribute("x",lp.x);text.setAttribute("y",lp.y);text.setAttribute("text-anchor",anchor(lp.x));text.setAttribute("dominant-baseline","middle");text.setAttribute("class","radar-label");const lh=13,start=-((labelLines.length-1)*lh)/2;labelLines.forEach((ln,li)=>{const ts=document.createElementNS(SVG,"tspan");ts.setAttribute("x",lp.x);ts.setAttribute("dy",li===0?start:lh);ts.textContent=ln;text.appendChild(ts);});labelsG.appendChild(text);});targetPoly.setAttribute("points",keys.map((k,i)=>{const p=pt(i,targetScores[k]||15,20,r);return`${p.x},${p.y}`;}).join(" "));areaPoly.setAttribute("points",keys.map((k,i)=>{const p=pt(i,pillarScores[k]||0,20,r);return`${p.x},${p.y}`;}).join(" "));keys.forEach((k,i)=>{const p=pt(i,pillarScores[k]||0,20,r);const c=document.createElementNS(SVG,"circle");c.setAttribute("cx",p.x);c.setAttribute("cy",p.y);c.setAttribute("r","5");c.setAttribute("fill","#6f875f");c.setAttribute("stroke","white");c.setAttribute("stroke-width","1.5");dotsG.appendChild(c);});})();
+(function(){const el=document.getElementById("pillar-list");if(!el)return;const pillars=[["positioning","Positioning & Category"],["value_architecture","Value Architecture"],["pricing_packaging","Pricing & Packaging"],["gtm_focus","GTM Focus"],["measurement","Measurement"]];pillars.forEach(([key,label])=>{const val=Number(pillarScores[key]||0),tgt=Number(targetScores[key]||15),pct=val/20*100,tpct=tgt/20*100,weak=val<tgt;const isPrimary=val===Math.min(...Object.values(pillarScores||{}).map(Number));const row=document.createElement("div");row.className="pillar-row";row.innerHTML=`<div class="pillar-name${isPrimary?" primary":""}">${esc(label)}${isPrimary?" ★":""}</div><div class="bar-track"><div class="bar-fill${weak?" weak":""}" style="width:${pct}%"></div><div class="bar-target" style="left:${tpct}%"></div></div><div class="pillar-score${weak?" weak":""}">${val}/20</div>`;el.appendChild(row);});})();
+(function(){set("headline-diagnosis",d.headline_diagnosis||d.executive_headline||"");const tension=d.the_operating_tension||(d.operating_tensions?.[0]?(d.operating_tensions[0].implication?`${d.operating_tensions[0].tension} — ${d.operating_tensions[0].implication}`:d.operating_tensions[0].tension):"");if(tension){const tc=document.getElementById("tension-card");if(tc){tc.style.display="flex";set("operating-tension",tension);}}const items=(d.what_this_means_in_practice?.length?d.what_this_means_in_practice:d.diagnosis_implications?.length?d.diagnosis_implications:(d.operating_tensions||[]).map(t=>t.implication).filter(Boolean)).slice(0,4);const pl=document.getElementById("practice-list");if(pl){items.forEach(item=>{const div=document.createElement("div");div.className="practice-item";div.innerHTML=`<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;pl.appendChild(div);});}})();
+(function(){const el=document.getElementById("root-cause-list");if(!el)return;(d.root_cause_hypotheses||[]).slice(0,3).forEach(rc=>{const probClass=(rc.probability||"").toLowerCase();const div=document.createElement("div");div.className="root-card";div.innerHTML=`<div class="root-prob"><div class="root-prob-label">Probability</div><div class="root-prob-value ${probClass}">${esc(rc.probability||"")}</div></div><div class="root-content"><div class="root-hyp">${esc(rc.hypothesis||"")}</div>${rc.what_it_looks_like?`<div class="root-looks">${esc(rc.what_it_looks_like)}</div>`:""}${rc.first_test?`<div class="root-test">First test: ${esc(rc.first_test)}</div>`:""}</div>`;el.appendChild(div);});})();
+(function(){function fillSwot(id,items){const el=document.getElementById(id);if(!el||!items)return;items.slice(0,3).forEach(item=>{const text=item.point||item||"";const div=document.createElement("div");div.className="swot-item";div.innerHTML=`<div class="swot-bullet"></div><span class="swot-text">${esc(text)}</span>`;el.appendChild(div);});}fillSwot("swot-s",d.swot?.strengths);fillSwot("swot-w",d.swot?.weaknesses);fillSwot("swot-o",d.swot?.opportunities);fillSwot("swot-t",d.swot?.threats);})();
+(function(){const el=document.getElementById("constraint-chain");const chain=d.constraint_chain||[];if(el){chain.slice(0,3).forEach((item,i)=>{const isLast=i===Math.min(chain.length,3)-1;const step=document.createElement("div");step.className="chain-step";step.innerHTML=`<div class="chain-left-col"><div class="chain-num">${i+1}</div>${!isLast?'<div class="chain-connector-line"></div>':""}</div><div class="chain-text-block"><div class="chain-text">${esc(item)}</div></div>`;el.appendChild(step);});}set("what-good-text",d.what_good_looks_like,"When this constraint is resolved, the revenue system operates with clear commercial intent — value reaches buyers efficiently, pricing holds, and the commercial motion compounds.");})();
+(function(){const cc=d.competitive_context||{};const pa=d.pricing_packaging_audit||{};const tagsEl=document.getElementById("comp-tags");if(tagsEl){if(cc.category){const t=document.createElement("div");t.className="tag";t.style.background="var(--dark-bg)";t.style.color="white";t.style.border="none";t.textContent=cc.category;tagsEl.appendChild(t);}(cc.most_compared_to||[]).slice(0,3).forEach(c=>{const t=document.createElement("div");t.className="tag";t.textContent=c;tagsEl.appendChild(t);});}const hypEl=document.getElementById("comp-hypotheses");if(hypEl){(cc.positioning_hypotheses||[]).slice(0,2).forEach(h=>{const div=document.createElement("div");div.className="comp-hyp";div.textContent=h;hypEl.appendChild(div);});}set("comp-frame",cc.competitive_frame||"");const sigEl=document.getElementById("pricing-signals");if(sigEl){(pa.current_state_signals||[]).slice(0,3).forEach(s=>{const div=document.createElement("div");div.className="panel-item";div.innerHTML=`<div class="panel-dot"></div><span class="panel-text">${esc(s)}</span>`;sigEl.appendChild(div);});}const fixEl=document.getElementById("pricing-fixes");if(fixEl){(pa.first_fixes||[]).slice(0,3).forEach(f=>{const div=document.createElement("div");div.className="panel-item";div.innerHTML=`<div class="panel-dot"></div><span class="panel-text">${esc(f)}</span>`;fixEl.appendChild(div);});}})();
+(function(){const rm=d.roadmap||{};function fillPhase(id,items){const el=document.getElementById(id);if(!el)return;(items||[]).slice(0,3).forEach((item,i)=>{const div=document.createElement("div");div.className="phase-item";div.innerHTML=`<div class="phase-num"><span class="phase-num-text">${i+1}</span></div><span class="phase-item-text">${esc(item)}</span>`;el.appendChild(div);});}fillPhase("thirty-day",rm.thirty_day);fillPhase("sixty-day",rm.sixty_day);fillPhase("ninety-day",rm.ninety_day);set("north-star-text",rm.north_star,"Reduce value leakage so the commercial motion converts at a rate that reflects the strength of the product and brand.");})();
+set("hyp-summary",d.constraint_hypothesis_summary||d.interpretation?.executive_readout||"");
+(function(){const el=document.getElementById("hyp-list");if(!el)return;const hyps=d.constraint_hypothesis||d.interpretation?.root_cause_hypotheses||[];hyps.slice(0,3).forEach((h,i)=>{const div=document.createElement("div");div.className="hyp-card";div.innerHTML=`<div class="hyp-num">${i+1}</div><span class="hyp-text">${esc(h)}</span>`;el.appendChild(div);});})();
+(function(){const el=document.getElementById("discovery-list");if(!el)return;const qs=d.discovery_questions||d.call_briefing?.top_questions_to_ask||[];qs.slice(0,5).forEach((q,i)=>{const div=document.createElement("div");div.className="question-card";div.innerHTML=`<div class="q-num">${i+1}</div><span class="q-text">${esc(q)}</span>`;el.appendChild(div);});})();
+(function(){const el=document.getElementById("friction-list");if(!el)return;const items=d.commercial_friction||[];items.slice(0,3).forEach(f=>{const div=document.createElement("div");div.className="friction-item";div.innerHTML=`<span class="friction-text">${esc(f)}</span>`;el.appendChild(div);});})();
+(function(){const el=document.getElementById("strategy-list");if(!el)return;const phases=["Open the call","Introduce the constraint","Bridge to engagement","Handle objections"];const items=d.conversation_strategy||[];items.slice(0,4).forEach((s,i)=>{const div=document.createElement("div");div.className="strategy-card";div.innerHTML=`<div class="strategy-phase">${esc(phases[i]||`Step ${i+1}`)}</div><div class="strategy-text">${esc(s)}</div>`;el.appendChild(div);});})();
+(function(){const el=document.getElementById("validate-list");if(!el)return;const items=d.call_briefing?.areas_to_validate_live||[];items.slice(0,3).forEach(v=>{const div=document.createElement("div");div.className="validate-item";div.innerHTML=`<div class="validate-dot"></div><span class="validate-text">${esc(v)}</span>`;el.appendChild(div);});})();
+(function(){const el=document.getElementById("objections-list");if(!el)return;const items=d.likely_objections||[];items.slice(0,3).forEach(o=>{const div=document.createElement("div");div.className="objection-item";div.innerHTML=`<span class="validate-text">${esc(o)}</span>`;el.appendChild(div);});})();
+const readinessStr=typeof readiness==="string"?readiness:"";
+const readinessParts=readinessStr.split(/[—–-]/);
+set("readiness-value",readinessParts[0]?.trim()||readinessStr);
+set("readiness-rationale",readinessParts[1]?.trim()||co.priority_engagement_angle||"");
+set("closing-company",company);set("closing-date",date);
 </script>
 </body>
 </html>
