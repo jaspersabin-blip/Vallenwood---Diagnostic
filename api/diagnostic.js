@@ -1378,7 +1378,36 @@ function buildHiddenReportData(report) {
       priority_engagement_angle: prettyPillar(report?.scoring?.primary_constraint?.key) || "Strategic Diagnostic Sprint",
       upsell_readiness:
         (report?.scoring?.overall_score || 0) <= 70 ? "High" : "Moderate"
-    }
+    },
+
+    // Audit enrichment fields — populated when audit enrichment has run
+    headline_diagnosis: report?.headline_diagnosis || report?.narrative?.headline_diagnosis || "",
+    executive_headline: report?.executive_headline || report?.narrative?.executive_headline || "",
+    the_operating_tension: report?.the_operating_tension || report?.narrative?.the_operating_tension || "",
+    what_this_means_in_practice: report?.what_this_means_in_practice || report?.narrative?.what_this_means_in_practice || [],
+    diagnosis_implications: report?.diagnosis_implications || [],
+    operating_tensions: report?.scoring?.operating_tensions || [],
+    what_good_looks_like: report?.what_good_looks_like || report?.narrative?.what_good_looks_like || "",
+    upgrade_bridge: report?.upgrade_bridge || report?.narrative?.upgrade_bridge || [],
+    root_cause_hypotheses: report?.root_cause_hypotheses || [],
+    swot: report?.swot || null,
+    constraint_chain: report?.constraint_chain || [],
+    competitive_context: report?.competitive_context || null,
+    pricing_packaging_audit: report?.pricing_packaging_audit || null,
+    roadmap: report?.roadmap || null,
+    constraint_hypothesis_summary: report?.constraint_hypothesis_summary || "",
+    constraint_hypothesis: report?.constraint_hypothesis || [],
+    commercial_friction: report?.commercial_friction || [],
+    likely_objections: report?.likely_objections || [],
+    discovery_questions: report?.discovery_questions || [],
+    conversation_strategy: report?.conversation_strategy || [],
+    engagement_opportunities: report?.engagement_opportunities || [],
+
+    // Flat pillar scores for chart rendering
+    pillar_scores: pillarScores,
+    target_pillar_scores: targetPillarScores,
+    radar_labels: radarLabels,
+    primary_constraint_label: primary?.label || "",
   };
 }
 
