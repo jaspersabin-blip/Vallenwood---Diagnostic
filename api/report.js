@@ -1,7 +1,11 @@
+// api/report.js
+// Reads report data from Redis and injects it into the HTML template.
+// Does NOT call any enrichment functions — all enrichment happens in
+// diagnostic.js background process after the Zapier response is sent.
+
 import fs from "fs";
 import path from "path";
 import { getReport } from "../lib/reportStore.js";
-import { enrichAuditReport, enrichHiddenReport } from "../lib/enrichAudit.js";
 
 function getDefaultRadarLabels() {
   return {
@@ -42,7 +46,6 @@ function getPillarScoreObject(reportData) {
 
   // Supports array form
   const arr = Array.isArray(source) ? source : [];
-
   return {
     positioning: Number(arr.find((p) => p.key === "positioning")?.score || 0),
     value_architecture: Number(arr.find((p) => p.key === "value_architecture")?.score || 0),
@@ -52,38 +55,23 @@ function getPillarScoreObject(reportData) {
   };
 }
 
-/**
- * Splits long radar labels into multi-line arrays for Chart.js pointLabels.
- * Example:
- * "Value Architecture" => ["Value", "Architecture"]
- * "Pricing & Packaging" => ["Pricing &", "Packaging"]
- */
 function splitRadarLabel(label) {
   const text = String(label || "").trim();
   if (!text) return [""];
-
-  // Keep short labels on one line
   if (text.length <= 12) return [text];
-
-  // Prefer natural split points
   if (text.includes(" & ")) {
     const [left, right] = text.split(" & ");
     return [`${left} &`, right];
   }
-
   const words = text.split(/\s+/);
-
   if (words.length === 1) return [text];
   if (words.length === 2) return words;
-
-  // Balance multi-word labels into 2 lines
   const midpoint = Math.ceil(words.length / 2);
   return [words.slice(0, midpoint).join(" "), words.slice(midpoint).join(" ")];
 }
 
 function getChartOptions(reportData) {
   const custom = reportData?.chart_options || reportData?.scoring?.chart_options || {};
-
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -141,12 +129,10 @@ function normalizeReportDataForTemplate(reportData, tier) {
 
   const normalized = {
     ...reportData,
-
     radar_labels: radarLabels,
     target_pillar_scores: targetPillarScores,
     pillar_scores: pillarScores,
     chart_options: chartOptions,
-
     chart: {
       labels: radarLabelArray,
       multiline_labels: radarLabelMultiLineArray,
@@ -154,8 +140,6 @@ function normalizeReportDataForTemplate(reportData, tier) {
       target_scores: targetScoreArray,
       options: chartOptions,
     },
-
-    // Aliases for template compatibility
     radar_label_array: radarLabelArray,
     radar_label_multiline_array: radarLabelMultiLineArray,
     pillar_score_array: actualScoreArray,
@@ -203,6 +187,7 @@ export default async function handler(req, res) {
     const tier = requestedTier || stored.tier || "exec";
     let finalReportData = stored.reportData || stored;
 
+    // Select the correct HTML template for this tier
     let templatePath;
     if (tier === "audit") {
       templatePath = path.join(process.cwd(), "reports", "audit-report.html");
@@ -212,81 +197,8 @@ export default async function handler(req, res) {
       templatePath = path.join(process.cwd(), "reports", "exec-report.html");
     }
 
-    if (tier === "audit" && !finalReportData.swot) {
-      try {
-        const aiInsights = await enrichAuditReport(finalReportData);
-
-        finalReportData = {
-          ...finalReportData,
-          swot: aiInsights?.swot || finalReportData.swot,
-          competitive_context:
-            aiInsights?.competitive_context || finalReportData.competitive_context,
-          pricing_packaging_audit: {
-            ...(finalReportData.pricing_packaging_audit || {}),
-            ...(aiInsights?.pricing_insight || {}),
-          },
-          roadmap: {
-            ...(finalReportData.roadmap || {}),
-            ...(aiInsights?.roadmap || {}),
-          },
-          constraint_analysis: {
-            ...(finalReportData.constraint_analysis || {}),
-            ...(aiInsights?.constraint_analysis || {}),
-          },
-        };
-      } catch (err) {
-        console.error("[report] Audit enrichment failed:", err);
-      }
-    }
-
-    if (tier === "hidden" && !finalReportData.constraint_hypothesis_summary) {
-      try {
-        const aiInsights = await enrichHiddenReport(finalReportData);
-
-        finalReportData = {
-          ...finalReportData,
-          constraint_hypothesis_summary:
-            aiInsights?.constraint_hypothesis_summary ||
-            finalReportData.constraint_hypothesis_summary,
-          constraint_hypothesis:
-            aiInsights?.constraint_hypothesis ||
-            finalReportData.constraint_hypothesis ||
-            [],
-          commercial_friction:
-            aiInsights?.commercial_friction ||
-            finalReportData.commercial_friction ||
-            [],
-          likely_objections:
-            aiInsights?.likely_objections ||
-            finalReportData.likely_objections ||
-            [],
-          discovery_questions:
-            aiInsights?.discovery_questions ||
-            finalReportData.discovery_questions ||
-            [],
-          conversation_strategy:
-            aiInsights?.conversation_strategy ||
-            finalReportData.conversation_strategy ||
-            [],
-          engagement_opportunities:
-            aiInsights?.engagement_opportunities ||
-            finalReportData.engagement_opportunities ||
-            [],
-          consulting_opportunity: {
-            ...(finalReportData.consulting_opportunity || {}),
-            ...(aiInsights?.consulting_opportunity || {}),
-          },
-          call_briefing: {
-            ...(finalReportData.call_briefing || {}),
-            ...(aiInsights?.call_briefing || {}),
-          },
-        };
-      } catch (err) {
-        console.error("[report] Hidden enrichment failed:", err);
-      }
-    }
-
-    // Normalize data for chart/template consumption
+    // Normalize data for chart and template consumption
+    // No enrichment here — enrichment runs in diagnostic.js background process
     finalReportData = normalizeReportDataForTemplate(finalReportData, tier);
 
     const html = fs.readFileSync(templatePath, "utf8");
@@ -298,6 +210,7 @@ export default async function handler(req, res) {
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(injected);
+
   } catch (err) {
     console.error("[report] Unhandled error:", err);
     return res.status(500).send(`Server error: ${err.message}`);
