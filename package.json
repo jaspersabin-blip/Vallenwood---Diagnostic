@@ -6,6 +6,7 @@
     "smoke:test": "node scripts/smoke-test.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@upstash/redis": "^1.36.3",
     "openai": "^6.25.0",
     "redis": "^5.11.0"
