@@ -3,7 +3,6 @@
 // Updated to use lib/scoring.js as the active scoring engine
 // Keeps legacy scoring for internal comparison only
 
-import OpenAI from "openai";
 import { createDiagLogger } from "../lib/diagLogger.js";
 import { makeReportId, saveReport } from "../lib/reportStore.js";
 import { scoreDiagnostic } from "../lib/scoring.js";
@@ -1764,6 +1763,43 @@ export default async function handler(req, res) {
           type: err?.type,
         });
         console.error("[diag] LLM enrichment failed:", err);
+      }
+    }
+
+    // Enrich hidden report if LLM is enabled — this was previously never called
+    if (llmEnabled) {
+      const tHidden = L.mark();
+      try {
+        L.log("Hidden report enrichment START");
+        const { enrichHiddenReport } = await import("../lib/enrichAudit.js");
+        const hiddenEnriched = await enrichHiddenReport(report);
+
+        if (hiddenEnriched?.constraint_hypothesis_summary)
+          report.constraint_hypothesis_summary = hiddenEnriched.constraint_hypothesis_summary;
+        if (hiddenEnriched?.constraint_hypothesis?.length)
+          report.constraint_hypothesis = hiddenEnriched.constraint_hypothesis;
+        if (hiddenEnriched?.commercial_friction?.length)
+          report.commercial_friction = hiddenEnriched.commercial_friction;
+        if (hiddenEnriched?.likely_objections?.length)
+          report.likely_objections = hiddenEnriched.likely_objections;
+        if (hiddenEnriched?.discovery_questions?.length)
+          report.discovery_questions = hiddenEnriched.discovery_questions;
+        if (hiddenEnriched?.conversation_strategy?.length)
+          report.conversation_strategy = hiddenEnriched.conversation_strategy;
+        if (hiddenEnriched?.engagement_opportunities?.length)
+          report.engagement_opportunities = hiddenEnriched.engagement_opportunities;
+        if (hiddenEnriched?.consulting_opportunity)
+          report.consulting_opportunity = hiddenEnriched.consulting_opportunity;
+        if (hiddenEnriched?.call_briefing)
+          report.call_briefing = {
+            ...report.call_briefing,
+            ...hiddenEnriched.call_briefing,
+          };
+
+        L.step("enrichHiddenReport OK", tHidden);
+      } catch (err) {
+        L.step("enrichHiddenReport FAIL", tHidden, { message: err?.message });
+        console.error("[diag] Hidden enrichment failed:", err);
       }
     }
 
