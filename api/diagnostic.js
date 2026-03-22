@@ -3,7 +3,6 @@
 // Updated to use lib/scoring.js as the active scoring engine
 // Keeps legacy scoring for internal comparison only
 
-import { waitUntil } from "@vercel/functions";
 import { createDiagLogger } from "../lib/diagLogger.js";
 import { makeReportId, saveReport } from "../lib/reportStore.js";
 import { scoreDiagnostic } from "../lib/scoring.js";
@@ -1025,84 +1024,6 @@ async function buildReportUrl(req, report, tier) {
 }
 
 /* =========================================================
-   Background Enrichment
-   Runs AFTER the HTTP response is sent to Zapier.
-   Updates Redis with AI-enriched content so the report URLs
-   serve the full version when the client opens them.
-========================================================= */
-
-async function enrichInBackground({ report, tier, execReportUrl, auditReportUrl, hiddenReportUrl }) {
-  console.log("[diag] enrichInBackground START tier=", tier);
-
-  try {
-    // --- Audit enrichment (slides 4-9) ---
-    if (tier === "audit") {
-      const enriched = await enrichAuditReport(report);
-
-      if (enriched?.full_tier) report.full_tier = enriched.full_tier;
-      if (enriched?.swot) report.full_tier.swot = enriched.swot;
-      if (enriched?.roadmap) report.full_tier.roadmap = { ...report.full_tier.roadmap, ...enriched.roadmap };
-      if (enriched?.pricing_packaging_audit) report.full_tier.pricing_packaging_audit = { ...report.full_tier.pricing_packaging_audit, ...enriched.pricing_packaging_audit };
-      if (enriched?.competitive_context) report.full_tier.competitive_context = { ...report.full_tier.competitive_context, ...enriched.competitive_context };
-      if (enriched?.root_cause_hypotheses) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
-      if (enriched?.constraint_chain) report.full_tier.constraint_chain = enriched.constraint_chain;
-      if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
-
-      if (enriched?.narrative) {
-        report.narrative = {
-          ...report.narrative,
-          headline_diagnosis: enriched.narrative.headline_diagnosis || "",
-          what_this_means_in_practice: enriched.narrative.what_this_means_in_practice || [],
-          the_operating_tension: enriched.narrative.the_operating_tension || "",
-          what_good_looks_like: enriched.narrative.what_good_looks_like || "",
-          upgrade_bridge: enriched.narrative.upgrade_bridge || "",
-          executive_summary: enriched.narrative.executive_summary || report.narrative.executive_summary,
-          operating_tensions: enriched.narrative.operating_tensions || report.narrative.operating_tensions,
-        };
-      }
-
-      // Re-save enriched audit report to Redis
-      const auditData = buildAuditReportData(report);
-      const auditId = new URL(auditReportUrl).searchParams.get("id");
-      if (auditId) await saveReport(auditId, { tier: "audit", reportData: auditData });
-      console.log("[diag] audit enrichment saved to Redis");
-    }
-
-    // --- Hidden report enrichment (slides 11-13) — always runs ---
-    const { enrichHiddenReport } = await import("../lib/enrichAudit.js");
-    const hiddenEnriched = await enrichHiddenReport(report);
-
-    if (hiddenEnriched?.constraint_hypothesis_summary)
-      report.constraint_hypothesis_summary = hiddenEnriched.constraint_hypothesis_summary;
-    if (hiddenEnriched?.constraint_hypothesis?.length)
-      report.constraint_hypothesis = hiddenEnriched.constraint_hypothesis;
-    if (hiddenEnriched?.commercial_friction?.length)
-      report.commercial_friction = hiddenEnriched.commercial_friction;
-    if (hiddenEnriched?.likely_objections?.length)
-      report.likely_objections = hiddenEnriched.likely_objections;
-    if (hiddenEnriched?.discovery_questions?.length)
-      report.discovery_questions = hiddenEnriched.discovery_questions;
-    if (hiddenEnriched?.conversation_strategy?.length)
-      report.conversation_strategy = hiddenEnriched.conversation_strategy;
-    if (hiddenEnriched?.engagement_opportunities?.length)
-      report.engagement_opportunities = hiddenEnriched.engagement_opportunities;
-    if (hiddenEnriched?.consulting_opportunity)
-      report.consulting_opportunity = hiddenEnriched.consulting_opportunity;
-    if (hiddenEnriched?.call_briefing)
-      report.call_briefing = { ...report.call_briefing, ...hiddenEnriched.call_briefing };
-
-    // Re-save enriched hidden report to Redis
-    const hiddenData = buildHiddenReportData(report);
-    const hiddenId = new URL(hiddenReportUrl).searchParams.get("id");
-    if (hiddenId) await saveReport(hiddenId, { tier: "hidden", reportData: hiddenData });
-    console.log("[diag] hidden enrichment saved to Redis");
-
-  } catch (err) {
-    console.error("[diag] enrichInBackground failed:", err.message);
-  }
-}
-
-/* =========================================================
    Handler
 ========================================================= */
 
@@ -1310,10 +1231,18 @@ export default async function handler(req, res) {
     // Updates Redis so report URLs serve fully enriched content.
     // -------------------------------------------------------
     if (llmEnabled) {
-      waitUntil(
-        enrichInBackground({ report, tier, execReportUrl, auditReportUrl, hiddenReportUrl })
-          .catch(err => console.error("[diag] background enrichment error:", err.message))
-      );
+      const auditReportId = auditReportUrl ? new URL(auditReportUrl).searchParams.get("id") : null;
+      const hiddenReportId = new URL(hiddenReportUrl).searchParams.get("id");
+      const baseUrl = process.env.APP_BASE_URL?.replace(/\/$/, "") || `https://${req.headers.host}`;
+
+      fetch(`${baseUrl}/api/enrich`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-vw-token": process.env.VW_TOKEN,
+        },
+        body: JSON.stringify({ report, tier, auditReportId, hiddenReportId }),
+      }).catch(err => console.error("[diag] enrich fire-and-forget failed:", err.message));
     }
 
     return;
