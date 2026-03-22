@@ -3,7 +3,7 @@
 // Updated to use lib/scoring.js as the active scoring engine
 // Keeps legacy scoring for internal comparison only
 
-import { waitUntil } from "@vercel/functions";
+import { after } from "@vercel/functions";
 import { createDiagLogger } from "../lib/diagLogger.js";
 import { makeReportId, saveReport } from "../lib/reportStore.js";
 import { scoreDiagnostic } from "../lib/scoring.js";
@@ -1306,10 +1306,10 @@ export default async function handler(req, res) {
     // Updates Redis so report URLs serve fully enriched content.
     // -------------------------------------------------------
     if (llmEnabled) {
-      waitUntil(
-        enrichInBackground({ report, tier, execReportUrl, auditReportUrl, hiddenReportUrl })
-          .catch(err => console.error("[diag] background enrichment error:", err.message))
-      );
+      after(async () => {
+        await enrichInBackground({ report, tier, execReportUrl, auditReportUrl, hiddenReportUrl })
+          .catch(err => console.error("[diag] background enrichment error:", err.message));
+      });
     }
 
     return;
