@@ -8,6 +8,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
     "@upstash/redis": "^1.36.3",
+    "@vercel/functions": "^3.4.3",
     "openai": "^6.25.0",
     "redis": "^5.11.0"
   }
