@@ -1235,13 +1235,28 @@ export default async function handler(req, res) {
       const hiddenReportId = new URL(hiddenReportUrl).searchParams.get("id");
       const baseUrl = process.env.APP_BASE_URL?.replace(/\/$/, "") || `https://${req.headers.host}`;
 
+      // Send only what enrich.js needs — not the full report with emails/HTML
+      const enrichPayload = {
+        tier,
+        auditReportId,
+        hiddenReportId,
+        report: {
+          client: report.client,
+          inputs: { normalized_answers: report.inputs?.normalized_answers },
+          scoring: report.scoring,
+          narrative: report.narrative,
+          full_tier: report.full_tier,
+          generated_at: report.generated_at,
+        },
+      };
+
       fetch(`${baseUrl}/api/enrich`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-vw-token": process.env.VW_TOKEN,
         },
-        body: JSON.stringify({ report, tier, auditReportId, hiddenReportId }),
+        body: JSON.stringify(enrichPayload),
       }).catch(err => console.error("[diag] enrich fire-and-forget failed:", err.message));
     }
 
