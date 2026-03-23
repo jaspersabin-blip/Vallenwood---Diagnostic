@@ -1259,7 +1259,7 @@ export default async function handler(req, res) {
           "x-vw-token": process.env.VW_TOKEN,
         },
         body: JSON.stringify(enrichPayload),
-      }).catch(err => console.error("[diag] enrich fire-and-forget failed:", err.message));
+      }).then(r => console.log("[diag] enrich response:", r.status)).catch(err => console.error("[diag] enrich fetch threw:", err.message, err.cause?.message));
     }
 
     return;
