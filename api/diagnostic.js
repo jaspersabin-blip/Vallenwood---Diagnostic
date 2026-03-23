@@ -1250,6 +1250,7 @@ export default async function handler(req, res) {
         },
       };
 
+      console.log("[diag] firing enrich at:", `${baseUrl}/api/enrich`, "hiddenReportId:", hiddenReportId);
       fetch(`${baseUrl}/api/enrich`, {
         method: "POST",
         headers: {
