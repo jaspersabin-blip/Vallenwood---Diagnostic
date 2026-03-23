@@ -1230,77 +1230,39 @@ export default async function handler(req, res) {
     });
 
     // -------------------------------------------------------
-    // BACKGROUND ENRICHMENT — runs directly after response is sent.
-    // Calls enrichment functions directly (no HTTP) to avoid
-    // Vercel's restriction on same-project self-calls via fetch.
+    // BACKGROUND ENRICHMENT — called via HTTP to /api/enrich
+    // res.json() already sent above, so Zapier has its response.
+    // This await keeps the function alive for the full enrichment.
     // -------------------------------------------------------
     if (llmEnabled) {
       const auditReportId = auditReportUrl ? new URL(auditReportUrl).searchParams.get("id") : null;
       const hiddenReportId = new URL(hiddenReportUrl).searchParams.get("id");
-
-      const enrichReport = {
-        client: report.client,
-        inputs: { normalized_answers: report.inputs?.normalized_answers },
-        scoring: report.scoring,
-        narrative: report.narrative,
-        full_tier: report.full_tier,
-        generated_at: report.generated_at,
+      const baseUrl = `https://vallenwood-diagnostic.vercel.app`;
+      const enrichPayload = {
+        tier,
+        auditReportId,
+        hiddenReportId,
+        report: {
+          client: report.client,
+          inputs: { normalized_answers: report.inputs?.normalized_answers },
+          scoring: report.scoring,
+          narrative: report.narrative,
+          full_tier: report.full_tier,
+          generated_at: report.generated_at,
+        },
       };
-
-      console.log("[diag] starting direct enrichment hiddenReportId:", hiddenReportId);
-      (async () => {
-        try {
-          // Audit enrichment — always runs (slides 5-9)
-          console.log("[enrich] Starting audit enrichment");
-          const enriched = await enrichAuditReport(enrichReport);
-          console.log("[enrich] Audit complete — swot:", !!enriched?.swot, "roadmap:", !!enriched?.roadmap);
-          if (!enrichReport.full_tier) enrichReport.full_tier = {};
-          if (enriched?.swot) enrichReport.full_tier.swot = enriched.swot;
-          if (enriched?.roadmap) enrichReport.full_tier.roadmap = { ...(enrichReport.full_tier.roadmap || {}), ...enriched.roadmap };
-          if (enriched?.pricing_packaging_audit) enrichReport.full_tier.pricing_packaging_audit = { ...(enrichReport.full_tier.pricing_packaging_audit || {}), ...enriched.pricing_packaging_audit };
-          if (enriched?.competitive_context) enrichReport.full_tier.competitive_context = { ...(enrichReport.full_tier.competitive_context || {}), ...enriched.competitive_context };
-          if (enriched?.root_cause_hypotheses?.length) enrichReport.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
-          if (enriched?.constraint_chain?.length) enrichReport.full_tier.constraint_chain = enriched.constraint_chain;
-          if (!enrichReport.narrative) enrichReport.narrative = {};
-          if (enriched?.narrative?.headline_diagnosis) enrichReport.narrative.headline_diagnosis = enriched.narrative.headline_diagnosis;
-          if (enriched?.narrative?.what_this_means_in_practice?.length) enrichReport.narrative.what_this_means_in_practice = enriched.narrative.what_this_means_in_practice;
-          if (enriched?.narrative?.the_operating_tension) enrichReport.narrative.the_operating_tension = enriched.narrative.the_operating_tension;
-          if (enriched?.narrative?.what_good_looks_like) enrichReport.narrative.what_good_looks_like = enriched.narrative.what_good_looks_like;
-          if (enriched?.headline_diagnosis && !enrichReport.narrative.headline_diagnosis) enrichReport.narrative.headline_diagnosis = enriched.headline_diagnosis;
-          if (enriched?.what_this_means_in_practice?.length && !enrichReport.narrative.what_this_means_in_practice?.length) enrichReport.narrative.what_this_means_in_practice = enriched.what_this_means_in_practice;
-          if (enriched?.the_operating_tension && !enrichReport.narrative.the_operating_tension) enrichReport.narrative.the_operating_tension = enriched.the_operating_tension;
-          if (enriched?.what_good_looks_like && !enrichReport.narrative.what_good_looks_like) enrichReport.narrative.what_good_looks_like = enriched.what_good_looks_like;
-          // Hidden enrichment — slides 11-13
-          console.log("[enrich] Starting hidden enrichment");
-          const hiddenEnriched = await enrichHiddenReport(enrichReport);
-          console.log("[enrich] Hidden complete — questions:", !!(hiddenEnriched?.discovery_questions?.length));
-          if (hiddenEnriched?.constraint_hypothesis_summary) enrichReport.constraint_hypothesis_summary = hiddenEnriched.constraint_hypothesis_summary;
-          if (hiddenEnriched?.constraint_hypothesis?.length) enrichReport.constraint_hypothesis = hiddenEnriched.constraint_hypothesis;
-          if (hiddenEnriched?.commercial_friction?.length) enrichReport.commercial_friction = hiddenEnriched.commercial_friction;
-          if (hiddenEnriched?.likely_objections?.length) enrichReport.likely_objections = hiddenEnriched.likely_objections;
-          if (hiddenEnriched?.discovery_questions?.length) enrichReport.discovery_questions = hiddenEnriched.discovery_questions;
-          if (hiddenEnriched?.conversation_strategy?.length) enrichReport.conversation_strategy = hiddenEnriched.conversation_strategy;
-          if (hiddenEnriched?.engagement_opportunities?.length) enrichReport.engagement_opportunities = hiddenEnriched.engagement_opportunities;
-          if (hiddenEnriched?.consulting_opportunity) enrichReport.consulting_opportunity = hiddenEnriched.consulting_opportunity;
-          if (hiddenEnriched?.call_briefing) enrichReport.call_briefing = { ...(enrichReport.call_briefing || {}), ...hiddenEnriched.call_briefing };
-          // Save hidden report with all enrichment merged
-          const { buildHiddenReportData } = await import("./enrich.js");
-          const hiddenData = buildHiddenReportData(enrichReport);
-          await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
-          console.log("[enrich] Hidden saved id=", hiddenReportId);
-          if (auditReportId) {
-            const { buildAuditReportData } = await import("./enrich.js");
-            const auditData = buildAuditReportData(enrichReport);
-            await saveReport(auditReportId, { tier: "audit", reportData: auditData });
-            console.log("[enrich] Audit saved id=", auditReportId);
-          }
-          console.log("[enrich] ALL COMPLETE");
-        } catch (err) {
-          console.error("[enrich] FAILED:", err.message);
-        }
-      })();
+      try {
+        console.log("[diag] awaiting enrich hiddenReportId:", hiddenReportId);
+        const enrichRes = await fetch(`${baseUrl}/api/enrich`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-vw-token": process.env.VW_TOKEN },
+          body: JSON.stringify(enrichPayload),
+        });
+        console.log("[diag] enrich complete status:", enrichRes.status);
+      } catch (err) {
+        console.error("[diag] enrich failed:", err.message);
+      }
     }
-
     return;
 
   } catch (err) {
