@@ -279,9 +279,34 @@ export default async function handler(req, res) {
     if (hiddenEnriched?.consulting_opportunity) report.consulting_opportunity = hiddenEnriched.consulting_opportunity;
     if (hiddenEnriched?.call_briefing) report.call_briefing = { ...report.call_briefing, ...hiddenEnriched.call_briefing };
 
-    const hiddenData = buildHiddenReportData(report, getDynamicTargetPillarScores, getRadarLabels, prettyPillar);
+    // Merge audit enrichment into report before building hidden report data
+    // so slides 5-9 fields (swot, roadmap, etc.) are included
+    const mergedReport = {
+      ...report,
+      full_tier: {
+        ...(report.full_tier || {}),
+        swot: report.full_tier?.swot || null,
+        root_cause_hypotheses: report.full_tier?.root_cause_hypotheses || [],
+        constraint_chain: report.full_tier?.constraint_chain || [],
+        competitive_context: report.full_tier?.competitive_context || null,
+        pricing_packaging_audit: report.full_tier?.pricing_packaging_audit || null,
+        roadmap: report.full_tier?.roadmap || null,
+        constraint_analysis: report.full_tier?.constraint_analysis || null,
+      },
+      constraint_hypothesis_summary: hiddenEnriched?.constraint_hypothesis_summary || report.constraint_hypothesis_summary || "",
+      constraint_hypothesis: hiddenEnriched?.constraint_hypothesis || report.constraint_hypothesis || [],
+      commercial_friction: hiddenEnriched?.commercial_friction || report.commercial_friction || [],
+      likely_objections: hiddenEnriched?.likely_objections || report.likely_objections || [],
+      discovery_questions: hiddenEnriched?.discovery_questions || report.discovery_questions || [],
+      conversation_strategy: hiddenEnriched?.conversation_strategy || report.conversation_strategy || [],
+      engagement_opportunities: hiddenEnriched?.engagement_opportunities || report.engagement_opportunities || [],
+      consulting_opportunity: hiddenEnriched?.consulting_opportunity || report.consulting_opportunity,
+      call_briefing: { ...(report.call_briefing || {}), ...(hiddenEnriched?.call_briefing || {}) },
+    };
+
+    const hiddenData = buildHiddenReportData(mergedReport, getDynamicTargetPillarScores, getRadarLabels, prettyPillar);
     await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
-    console.log("[enrich] Hidden report saved to Redis id=", hiddenReportId);
+    console.log("[enrich] Hidden report saved to Redis id=", hiddenReportId); 
 
   } catch (err) {
     console.error("[enrich] FAILED:", err.message);
