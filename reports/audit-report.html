@@ -885,16 +885,16 @@
     }
 
     .comp-hyp {
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 12px;
+      line-height: 1.55;
       color: var(--text);
-      padding: 6px 10px;
+      padding: 10px 14px;
       background: var(--bg);
-      border-radius: 8px;
-      margin-bottom: 5px;
+      border-radius: 10px;
+      margin-bottom: 8px;
       overflow: hidden;
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 6;
       -webkit-box-orient: vertical;
     }
 
@@ -1830,7 +1830,7 @@ if (bmEl) {
 
   const hypEl = document.getElementById("comp-hypotheses");
   if (hypEl) {
-    (cc.positioning_hypotheses || []).slice(0,2).forEach(h => {
+    (cc.positioning_hypotheses || []).slice(0,1).forEach(h => {
       const div = document.createElement("div");
       div.className = "comp-hyp";
       div.textContent = h;
