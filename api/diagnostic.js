@@ -1166,6 +1166,7 @@ export default async function handler(req, res) {
     L.step("buildReport", tBuild);
 
     const llmEnabled = process.env.LLM_ENRICH === "1";
+    console.log("[diag] LLM_ENRICH value:", JSON.stringify(process.env.LLM_ENRICH), "llmEnabled:", llmEnabled);
 
     const summary = {
       score: osScored.brand_to_gtm_os_score,
