@@ -1234,7 +1234,7 @@ export default async function handler(req, res) {
     if (llmEnabled) {
       const auditReportId = auditReportUrl ? new URL(auditReportUrl).searchParams.get("id") : null;
       const hiddenReportId = new URL(hiddenReportUrl).searchParams.get("id");
-      const baseUrl = process.env.APP_BASE_URL?.replace(/\/$/, "") || `https://${req.headers.host}`;
+      const baseUrl = process.env.APP_BASE_URL?.replace(/\/$/, "") || `https://vallenwood-diagnostic.vercel.app`;
 
       // Send only what enrich.js needs — not the full report with emails/HTML
       const enrichPayload = {
