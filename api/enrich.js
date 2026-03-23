@@ -235,6 +235,7 @@ export default async function handler(req, res) {
     if (auditReportId) {
       console.log("[enrich] Starting audit enrichment");
       const enriched = await enrichAuditReport(report);
+      console.log("[enrich] audit enriched keys:", Object.keys(enriched || {}), "has swot:", !!enriched?.swot, "has roadmap:", !!enriched?.roadmap);
       console.log("[enrich] Audit enrichment complete, keys:", Object.keys(enriched || {}));
 
       if (enriched?.full_tier) report.full_tier = enriched.full_tier;
@@ -259,9 +260,13 @@ export default async function handler(req, res) {
         };
       }
 
-      const auditData = buildAuditReportData(report, getDynamicTargetPillarScores, getRadarLabels);
-      await saveReport(auditReportId, { tier: "audit", reportData: auditData });
-      console.log("[enrich] Audit report saved to Redis id=", auditReportId);
+      try {
+        const auditData = buildAuditReportData(report, getDynamicTargetPillarScores, getRadarLabels);
+        await saveReport(auditReportId, { tier: "audit", reportData: auditData });
+        console.log("[enrich] Audit report saved to Redis id=", auditReportId);
+      } catch (saveErr) {
+        console.error("[enrich] AUDIT SAVE FAILED:", saveErr.message);
+      }
     }
 
     // --- Hidden report enrichment (slides 11-13) — always runs ---
@@ -304,9 +309,13 @@ export default async function handler(req, res) {
       call_briefing: { ...(report.call_briefing || {}), ...(hiddenEnriched?.call_briefing || {}) },
     };
 
-    const hiddenData = buildHiddenReportData(mergedReport, getDynamicTargetPillarScores, getRadarLabels, prettyPillar);
-    await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
-    console.log("[enrich] Hidden report saved to Redis id=", hiddenReportId); 
+    try {
+      const hiddenData = buildHiddenReportData(mergedReport, getDynamicTargetPillarScores, getRadarLabels, prettyPillar);
+      await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
+      console.log("[enrich] Hidden report saved to Redis id=", hiddenReportId);
+    } catch (saveErr) {
+      console.error("[enrich] HIDDEN SAVE FAILED:", saveErr.message);
+    } 
 
   } catch (err) {
     console.error("[enrich] FAILED:", err.message);
