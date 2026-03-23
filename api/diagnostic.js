@@ -20,7 +20,7 @@ function scoreBand(totalScore) {
   if (totalScore >= 85) return "High Brand-to-GTM alignment";
   if (totalScore >= 70) return "Moderate system friction";
   if (totalScore >= 55) return "Structural GTM misalignment";
-  return "Severe growth constraints";
+  return "Significant growth constraints";
 }
 
 function prettyPillar(key) {
