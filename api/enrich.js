@@ -221,7 +221,10 @@ export default async function handler(req, res) {
 
   const { report, tier, auditReportId, hiddenReportId } = req.body || {};
 
+  console.log("[enrich] payload check — tier:", tier, "hasReport:", !!report, "hiddenReportId:", hiddenReportId, "hasNormalizedAnswers:", !!report?.inputs?.normalized_answers, "hasScoring:", !!report?.scoring);
+
   if (!report || !hiddenReportId) {
+    console.log("[enrich] REJECTED — missing report or hiddenReportId. Body keys:", Object.keys(req.body || {}));
     return res.status(400).json({ error: "Missing report or hiddenReportId" });
   }
 
