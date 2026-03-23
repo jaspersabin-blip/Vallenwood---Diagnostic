@@ -232,7 +232,7 @@ export default async function handler(req, res) {
 
   try {
     // --- Audit enrichment (slides 4-9) ---
-    if (tier === "audit" && auditReportId) {
+    if (auditReportId) {
       console.log("[enrich] Starting audit enrichment");
       const enriched = await enrichAuditReport(report);
       console.log("[enrich] Audit enrichment complete, keys:", Object.keys(enriched || {}));
