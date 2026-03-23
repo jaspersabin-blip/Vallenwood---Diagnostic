@@ -225,9 +225,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing report or hiddenReportId" });
   }
 
-  // Respond immediately — work happens after this
-  res.status(202).json({ status: "enrichment started" });
-
   console.log("[enrich] START tier=", tier, "auditId=", auditReportId, "hiddenId=", hiddenReportId);
 
   try {
@@ -286,4 +283,7 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("[enrich] FAILED:", err.message);
   }
+
+  // Respond after all work is done
+  res.status(200).json({ status: "enrichment complete" });
 }
