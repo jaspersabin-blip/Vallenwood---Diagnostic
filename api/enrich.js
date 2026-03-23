@@ -1,7 +1,8 @@
 // api/enrich.js
 // Dedicated enrichment endpoint — called fire-and-forget from api/diagnostic.js
-// Runs as a completely separate Vercel function invocation so it has its own
-// lifetime and is not killed when diagnostic.js returns its response.
+// Runs as a completely separate Vercel function invocation with its own lifetime.
+// Audit enrichment always runs regardless of tier so hidden report slides 5-9
+// are populated for both exec and audit submissions.
 
 import { saveReport } from "../lib/reportStore.js";
 import { enrichAuditReport, enrichHiddenReport } from "../lib/enrichAudit.js";
@@ -10,150 +11,10 @@ export const config = {
   maxDuration: 300,
 };
 
-function buildAuditReportData(report, getDynamicTargetPillarScores, getRadarLabels) {
-  const normalizedAnswers = report?.inputs?.normalized_answers || {};
-  const targetPillarScores = getDynamicTargetPillarScores(normalizedAnswers, "audit");
-  const radarLabels = getRadarLabels();
-  const pillarArray = Array.isArray(report?.scoring?.pillar_scores) ? report.scoring.pillar_scores : [];
-  const fullTier = report?.full_tier || {};
-  const narrative = report?.narrative || {};
-  const execSummary = narrative?.executive_summary || {};
-
-  return {
-    company_name: report?.client?.company_name || "Company",
-    contact_name: report?.client?.contact_name || "Client",
-    website: report?.client?.website || "",
-    report_date: report?.generated_at ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" }) : "",
-    overall_score: report?.scoring?.overall_score ?? 0,
-    score_band: report?.scoring?.band || "",
-    confidence: report?.scoring?.confidence || "Moderate",
-    primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
-    primary_constraint_why_it_matters: report?.scoring?.primary_constraint?.why_it_matters || "",
-    headline_diagnosis: narrative?.headline_diagnosis || execSummary?.headline || "",
-    executive_summary_paragraph: execSummary?.summary_paragraph || "",
-    executive_headline: execSummary?.headline || "",
-    what_this_means_in_practice: narrative?.what_this_means_in_practice || [],
-    the_operating_tension: narrative?.the_operating_tension || "",
-    what_good_looks_like: narrative?.what_good_looks_like || "",
-    upgrade_bridge: narrative?.upgrade_bridge || "",
-    pillar_scores: {
-      positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
-      value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
-      pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
-      gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
-      measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
-    },
-    target_pillar_scores: targetPillarScores,
-    radar_labels: radarLabels,
-    benchmark_context: { average_saas_company: 62, top_quartile: 78, elite_gtm_system: 85 },
-    operating_tensions: narrative?.operating_tensions?.slice(0, 5) || report?.scoring?.operating_tensions?.slice(0, 5) || [],
-    swot: fullTier?.swot || null,
-    root_cause_hypotheses: fullTier?.root_cause_hypotheses || [],
-    constraint_chain: fullTier?.constraint_chain || [],
-    competitive_context: fullTier?.competitive_context || null,
-    pricing_packaging_audit: fullTier?.pricing_packaging_audit || null,
-    roadmap: fullTier?.roadmap || null,
-    constraint_analysis: fullTier?.constraint_analysis || null,
-    first_sprint_plan: fullTier?.first_sprint_plan || null,
-  };
-}
-
-function buildHiddenReportData(report, getDynamicTargetPillarScores, getRadarLabels, prettyPillar) {
-  const pillarArray = Array.isArray(report?.scoring?.pillar_scores) ? report.scoring.pillar_scores : [];
-  const ranked = [...pillarArray].sort((a, b) => a.score - b.score);
-  const pillarScores = {};
-  pillarArray.forEach((p) => { pillarScores[p.key] = p.score; });
-  const primary = ranked[0] || null;
-  const normalized = report?.inputs?.normalized_answers || {};
-  const targetPillarScores = getDynamicTargetPillarScores(normalized, "hidden");
-  const radarLabels = getRadarLabels();
-  const rawChannels = normalized?.acquisition_channels;
-  const primaryChannels = Array.isArray(rawChannels)
-    ? rawChannels
-    : typeof rawChannels === "string"
-      ? rawChannels.split(",").map((s) => s.trim()).filter(Boolean)
-      : [];
-
-  return {
-    company_name: report?.client?.company_name || "Company",
-    contact_name: report?.client?.contact_name || "Client",
-    report_date: report?.generated_at ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" }) : "",
-    diagnostic_snapshot: {
-      annual_revenue: normalized?.annual_revenue || null,
-      acv: normalized?.acv || null,
-      sales_cycle: normalized?.sales_cycle || null,
-      close_rate: normalized?.close_rate || null,
-      primary_channels: primaryChannels,
-      measurement_model: normalized?.marketing_measured_by || null,
-      growth_status: normalized?.growth_status || null,
-    },
-    benchmark_context: { average_saas_company: 62, top_quartile: 78, elite_gtm_system: 88 },
-    scoring: {
-      overall_score: report?.scoring?.overall_score || 0,
-      score_band: report?.scoring?.band || "",
-      confidence: report?.scoring?.confidence || "Moderate",
-      pillar_scores: pillarScores,
-      target_pillar_scores: targetPillarScores,
-      radar_labels: radarLabels,
-      pillar_ranked: ranked.map((p) => ({ key: p.key, label: p.label, score: p.score })),
-      primary_constraint: primary ? { key: primary.key, label: primary.label, score: primary.score } : null,
-    },
-    signal_analysis: {
-      operating_tensions: report?.scoring?.operating_tensions || [],
-      strength_signals: [
-        ...(pillarScores.measurement >= 17 ? ["Measurement maturity appears relatively strong compared to other pillars."] : []),
-        ...(pillarScores.gtm_focus >= 17 ? ["GTM execution appears relatively strong compared to other pillars."] : []),
-      ],
-      constraint_signals: [
-        ...(pillarScores.value_architecture < 14 ? ["Weak value architecture may create downstream pressure on pricing and positioning."] : []),
-        ...(pillarScores.pricing_packaging < 14 ? ["Pricing and packaging appear to be limiting margin protection or deal discipline."] : []),
-      ],
-      risk_signals: (report?.scoring?.operating_tensions || []).slice(0, 3).map((c) => c.implication),
-      opportunity_signals: [
-        ...(String(normalized?.discounting || "").includes("Rarely") ? ["Low discounting frequency suggests some pricing power already exists."] : []),
-      ],
-    },
-    interpretation: {
-      executive_readout: "Initial diagnostic suggests the primary leverage point lies in improving the constraint most likely to suppress pricing power, differentiation, or GTM efficiency.",
-      root_cause_hypotheses: (report?.scoring?.operating_tensions || []).slice(0, 3).map((c) => c.implication),
-    },
-    call_briefing: report?.call_briefing || {
-      opening_summary: "Begin by confirming where the commercial motion appears stronger than the proof, pricing, or measurement systems supporting it.",
-      top_questions_to_ask: ["How do prospects typically evaluate ROI before purchasing?", "Where in the sales process do pricing objections appear?", "Which customer proof points most often move deals forward?"],
-      areas_to_validate_live: ["Whether pricing tiers reflect actual customer value segments", "Whether sales messaging consistently leads with outcomes", "Whether attribution trust matches leadership expectations"],
-    },
-    consulting_opportunity: report?.consulting_opportunity || {
-      likely_needs: ["Value architecture refinement", "Pricing and packaging strategy", "Messaging system alignment"],
-      priority_engagement_angle: prettyPillar(report?.scoring?.primary_constraint?.key) || "Strategic Diagnostic Sprint",
-      upsell_readiness: (report?.scoring?.overall_score || 0) <= 70 ? "High" : "Moderate",
-    },
-    headline_diagnosis: report?.narrative?.headline_diagnosis || "",
-    executive_headline: report?.narrative?.executive_headline || "",
-    the_operating_tension: report?.narrative?.the_operating_tension || "",
-    what_this_means_in_practice: report?.narrative?.what_this_means_in_practice || [],
-    diagnosis_implications: report?.diagnosis_implications || [],
-    operating_tensions: report?.scoring?.operating_tensions || [],
-    what_good_looks_like: report?.narrative?.what_good_looks_like || "",
-    upgrade_bridge: report?.narrative?.upgrade_bridge || [],
-    root_cause_hypotheses: report?.full_tier?.root_cause_hypotheses || [],
-    swot: report?.full_tier?.swot || null,
-    constraint_chain: report?.full_tier?.constraint_chain || [],
-    competitive_context: report?.full_tier?.competitive_context || null,
-    pricing_packaging_audit: report?.full_tier?.pricing_packaging_audit || null,
-    roadmap: report?.full_tier?.roadmap || null,
-    constraint_hypothesis_summary: report?.constraint_hypothesis_summary || "",
-    constraint_hypothesis: report?.constraint_hypothesis || [],
-    commercial_friction: report?.commercial_friction || [],
-    likely_objections: report?.likely_objections || [],
-    discovery_questions: report?.discovery_questions || [],
-    conversation_strategy: report?.conversation_strategy || [],
-    engagement_opportunities: report?.engagement_opportunities || [],
-    pillar_scores: pillarScores,
-    target_pillar_scores: targetPillarScores,
-    radar_labels: radarLabels,
-    primary_constraint_label: primary?.label || "",
-  };
-}
+/* =========================================================
+   Helpers — duplicated from diagnostic.js so this function
+   is self-contained and doesn't depend on the main handler
+========================================================= */
 
 function prettyPillar(key) {
   const map = {
@@ -170,9 +31,21 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   const acv = String(normalizedAnswers?.acv || "").toLowerCase();
   const cycle = String(normalizedAnswers?.sales_cycle || "").toLowerCase();
   const revenue = String(normalizedAnswers?.annual_revenue || "").toLowerCase();
+  const model = String(normalizedAnswers?.revenue_model || "").toLowerCase();
 
-  const isEnterprise = revenue.includes("100m+") || acv.includes("75–250") || acv.includes("250k+");
-  const isScaling = revenue.includes("25–50") || revenue.includes("10–25") || acv.includes("25–75");
+  const isEnterprise =
+    revenue.includes("100m+") ||
+    acv.includes("75–250") ||
+    acv.includes("75-250") ||
+    acv.includes("250k+");
+
+  const isScaling =
+    revenue.includes("25–50") ||
+    revenue.includes("25-50") ||
+    revenue.includes("10–25") ||
+    revenue.includes("10-25") ||
+    acv.includes("25–75") ||
+    acv.includes("25-75");
 
   let targets = isEnterprise
     ? { positioning: 16, value_architecture: 15, pricing_packaging: 15, gtm_focus: 15, measurement: 16 }
@@ -183,6 +56,9 @@ function getDynamicTargetPillarScores(normalizedAnswers, tier = "exec") {
   if (cycle.includes("6–12") || cycle.includes("6-12") || cycle.includes("12+")) {
     targets.gtm_focus += 1;
     targets.measurement += 1;
+  }
+  if (model.includes("usage") || model.includes("hybrid")) {
+    targets.pricing_packaging += 1;
   }
 
   if (tier === "audit" || tier === "hidden") {
@@ -208,8 +84,202 @@ function getRadarLabels() {
   };
 }
 
+function buildAuditReportData(report) {
+  const normalizedAnswers = report?.inputs?.normalized_answers || {};
+  const targetPillarScores = getDynamicTargetPillarScores(normalizedAnswers, "audit");
+  const radarLabels = getRadarLabels();
+  const pillarArray = Array.isArray(report?.scoring?.pillar_scores)
+    ? report.scoring.pillar_scores
+    : [];
+  const fullTier = report?.full_tier || {};
+  const narrative = report?.narrative || {};
+  const execSummary = narrative?.executive_summary || {};
+
+  return {
+    company_name: report?.client?.company_name || "Company",
+    contact_name: report?.client?.contact_name || "Client",
+    website: report?.client?.website || "",
+    report_date: report?.generated_at
+      ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" })
+      : "",
+    overall_score: report?.scoring?.overall_score ?? 0,
+    score_band: report?.scoring?.band || "",
+    confidence: report?.scoring?.confidence || "Moderate",
+    primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
+    primary_constraint_why_it_matters: report?.scoring?.primary_constraint?.why_it_matters || "",
+    headline_diagnosis: narrative?.headline_diagnosis || execSummary?.headline || "",
+    executive_summary_paragraph: execSummary?.summary_paragraph || "",
+    executive_headline: execSummary?.headline || "",
+    what_this_means_in_practice: narrative?.what_this_means_in_practice || [],
+    the_operating_tension: narrative?.the_operating_tension || "",
+    what_good_looks_like: narrative?.what_good_looks_like || "",
+    upgrade_bridge: narrative?.upgrade_bridge || "",
+    pillar_scores: {
+      positioning: pillarArray.find((p) => p.key === "positioning")?.score ?? 0,
+      value_architecture: pillarArray.find((p) => p.key === "value_architecture")?.score ?? 0,
+      pricing_packaging: pillarArray.find((p) => p.key === "pricing_packaging")?.score ?? 0,
+      gtm_focus: pillarArray.find((p) => p.key === "gtm_focus")?.score ?? 0,
+      measurement: pillarArray.find((p) => p.key === "measurement")?.score ?? 0,
+    },
+    target_pillar_scores: targetPillarScores,
+    radar_labels: radarLabels,
+    benchmark_context: { average_saas_company: 62, top_quartile: 78, elite_gtm_system: 85 },
+    operating_tensions:
+      narrative?.operating_tensions?.slice(0, 5) ||
+      report?.scoring?.operating_tensions?.slice(0, 5) ||
+      [],
+    swot: fullTier?.swot || null,
+    root_cause_hypotheses: fullTier?.root_cause_hypotheses || [],
+    constraint_chain: fullTier?.constraint_chain || [],
+    competitive_context: fullTier?.competitive_context || null,
+    pricing_packaging_audit: fullTier?.pricing_packaging_audit || null,
+    roadmap: fullTier?.roadmap || null,
+    constraint_analysis: fullTier?.constraint_analysis || null,
+    first_sprint_plan: fullTier?.first_sprint_plan || null,
+  };
+}
+
+function buildHiddenReportData(report) {
+  const pillarArray = Array.isArray(report?.scoring?.pillar_scores)
+    ? report.scoring.pillar_scores
+    : [];
+  const ranked = [...pillarArray].sort((a, b) => a.score - b.score);
+  const pillarScores = {};
+  pillarArray.forEach((p) => { pillarScores[p.key] = p.score; });
+  const primary = ranked[0] || null;
+  const normalized = report?.inputs?.normalized_answers || {};
+  const targetPillarScores = getDynamicTargetPillarScores(normalized, "hidden");
+  const radarLabels = getRadarLabels();
+  const rawChannels = normalized?.acquisition_channels;
+  const primaryChannels = Array.isArray(rawChannels)
+    ? rawChannels
+    : typeof rawChannels === "string"
+    ? rawChannels.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  return {
+    company_name: report?.client?.company_name || "Company",
+    contact_name: report?.client?.contact_name || "Client",
+    report_date: report?.generated_at
+      ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" })
+      : "",
+    diagnostic_snapshot: {
+      annual_revenue: normalized?.annual_revenue || null,
+      acv: normalized?.acv || null,
+      sales_cycle: normalized?.sales_cycle || null,
+      close_rate: normalized?.close_rate || null,
+      primary_channels: primaryChannels,
+      measurement_model: normalized?.marketing_measured_by || null,
+      growth_status: normalized?.growth_status || null,
+    },
+    benchmark_context: { average_saas_company: 62, top_quartile: 78, elite_gtm_system: 88 },
+    scoring: {
+      overall_score: report?.scoring?.overall_score || 0,
+      score_band: report?.scoring?.band || "",
+      confidence: report?.scoring?.confidence || "Moderate",
+      pillar_scores: pillarScores,
+      target_pillar_scores: targetPillarScores,
+      radar_labels: radarLabels,
+      pillar_ranked: ranked.map((p) => ({ key: p.key, label: p.label, score: p.score })),
+      primary_constraint: primary
+        ? { key: primary.key, label: primary.label, score: primary.score }
+        : null,
+    },
+    signal_analysis: {
+      operating_tensions: report?.scoring?.operating_tensions || [],
+      strength_signals: [
+        ...(pillarScores.measurement >= 17
+          ? ["Measurement maturity appears relatively strong compared to other pillars."]
+          : []),
+        ...(pillarScores.gtm_focus >= 17
+          ? ["GTM execution appears relatively strong compared to other pillars."]
+          : []),
+      ],
+      constraint_signals: [
+        ...(pillarScores.value_architecture < 14
+          ? ["Weak value architecture may create downstream pressure on pricing and positioning."]
+          : []),
+        ...(pillarScores.pricing_packaging < 14
+          ? ["Pricing and packaging appear to be limiting margin protection or deal discipline."]
+          : []),
+      ],
+      risk_signals: (report?.scoring?.operating_tensions || [])
+        .slice(0, 3)
+        .map((c) => c.implication),
+      opportunity_signals: [
+        ...(String(normalized?.discounting || "").includes("Rarely")
+          ? ["Low discounting frequency suggests some pricing power already exists."]
+          : []),
+      ],
+    },
+    interpretation: {
+      executive_readout:
+        "Initial diagnostic suggests the primary leverage point lies in improving the constraint most likely to suppress pricing power, differentiation, or GTM efficiency.",
+      root_cause_hypotheses: (report?.scoring?.operating_tensions || [])
+        .slice(0, 3)
+        .map((c) => c.implication),
+    },
+    call_briefing: report?.call_briefing || {
+      opening_summary:
+        "Begin by confirming where the commercial motion appears stronger than the proof, pricing, or measurement systems supporting it.",
+      top_questions_to_ask: [
+        "How do prospects typically evaluate ROI before purchasing?",
+        "Where in the sales process do pricing objections appear?",
+        "Which customer proof points most often move deals forward?",
+      ],
+      areas_to_validate_live: [
+        "Whether pricing tiers reflect actual customer value segments",
+        "Whether sales messaging consistently leads with outcomes",
+        "Whether attribution trust matches leadership expectations",
+      ],
+    },
+    consulting_opportunity: report?.consulting_opportunity || {
+      likely_needs: [
+        "Value architecture refinement",
+        "Pricing and packaging strategy",
+        "Messaging system alignment",
+      ],
+      priority_engagement_angle:
+        prettyPillar(report?.scoring?.primary_constraint?.key) || "Strategic Diagnostic Sprint",
+      upsell_readiness: (report?.scoring?.overall_score || 0) <= 70 ? "High" : "Moderate",
+    },
+    // Narrative fields from audit enrichment
+    headline_diagnosis: report?.narrative?.headline_diagnosis || "",
+    executive_headline: report?.narrative?.executive_headline || "",
+    the_operating_tension: report?.narrative?.the_operating_tension || "",
+    what_this_means_in_practice: report?.narrative?.what_this_means_in_practice || [],
+    diagnosis_implications: report?.diagnosis_implications || [],
+    operating_tensions: report?.scoring?.operating_tensions || [],
+    what_good_looks_like: report?.narrative?.what_good_looks_like || "",
+    upgrade_bridge: report?.narrative?.upgrade_bridge || [],
+    // Slides 5-9 from audit enrichment
+    root_cause_hypotheses: report?.full_tier?.root_cause_hypotheses || [],
+    swot: report?.full_tier?.swot || null,
+    constraint_chain: report?.full_tier?.constraint_chain || [],
+    competitive_context: report?.full_tier?.competitive_context || null,
+    pricing_packaging_audit: report?.full_tier?.pricing_packaging_audit || null,
+    roadmap: report?.full_tier?.roadmap || null,
+    // Slides 11-13 from hidden enrichment
+    constraint_hypothesis_summary: report?.constraint_hypothesis_summary || "",
+    constraint_hypothesis: report?.constraint_hypothesis || [],
+    commercial_friction: report?.commercial_friction || [],
+    likely_objections: report?.likely_objections || [],
+    discovery_questions: report?.discovery_questions || [],
+    conversation_strategy: report?.conversation_strategy || [],
+    engagement_opportunities: report?.engagement_opportunities || [],
+    // Chart data
+    pillar_scores: pillarScores,
+    target_pillar_scores: targetPillarScores,
+    radar_labels: radarLabels,
+    primary_constraint_label: primary?.label || "",
+  };
+}
+
+/* =========================================================
+   Handler
+========================================================= */
+
 export default async function handler(req, res) {
-  // Only accept POST from internal calls (same VW_TOKEN)
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
   }
@@ -221,47 +291,66 @@ export default async function handler(req, res) {
 
   const { report, tier, auditReportId, hiddenReportId } = req.body || {};
 
-  console.log("[enrich] payload check — tier:", tier, "hasReport:", !!report, "hiddenReportId:", hiddenReportId, "hasNormalizedAnswers:", !!report?.inputs?.normalized_answers, "hasScoring:", !!report?.scoring);
+  console.log(
+    "[enrich] payload check — tier:", tier,
+    "hasReport:", !!report,
+    "hiddenReportId:", hiddenReportId,
+    "auditReportId:", auditReportId,
+    "hasNormalizedAnswers:", !!report?.inputs?.normalized_answers,
+    "hasScoring:", !!report?.scoring
+  );
 
   if (!report || !hiddenReportId) {
-    console.log("[enrich] REJECTED — missing report or hiddenReportId. Body keys:", Object.keys(req.body || {}));
+    console.log("[enrich] REJECTED — missing report or hiddenReportId");
     return res.status(400).json({ error: "Missing report or hiddenReportId" });
   }
 
   console.log("[enrich] START tier=", tier, "auditId=", auditReportId, "hiddenId=", hiddenReportId);
 
   try {
-    // --- Audit enrichment (slides 4-9) ---
+    // -------------------------------------------------------
+    // STEP 1: Audit enrichment — ALWAYS runs regardless of tier
+    // Populates full_tier: swot, root_cause_hypotheses,
+    // constraint_chain, competitive_context, roadmap (slides 5-9)
+    // -------------------------------------------------------
+    console.log("[enrich] Starting audit enrichment");
+    const enriched = await enrichAuditReport(report);
+    console.log(
+      "[enrich] Audit enrichment complete —",
+      "swot:", !!enriched?.swot,
+      "root_causes:", !!(enriched?.root_cause_hypotheses?.length),
+      "roadmap:", !!enriched?.roadmap,
+      "competitive:", !!enriched?.competitive_context
+    );
+
+    // Merge audit enrichment results into report
+    if (!report.full_tier) report.full_tier = {};
+    if (enriched?.full_tier) report.full_tier = { ...report.full_tier, ...enriched.full_tier };
+    if (enriched?.swot) report.full_tier.swot = enriched.swot;
+    if (enriched?.roadmap) report.full_tier.roadmap = { ...(report.full_tier.roadmap || {}), ...enriched.roadmap };
+    if (enriched?.pricing_packaging_audit) report.full_tier.pricing_packaging_audit = { ...(report.full_tier.pricing_packaging_audit || {}), ...enriched.pricing_packaging_audit };
+    if (enriched?.competitive_context) report.full_tier.competitive_context = { ...(report.full_tier.competitive_context || {}), ...enriched.competitive_context };
+    if (enriched?.root_cause_hypotheses?.length) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
+    if (enriched?.constraint_chain?.length) report.full_tier.constraint_chain = enriched.constraint_chain;
+    if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
+
+    // Merge narrative fields from audit enrichment
+    if (!report.narrative) report.narrative = {};
+    if (enriched?.narrative?.headline_diagnosis) report.narrative.headline_diagnosis = enriched.narrative.headline_diagnosis;
+    if (enriched?.narrative?.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.narrative.what_this_means_in_practice;
+    if (enriched?.narrative?.the_operating_tension) report.narrative.the_operating_tension = enriched.narrative.the_operating_tension;
+    if (enriched?.narrative?.what_good_looks_like) report.narrative.what_good_looks_like = enriched.narrative.what_good_looks_like;
+    if (enriched?.narrative?.upgrade_bridge) report.narrative.upgrade_bridge = enriched.narrative.upgrade_bridge;
+    // Also handle top-level flattened fields
+    if (enriched?.headline_diagnosis && !report.narrative.headline_diagnosis) report.narrative.headline_diagnosis = enriched.headline_diagnosis;
+    if (enriched?.what_this_means_in_practice?.length && !report.narrative.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.what_this_means_in_practice;
+    if (enriched?.the_operating_tension && !report.narrative.the_operating_tension) report.narrative.the_operating_tension = enriched.the_operating_tension;
+    if (enriched?.what_good_looks_like && !report.narrative.what_good_looks_like) report.narrative.what_good_looks_like = enriched.what_good_looks_like;
+
+    // Save audit report to Redis only if this was an audit tier submission
     if (auditReportId) {
-      console.log("[enrich] Starting audit enrichment");
-      const enriched = await enrichAuditReport(report);
-      console.log("[enrich] audit enriched keys:", Object.keys(enriched || {}), "has swot:", !!enriched?.swot, "has roadmap:", !!enriched?.roadmap);
-      console.log("[enrich] Audit enrichment complete, keys:", Object.keys(enriched || {}));
-
-      if (enriched?.full_tier) report.full_tier = enriched.full_tier;
-      if (enriched?.swot) report.full_tier.swot = enriched.swot;
-      if (enriched?.roadmap) report.full_tier.roadmap = { ...report.full_tier.roadmap, ...enriched.roadmap };
-      if (enriched?.pricing_packaging_audit) report.full_tier.pricing_packaging_audit = { ...report.full_tier.pricing_packaging_audit, ...enriched.pricing_packaging_audit };
-      if (enriched?.competitive_context) report.full_tier.competitive_context = { ...report.full_tier.competitive_context, ...enriched.competitive_context };
-      if (enriched?.root_cause_hypotheses) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
-      if (enriched?.constraint_chain) report.full_tier.constraint_chain = enriched.constraint_chain;
-      if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
-
-      if (enriched?.narrative) {
-        report.narrative = {
-          ...report.narrative,
-          headline_diagnosis: enriched.narrative.headline_diagnosis || "",
-          what_this_means_in_practice: enriched.narrative.what_this_means_in_practice || [],
-          the_operating_tension: enriched.narrative.the_operating_tension || "",
-          what_good_looks_like: enriched.narrative.what_good_looks_like || "",
-          upgrade_bridge: enriched.narrative.upgrade_bridge || "",
-          executive_summary: enriched.narrative.executive_summary || report.narrative.executive_summary,
-          operating_tensions: enriched.narrative.operating_tensions || report.narrative.operating_tensions,
-        };
-      }
-
       try {
-        const auditData = buildAuditReportData(report, getDynamicTargetPillarScores, getRadarLabels);
+        const auditData = buildAuditReportData(report);
         await saveReport(auditReportId, { tier: "audit", reportData: auditData });
         console.log("[enrich] Audit report saved to Redis id=", auditReportId);
       } catch (saveErr) {
@@ -269,11 +358,20 @@ export default async function handler(req, res) {
       }
     }
 
-    // --- Hidden report enrichment (slides 11-13) — always runs ---
+    // -------------------------------------------------------
+    // STEP 2: Hidden enrichment — populates slides 11-13
+    // (constraint hypotheses, discovery questions, conversation strategy)
+    // -------------------------------------------------------
     console.log("[enrich] Starting hidden enrichment");
     const hiddenEnriched = await enrichHiddenReport(report);
-    console.log("[enrich] Hidden enrichment complete, keys:", Object.keys(hiddenEnriched || {}));
+    console.log(
+      "[enrich] Hidden enrichment complete —",
+      "hypothesis_summary:", !!hiddenEnriched?.constraint_hypothesis_summary,
+      "discovery_questions:", !!(hiddenEnriched?.discovery_questions?.length),
+      "conversation_strategy:", !!(hiddenEnriched?.conversation_strategy?.length)
+    );
 
+    // Merge hidden enrichment into report
     if (hiddenEnriched?.constraint_hypothesis_summary) report.constraint_hypothesis_summary = hiddenEnriched.constraint_hypothesis_summary;
     if (hiddenEnriched?.constraint_hypothesis?.length) report.constraint_hypothesis = hiddenEnriched.constraint_hypothesis;
     if (hiddenEnriched?.commercial_friction?.length) report.commercial_friction = hiddenEnriched.commercial_friction;
@@ -282,43 +380,25 @@ export default async function handler(req, res) {
     if (hiddenEnriched?.conversation_strategy?.length) report.conversation_strategy = hiddenEnriched.conversation_strategy;
     if (hiddenEnriched?.engagement_opportunities?.length) report.engagement_opportunities = hiddenEnriched.engagement_opportunities;
     if (hiddenEnriched?.consulting_opportunity) report.consulting_opportunity = hiddenEnriched.consulting_opportunity;
-    if (hiddenEnriched?.call_briefing) report.call_briefing = { ...report.call_briefing, ...hiddenEnriched.call_briefing };
+    if (hiddenEnriched?.call_briefing) report.call_briefing = { ...(report.call_briefing || {}), ...hiddenEnriched.call_briefing };
 
-    // Merge audit enrichment into report before building hidden report data
-    // so slides 5-9 fields (swot, roadmap, etc.) are included
-    const mergedReport = {
-      ...report,
-      full_tier: {
-        ...(report.full_tier || {}),
-        swot: report.full_tier?.swot || null,
-        root_cause_hypotheses: report.full_tier?.root_cause_hypotheses || [],
-        constraint_chain: report.full_tier?.constraint_chain || [],
-        competitive_context: report.full_tier?.competitive_context || null,
-        pricing_packaging_audit: report.full_tier?.pricing_packaging_audit || null,
-        roadmap: report.full_tier?.roadmap || null,
-        constraint_analysis: report.full_tier?.constraint_analysis || null,
-      },
-      constraint_hypothesis_summary: hiddenEnriched?.constraint_hypothesis_summary || report.constraint_hypothesis_summary || "",
-      constraint_hypothesis: hiddenEnriched?.constraint_hypothesis || report.constraint_hypothesis || [],
-      commercial_friction: hiddenEnriched?.commercial_friction || report.commercial_friction || [],
-      likely_objections: hiddenEnriched?.likely_objections || report.likely_objections || [],
-      discovery_questions: hiddenEnriched?.discovery_questions || report.discovery_questions || [],
-      conversation_strategy: hiddenEnriched?.conversation_strategy || report.conversation_strategy || [],
-      engagement_opportunities: hiddenEnriched?.engagement_opportunities || report.engagement_opportunities || [],
-      consulting_opportunity: hiddenEnriched?.consulting_opportunity || report.consulting_opportunity,
-      call_briefing: { ...(report.call_briefing || {}), ...(hiddenEnriched?.call_briefing || {}) },
-    };
-
+    // -------------------------------------------------------
+    // STEP 3: Build and save hidden report to Redis
+    // Built AFTER both enrichment steps so all fields are present:
+    // slides 5-9 (from audit enrichment) + slides 11-13 (from hidden enrichment)
+    // -------------------------------------------------------
     try {
-      const hiddenData = buildHiddenReportData(mergedReport, getDynamicTargetPillarScores, getRadarLabels, prettyPillar);
+      const hiddenData = buildHiddenReportData(report);
       await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
       console.log("[enrich] Hidden report saved to Redis id=", hiddenReportId);
     } catch (saveErr) {
       console.error("[enrich] HIDDEN SAVE FAILED:", saveErr.message);
-    } 
+    }
+
+    console.log("[enrich] ALL COMPLETE");
 
   } catch (err) {
-    console.error("[enrich] FAILED:", err.message);
+    console.error("[enrich] FAILED:", err.message, err.stack?.slice(0, 500));
   }
 
   // Respond after all work is done
