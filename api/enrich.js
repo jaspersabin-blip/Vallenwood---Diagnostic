@@ -98,6 +98,61 @@ function buildHiddenReportData(report) {
   };
 }
 
+
+export async function runEnrichment({ report, tier, auditReportId, hiddenReportId }) {
+  console.log("[enrich] START tier=", tier, "hiddenId=", hiddenReportId);
+  try {
+    console.log("[enrich] Starting audit enrichment");
+    const enriched = await enrichAuditReport(report);
+    console.log("[enrich] Audit complete — swot:", !!enriched?.swot, "root_causes:", !!(enriched?.root_cause_hypotheses?.length), "roadmap:", !!enriched?.roadmap);
+    if (!report.full_tier) report.full_tier = {};
+    if (enriched?.full_tier) report.full_tier = { ...report.full_tier, ...enriched.full_tier };
+    if (enriched?.swot) report.full_tier.swot = enriched.swot;
+    if (enriched?.roadmap) report.full_tier.roadmap = { ...(report.full_tier.roadmap || {}), ...enriched.roadmap };
+    if (enriched?.pricing_packaging_audit) report.full_tier.pricing_packaging_audit = { ...(report.full_tier.pricing_packaging_audit || {}), ...enriched.pricing_packaging_audit };
+    if (enriched?.competitive_context) report.full_tier.competitive_context = { ...(report.full_tier.competitive_context || {}), ...enriched.competitive_context };
+    if (enriched?.root_cause_hypotheses?.length) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
+    if (enriched?.constraint_chain?.length) report.full_tier.constraint_chain = enriched.constraint_chain;
+    if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
+    if (!report.narrative) report.narrative = {};
+    if (enriched?.narrative?.headline_diagnosis) report.narrative.headline_diagnosis = enriched.narrative.headline_diagnosis;
+    if (enriched?.narrative?.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.narrative.what_this_means_in_practice;
+    if (enriched?.narrative?.the_operating_tension) report.narrative.the_operating_tension = enriched.narrative.the_operating_tension;
+    if (enriched?.narrative?.what_good_looks_like) report.narrative.what_good_looks_like = enriched.narrative.what_good_looks_like;
+    if (enriched?.headline_diagnosis && !report.narrative.headline_diagnosis) report.narrative.headline_diagnosis = enriched.headline_diagnosis;
+    if (enriched?.what_this_means_in_practice?.length && !report.narrative.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.what_this_means_in_practice;
+    if (enriched?.the_operating_tension && !report.narrative.the_operating_tension) report.narrative.the_operating_tension = enriched.the_operating_tension;
+    if (enriched?.what_good_looks_like && !report.narrative.what_good_looks_like) report.narrative.what_good_looks_like = enriched.what_good_looks_like;
+    if (auditReportId) {
+      try {
+        const auditData = buildAuditReportData(report);
+        await saveReport(auditReportId, { tier: "audit", reportData: auditData });
+        console.log("[enrich] Audit report saved id=", auditReportId);
+      } catch (e) { console.error("[enrich] AUDIT SAVE FAILED:", e.message); }
+    }
+    console.log("[enrich] Starting hidden enrichment");
+    const hiddenEnriched = await enrichHiddenReport(report);
+    console.log("[enrich] Hidden complete — hypothesis:", !!hiddenEnriched?.constraint_hypothesis_summary, "questions:", !!(hiddenEnriched?.discovery_questions?.length));
+    if (hiddenEnriched?.constraint_hypothesis_summary) report.constraint_hypothesis_summary = hiddenEnriched.constraint_hypothesis_summary;
+    if (hiddenEnriched?.constraint_hypothesis?.length) report.constraint_hypothesis = hiddenEnriched.constraint_hypothesis;
+    if (hiddenEnriched?.commercial_friction?.length) report.commercial_friction = hiddenEnriched.commercial_friction;
+    if (hiddenEnriched?.likely_objections?.length) report.likely_objections = hiddenEnriched.likely_objections;
+    if (hiddenEnriched?.discovery_questions?.length) report.discovery_questions = hiddenEnriched.discovery_questions;
+    if (hiddenEnriched?.conversation_strategy?.length) report.conversation_strategy = hiddenEnriched.conversation_strategy;
+    if (hiddenEnriched?.engagement_opportunities?.length) report.engagement_opportunities = hiddenEnriched.engagement_opportunities;
+    if (hiddenEnriched?.consulting_opportunity) report.consulting_opportunity = hiddenEnriched.consulting_opportunity;
+    if (hiddenEnriched?.call_briefing) report.call_briefing = { ...(report.call_briefing || {}), ...hiddenEnriched.call_briefing };
+    try {
+      const hiddenData = buildHiddenReportData(report);
+      await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
+      console.log("[enrich] Hidden report saved id=", hiddenReportId);
+    } catch (e) { console.error("[enrich] HIDDEN SAVE FAILED:", e.message); }
+    console.log("[enrich] ALL COMPLETE");
+  } catch (err) {
+    console.error("[enrich] FAILED:", err.message);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const token = req.headers["x-vw-token"];

@@ -7,6 +7,7 @@ import { createDiagLogger } from "../lib/diagLogger.js";
 import { makeReportId, saveReport } from "../lib/reportStore.js";
 import { scoreDiagnostic } from "../lib/scoring.js";
 import { enrichAuditReport, enrichHiddenReport } from "../lib/enrichAudit.js";
+import { runEnrichment } from "./enrich.js";
 
 // -------------------------------------------------------
 // runEnrichment — called directly (no HTTP) after response
