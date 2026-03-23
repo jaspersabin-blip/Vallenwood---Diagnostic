@@ -900,12 +900,16 @@
 
     .comp-frame-block {
       margin-top: auto;
-      padding-top: 10px;
+      padding-top: 8px;
       border-top: 1px solid var(--line);
-      font-size: 12px;
-      line-height: 1.55;
+      font-size: 11px;
+      line-height: 1.5;
       color: var(--muted);
       font-style: italic;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
     }
 
     .panel-item {
