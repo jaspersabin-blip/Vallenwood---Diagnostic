@@ -4,7 +4,7 @@
 // Keeps legacy scoring for internal comparison only
 
 import { createDiagLogger } from "../lib/diagLogger.js";
-import { makeReportId, saveReport } from "../lib/reportStore.js";
+import { makeReportId, saveReport, getReport } from "../lib/reportStore.js";
 import { scoreDiagnostic } from "../lib/scoring.js";
 import { enrichAuditReport, enrichHiddenReport } from "../lib/enrichAudit.js";
 
@@ -1252,8 +1252,31 @@ export default async function handler(req, res) {
       };
       try {
         console.log("[diag] calling enrichment directly — auditReportId:", auditReportId, "hiddenReportId:", hiddenReportId);
-        await enrichAuditReport(enrichPayload);
-        await enrichHiddenReport(enrichPayload);
+
+        // Enrich audit report and save results back to Redis
+        if (auditReportId) {
+          const auditEnriched = await enrichAuditReport(enrichPayload);
+          if (auditEnriched && Object.keys(auditEnriched).length > 0) {
+            const auditRecord = await getReport(auditReportId);
+            if (auditRecord) {
+              const auditMerged = { ...auditRecord, ...auditEnriched };
+              await saveReport(auditReportId, auditMerged);
+              console.log("[diag] audit report enriched and saved — keys:", Object.keys(auditEnriched));
+            }
+          }
+        }
+
+        // Enrich hidden report and save results back to Redis
+        const hiddenEnriched = await enrichHiddenReport(enrichPayload);
+        if (hiddenEnriched && Object.keys(hiddenEnriched).length > 0) {
+          const hiddenRecord = await getReport(hiddenReportId);
+          if (hiddenRecord) {
+            const hiddenMerged = { ...hiddenRecord, ...hiddenEnriched };
+            await saveReport(hiddenReportId, hiddenMerged);
+            console.log("[diag] hidden report enriched and saved — keys:", Object.keys(hiddenEnriched));
+          }
+        }
+
         console.log("[diag] enrichment complete");
       } catch (err) {
         console.error("[diag] enrichment failed:", err.message);
