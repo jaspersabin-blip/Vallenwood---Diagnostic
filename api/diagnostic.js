@@ -1,5 +1,5 @@
 // api/diagnostic.js
-// Brand-to-GTM OS Diagnostic API
+// Vallenwood Revenue System Score — Diagnostic API
 // Updated to use lib/scoring.js as the active scoring engine
 // Keeps legacy scoring for internal comparison only
 
@@ -19,7 +19,7 @@ function cap(n, max) {
 }
 
 function scoreBand(totalScore) {
-  if (totalScore >= 85) return "High Brand-to-GTM alignment";
+  if (totalScore >= 85) return "Strong revenue system alignment";
   if (totalScore >= 70) return "Moderate system friction";
   if (totalScore >= 55) return "Structural GTM misalignment";
   return "Significant growth constraints";
@@ -393,44 +393,44 @@ function getRadarLabels() {
 
 function renderExecSummary({ osScored, clientName, clientCompany, execReportUrl }) {
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
-  const subject = `Your Brand-to-GTM OS Executive Summary — ${clientCompany || "Your Organization"}`;
+  const subject = `Your Vallenwood Revenue System Score — ${clientCompany || "Your Organization"}`;
 
   const bodyHtml = `
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f7f4ea;padding:32px 16px;color:#2f2f2f;">
     <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
       <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">Vallenwood Consulting</div>
-        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">Your Brand-to-GTM OS Executive Summary</h1>
+        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">Your Vallenwood Revenue System Score</h1>
         <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">A diagnostic snapshot of the operating constraint most likely to be affecting growth, pricing power, and go-to-market efficiency.</p>
       </div>
       <div style="padding:24px 28px;">
         <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
-        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Thank you for completing the Brand-to-GTM OS Diagnostic for <strong>${clientCompany || "your organization"}</strong>. Your Executive Summary has been generated and is ready to review.</p>
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Thank you for completing the Vallenwood Revenue System Score diagnostic for <strong>${clientCompany || "your organization"}</strong>. Your Executive Summary has been generated and is ready to review.</p>
         <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
           <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Company</p>
           <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${clientCompany || "Your organization"}</p>
-          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">OS Alignment</p>
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">RSS Score</p>
           <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)</p>
           <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
           <p style="margin:0;font-size:18px;font-weight:700;">${niceConstraint}</p>
         </div>
         <p style="margin:0 0 20px;font-size:15px;line-height:1.6;"><strong>View your executive summary:</strong><br>
-          <a href="${execReportUrl || "https://vallenwoodconsulting.com"}" style="color:#6f875f;font-weight:600;text-decoration:none;">Brand-to-GTM OS Executive Summary &rarr;</a>
+          <a href="${execReportUrl || "https://vallenwoodconsulting.com"}" style="color:#6f875f;font-weight:600;text-decoration:none;">Revenue System Score Report &rarr;</a>
         </p>
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Included with your summary is a <strong>30-minute Brand-to-GTM Review Call</strong> where we walk through the findings and identify the highest-leverage next moves.</p>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Included with your summary is a <strong>30-minute Revenue System Review Call</strong> where we walk through the findings and identify the highest-leverage next moves.</p>
         <a href="https://vallenwoodconsultingllc.hbportal.co/schedule/68e972a4097e7b0027a71406" style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 20px;border-radius:12px;font-size:15px;">Book Your 30-Minute Review Call</a>
       </div>
       <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">This summary is directional and designed to surface leverage quickly. Reports may take a few minutes to fully generate after submission.</div>
     </div>
   </div>`;
 
-  const bodyText = `Hi ${clientName || "there"},\n\nThank you for completing the Brand-to-GTM OS Diagnostic for ${clientCompany || "your organization"}.\n\nOS Alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)\nPrimary Constraint: ${niceConstraint}\n\nView your executive summary:\n${execReportUrl || ""}\n\nBook your 30-minute Review Call:\nhttps://vallenwoodconsultingllc.hbportal.co/schedule/68e972a4097e7b0027a71406\n\n— Jasper\nVallenwood Consulting`;
+  const bodyText = `Hi ${clientName || "there"},\n\nThank you for completing the Vallenwood Revenue System Score diagnostic for ${clientCompany || "your organization"}.\n\nOS Alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)\nPrimary Constraint: ${niceConstraint}\n\nView your executive summary:\n${execReportUrl || ""}\n\nBook your 30-minute Review Call:\nhttps://vallenwoodconsultingllc.hbportal.co/schedule/68e972a4097e7b0027a71406\n\n— Jasper\nVallenwood Consulting`;
 
   return { subject, bodyText, bodyHtml };
 }
 
 function renderAudit({ osScored, clientName, clientCompany, auditReportUrl }) {
-  const subject = `Your Brand-to-GTM OS Strategic Audit — ${clientCompany || "Your Organization"}`;
+  const subject = `Your Vallenwood Revenue System Score — ${clientCompany || "Your Organization"}`;
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
 
   const bodyHtml = `
@@ -438,31 +438,31 @@ function renderAudit({ osScored, clientName, clientCompany, auditReportUrl }) {
     <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e6dfcf;border-radius:16px;overflow:hidden;">
       <div style="padding:28px 28px 18px;background:linear-gradient(135deg,#ffffff,#fbfaf6);border-bottom:1px solid #e6dfcf;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6f875f;margin-bottom:10px;">Vallenwood Consulting</div>
-        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">Your Brand-to-GTM OS Strategic Audit</h1>
+        <h1 style="margin:0 0 8px;font-size:28px;line-height:1.1;color:#2f2f2f;">Your Vallenwood Revenue System Score — Strategic Audit</h1>
         <p style="margin:0;color:#6f6f69;font-size:15px;line-height:1.6;">A deeper strategic read on the operating constraints shaping positioning, pricing power, and go-to-market performance.</p>
       </div>
       <div style="padding:24px 28px;">
         <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Hi ${clientName || "there"},</p>
-        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Thank you for completing the Brand-to-GTM OS Diagnostic for <strong>${clientCompany || "your organization"}</strong>. Your Strategic Audit has been generated and is ready to review.</p>
+        <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Thank you for completing the Vallenwood Revenue System Score diagnostic for <strong>${clientCompany || "your organization"}</strong>. Your Strategic Audit has been generated and is ready to review.</p>
         <div style="border:1px solid #e6dfcf;border-radius:14px;padding:18px;background:#fbfaf6;margin-bottom:20px;">
           <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Company</p>
           <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${clientCompany || "Your organization"}</p>
-          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">OS Alignment</p>
+          <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">RSS Score</p>
           <p style="margin:0 0 16px;font-size:18px;font-weight:700;">${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)</p>
           <p style="margin:0 0 8px;font-size:13px;color:#6f6f69;text-transform:uppercase;letter-spacing:.04em;">Primary Constraint</p>
           <p style="margin:0;font-size:18px;font-weight:700;">${niceConstraint}</p>
         </div>
         <p style="margin:0 0 20px;font-size:15px;line-height:1.6;"><strong>View your full report:</strong><br>
-          <a href="${auditReportUrl || "https://vallenwoodconsulting.com"}" style="color:#6f875f;font-weight:600;text-decoration:none;">Brand-to-GTM OS Strategic Audit &rarr;</a>
+          <a href="${auditReportUrl || "https://vallenwoodconsulting.com"}" style="color:#6f875f;font-weight:600;text-decoration:none;">Revenue System Score — Strategic Audit &rarr;</a>
         </p>
-        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Included with your audit is a <strong>60-minute Brand-to-GTM Strategy Session</strong> where we walk through the findings, validate the diagnosis, and align on the highest-leverage next moves.</p>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Included with your audit is a <strong>60-minute Revenue System Strategy Session</strong> where we walk through the findings, validate the diagnosis, and align on the highest-leverage next moves.</p>
         <a href="https://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007" style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 20px;border-radius:12px;font-size:15px;">Book Your 60-Minute Strategy Session</a>
       </div>
       <div style="padding:18px 28px;border-top:1px solid #e6dfcf;color:#6f6f69;font-size:13px;line-height:1.6;">This audit is designed to convert diagnosis into a focused action plan. Reports may take a few minutes to fully generate after submission.</div>
     </div>
   </div>`;
 
-  const bodyText = `Hi ${clientName || "there"},\n\nThank you for completing the Brand-to-GTM OS Diagnostic for ${clientCompany || "your organization"}.\n\nOS Alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)\nPrimary Constraint: ${niceConstraint}\n\nView your full report:\n${auditReportUrl || ""}\n\nBook your 60-minute Strategy Session:\nhttps://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007\n\n— Jasper\nVallenwood Consulting`;
+  const bodyText = `Hi ${clientName || "there"},\n\nThank you for completing the Vallenwood Revenue System Score diagnostic for ${clientCompany || "your organization"}.\n\nOS Alignment: ${osScored.interpretation_band} (${osScored.brand_to_gtm_os_score}/100)\nPrimary Constraint: ${niceConstraint}\n\nView your full report:\n${auditReportUrl || ""}\n\nBook your 60-minute Strategy Session:\nhttps://vallenwoodconsultingllc.hbportal.co/schedule/68fa3ed7c0d0af002f7fa007\n\n— Jasper\nVallenwood Consulting`;
 
   return { subject, bodyText, bodyHtml };
 }
