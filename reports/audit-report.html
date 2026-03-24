@@ -1742,17 +1742,16 @@ if (bmEl) {
     const tpct = tgt/20*100;
     const isPrimary = key === d.primary_constraint_label?.toLowerCase().replace(/\s+/g,"_")
       || val === Math.min(...Object.values(pillarScores||{}));
-    const weak = val < tgt;
 
     const row = document.createElement("div");
     row.className = "pillar-row";
     row.innerHTML = `
       <div class="pillar-name${isPrimary ? " primary" : ""}">${esc(label)}${isPrimary ? " ★" : ""}</div>
       <div class="bar-track">
-        <div class="bar-fill${weak ? " weak" : ""}" style="width:${pct}%"></div>
+        <div class="bar-fill${isPrimary ? " weak" : ""}" style="width:${pct}%"></div>
         <div class="bar-target" style="left:${tpct}%"></div>
       </div>
-      <div class="pillar-score${weak ? " weak" : ""}">${val}/20</div>
+      <div class="pillar-score${isPrimary ? " weak" : ""}">${val}/20</div>
     `;
     el.appendChild(row);
   });
