@@ -611,7 +611,7 @@ function buildReport({ tier, clientName, clientEmail, clientCompany, clientWebsi
     },
     narrative: {
       executive_summary: {
-        headline: `${osScored.interpretation_band}: primary constraint is ${prettyPillar(osScored.primary_constraint_key)}`,
+        headline: "",
         summary_paragraph: "This diagnostic reflects alignment across five pillars of the Brand-to-GTM Operating System. The goal is to identify the operating constraint that, if improved, will unlock the most leverage.",
         key_observations: contradictionBullets,
         what_to_do_next: [
@@ -839,7 +839,7 @@ function buildExecReportData(report) {
     primary_constraint_why_it_matters: report?.scoring?.primary_constraint?.why_it_matters || "",
     executive_summary_paragraph: report?.narrative?.executive_summary?.summary_paragraph || "",
     executive_headline: report?.narrative?.executive_summary?.headline || "",
-    headline_diagnosis: report?.headline_diagnosis || report?.narrative?.headline_diagnosis || report?.narrative?.executive_summary?.headline || "",
+    headline_diagnosis: report?.headline_diagnosis || report?.narrative?.headline_diagnosis || "",
     what_this_means_in_practice: report?.what_this_means_in_practice?.length ? report.what_this_means_in_practice : report?.narrative?.what_this_means_in_practice || [],
     the_operating_tension: report?.the_operating_tension || report?.narrative?.the_operating_tension || "",
     upgrade_bridge: report?.narrative?.upgrade_bridge || [],
@@ -879,7 +879,7 @@ function buildAuditReportData(report) {
     confidence: report?.scoring?.confidence || "Moderate",
     primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
     primary_constraint_why_it_matters: report?.scoring?.primary_constraint?.why_it_matters || "",
-    headline_diagnosis: report?.headline_diagnosis || narrative?.headline_diagnosis || execSummary?.headline || "",
+    headline_diagnosis: report?.headline_diagnosis || narrative?.headline_diagnosis || "",
     executive_summary_paragraph: execSummary?.summary_paragraph || "",
     executive_headline: execSummary?.headline || "",
     what_this_means_in_practice: report?.what_this_means_in_practice?.length ? report.what_this_means_in_practice : narrative?.what_this_means_in_practice || [],
