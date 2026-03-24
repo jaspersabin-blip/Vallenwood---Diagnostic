@@ -3,6 +3,9 @@
     "api/diagnostic.js": {
       "maxDuration": 300
     },
+    "api/enrich.js": {
+      "maxDuration": 300
+    },
     "api/report.js": {
       "maxDuration": 60
     }
