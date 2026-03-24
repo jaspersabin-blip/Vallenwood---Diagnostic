@@ -1932,6 +1932,59 @@ if (bmEl) {
 })();
 
 // ── Closing
+
+// ── About slide — TOC + pillar pills
+(function() {
+  set("chrome-company-about", company);
+  const pillEl = document.getElementById("pillar-pills");
+  if (pillEl) {
+    const pills = [
+      { label: "Positioning", key: "positioning" },
+      { label: "Value", key: "value_architecture" },
+      { label: "Pricing", key: "pricing_packaging" },
+      { label: "GTM", key: "gtm_focus" },
+      { label: "Measurement", key: "measurement" },
+    ];
+    const scores = d.pillar_scores || {};
+    const minScore = Math.min(...Object.values(scores).map(Number));
+    pills.forEach(function(p) {
+      var val = scores[p.key] || 0;
+      var isPrimary = val === minScore;
+      var div = document.createElement("div");
+      div.style.cssText = "text-align:center;padding:6px 4px;border-radius:8px;background:" + (isPrimary ? "var(--warning)" : "var(--bg)") + ";border:1px solid " + (isPrimary ? "var(--warning)" : "var(--line)") + ";";
+      div.innerHTML = "<div style='font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:" + (isPrimary ? "white" : "var(--muted)") + ";'>" + esc(p.label) + "</div><div style='font-size:13px;font-weight:700;color:" + (isPrimary ? "white" : "var(--text)") + ";'>" + val + "<span style='font-size:9px;font-weight:400;'>/20</span></div>";
+      pillEl.appendChild(div);
+    });
+  }
+  var tocEl = document.getElementById("toc-list");
+  if (!tocEl) return;
+  var tocEntries = [
+    { num: "03", label: "Revenue System Score", id: "slide-score" },
+    { num: "04", label: "5-Pillar Breakdown", id: "slide-pillars" },
+    { num: "05", label: "Diagnosis", id: "slide-diagnosis" },
+    { num: "06", label: "Root Cause Analysis", id: "slide-root-causes" },
+    { num: "07", label: "Strategic SWOT", id: "slide-swot" },
+    { num: "08", label: "Constraint Dynamics", id: "slide-constraint" },
+    { num: "09", label: "Competitive & Pricing", id: "slide-competitive" },
+    { num: "10", label: "Action Roadmap", id: "slide-roadmap" },
+    { num: "11", label: "Next steps", id: "slide-closing-end" },
+  ];
+  tocEntries.forEach(function(entry) {
+    var row = document.createElement("a");
+    row.href = "#" + entry.id;
+    row.style.cssText = "display:flex;align-items:center;gap:12px;padding:7px 12px;background:white;border:1px solid var(--line);border-radius:8px;text-decoration:none;cursor:pointer;";
+    row.innerHTML = "<span style='font-size:10px;font-weight:700;color:var(--muted);width:20px;flex-shrink:0;'>" + entry.num + "</span><span style='font-size:12px;font-weight:500;color:var(--text);'>" + esc(entry.label) + "</span>";
+    row.addEventListener("mouseenter", function() { row.style.background = "var(--bg)"; });
+    row.addEventListener("mouseleave", function() { row.style.background = "white"; });
+    row.addEventListener("click", function(e) {
+      e.preventDefault();
+      var target = document.getElementById(entry.id);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    tocEl.appendChild(row);
+  });
+})();
+
 set("closing-company", company);
 set("closing-date", date);
 </script>
