@@ -19,10 +19,10 @@ function cap(n, max) {
 }
 
 function scoreBand(totalScore) {
-  if (totalScore >= 85) return "Strong revenue system alignment";
-  if (totalScore >= 70) return "Moderate system friction";
-  if (totalScore >= 55) return "Structural GTM misalignment";
-  return "Significant growth constraints";
+  if (totalScore >= 85) return "Your revenue system is well aligned";
+  if (totalScore >= 70) return "Good foundation with room to optimize";
+  if (totalScore >= 55) return "One constraint is likely holding the system back";
+  return "High potential — the system is ready to be unlocked";
 }
 
 function prettyPillar(key) {
