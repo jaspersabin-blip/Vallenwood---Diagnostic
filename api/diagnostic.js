@@ -1237,7 +1237,6 @@ export default async function handler(req, res) {
     if (llmEnabled) {
       const auditReportId = auditReportUrl ? new URL(auditReportUrl).searchParams.get("id") : null;
       const hiddenReportId = new URL(hiddenReportUrl).searchParams.get("id");
-      const baseUrl = `https://vallenwood-diagnostic.vercel.app`;
       const enrichPayload = {
         tier,
         auditReportId,
@@ -1252,15 +1251,12 @@ export default async function handler(req, res) {
         },
       };
       try {
-        console.log("[diag] awaiting enrich hiddenReportId:", hiddenReportId);
-        const enrichRes = await fetch(`${baseUrl}/api/enrich`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-vw-token": process.env.VW_TOKEN },
-          body: JSON.stringify(enrichPayload),
-        });
-        console.log("[diag] enrich complete status:", enrichRes.status);
+        console.log("[diag] calling enrichment directly — auditReportId:", auditReportId, "hiddenReportId:", hiddenReportId);
+        await enrichAuditReport(enrichPayload);
+        await enrichHiddenReport(enrichPayload);
+        console.log("[diag] enrichment complete");
       } catch (err) {
-        console.error("[diag] enrich failed:", err.message);
+        console.error("[diag] enrichment failed:", err.message);
       }
     }
     return;
