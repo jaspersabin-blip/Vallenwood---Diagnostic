@@ -1185,7 +1185,7 @@ export default async function handler(req, res) {
 
     // Build report URLs and save initial (unenriched) versions to Redis
     const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
-    const auditReportUrl = tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
+    const auditReportUrl = await buildReportUrl(req, report, "audit");
     const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
 
     // Render emails
