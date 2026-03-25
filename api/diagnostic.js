@@ -532,6 +532,7 @@ function renderInternalEmail({ osScored, clientName, clientCompany, clientEmail,
         <div style="border:1px solid #e6dfcf;border-radius:14px;padding:16px;background:#fff;margin-bottom:20px;">
           <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6f6f69;">Report Links</p>
           <p style="margin:0 0 8px;font-size:13px;"><strong>Client report:</strong> <a href="${auditReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Audit Report →</a></p>
+          <p style="margin:0 0 8px;font-size:13px;"><strong>Audit report:</strong> <a href="${auditReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Audit Report →</a></p>
           <p style="margin:0;font-size:13px;"><strong>Internal brief:</strong> <a href="${hiddenReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Client Briefing →</a></p>
         </div>
         <a href="${hiddenReportUrl || ""}" style="display:inline-block;background:#6f875f;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:12px;font-size:14px;">Open Full Internal Brief</a>
