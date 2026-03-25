@@ -160,7 +160,17 @@ export default async function handler(req, res) {
   const token = req.headers["x-vw-token"];
   if (!token || token !== process.env.VW_TOKEN) return res.status(401).json({ error: "Unauthorized" });
 
-  const { report, tier, auditReportId, hiddenReportId } = req.body || {};
+  const { report, tier } = req.body || {};
+  let { auditReportId, hiddenReportId } = req.body || {};
+
+  // Accept either a bare ID or a full URL
+  function extractId(val) {
+    if (!val) return null;
+    if (val.includes('id=')) return val.split('id=')[1].split('&')[0];
+    return val;
+  }
+  auditReportId = extractId(auditReportId);
+  hiddenReportId = extractId(hiddenReportId);
   console.log("[enrich] payload check — tier:", tier, "hasReport:", !!report, "hiddenReportId:", hiddenReportId, "auditReportId:", auditReportId);
 
   if (!report || !hiddenReportId) {
