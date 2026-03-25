@@ -248,5 +248,11 @@ export default async function handler(req, res) {
     console.error("[enrich] FAILED:", err.message);
   }
 
-  res.status(200).json({ status: "enrichment complete" });
+  // Respond immediately so Zapier doesn't time out
+  res.status(200).json({ status: "enrichment queued" });
+
+  // Run enrichment after response is sent
+  runEnrichment({ report, tier, auditReportId, hiddenReportId }).catch(err => {
+    console.error("[enrich] background enrichment failed:", err.message);
+  });
 }
