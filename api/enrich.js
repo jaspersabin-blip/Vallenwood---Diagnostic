@@ -161,98 +161,43 @@ export default async function handler(req, res) {
   const token = req.headers["x-vw-token"];
   if (!token || token !== process.env.VW_TOKEN) return res.status(401).json({ error: "Unauthorized" });
 
+  function extractId(val) {
+    if (!val) return null;
+    if (typeof val === "string" && val.includes("id=")) return val.split("id=")[1].split("&")[0];
+    return val;
+  }
+
   let { report, tier } = req.body || {};
   let { auditReportId, hiddenReportId } = req.body || {};
 
-  // If report not provided, load it from Redis using the hiddenReportId
-  if (!report && hiddenReportId) {
-    const stored = await getReport(extractId(hiddenReportId));
+  auditReportId = extractId(auditReportId);
+  hiddenReportId = extractId(hiddenReportId);
+
+  console.log("[enrich] payload check — tier:", tier, "hasReport:", !!report, "hiddenReportId:", hiddenReportId, "auditReportId:", auditReportId);
+
+  if (!hiddenReportId) {
+    console.log("[enrich] REJECTED — missing hiddenReportId");
+    return res.status(400).json({ error: "Missing hiddenReportId" });
+  }
+
+  // If report not provided, load from Redis using the hidden report ID
+  if (!report) {
+    const stored = await getReport(hiddenReportId);
     if (stored) report = stored.reportData || stored;
   }
 
-  // Accept either a bare ID or a full URL
-  function extractId(val) {
-    if (!val) return null;
-    if (val.includes('id=')) return val.split('id=')[1].split('&')[0];
-    return val;
-  }
-  auditReportId = extractId(auditReportId);
-  hiddenReportId = extractId(hiddenReportId);
-  console.log("[enrich] payload check — tier:", tier, "hasReport:", !!report, "hiddenReportId:", hiddenReportId, "auditReportId:", auditReportId);
-
-  if (!report || !hiddenReportId) {
-    console.log("[enrich] REJECTED — missing report or hiddenReportId");
-    return res.status(400).json({ error: "Missing report or hiddenReportId" });
+  if (!report) {
+    console.log("[enrich] REJECTED — could not load report");
+    return res.status(400).json({ error: "Missing report" });
   }
 
-  console.log("[enrich] START");
+  // Start enrichment BEFORE responding so Vercel keeps the function alive
+  const enrichPromise = runEnrichment({ report, tier, auditReportId, hiddenReportId })
+    .catch(err => console.error("[enrich] enrichment failed:", err.message));
 
-  try {
-    // STEP 1: Audit enrichment — ALWAYS runs to populate slides 5-9
-    console.log("[enrich] Starting audit enrichment (always runs)");
-    const enriched = await enrichAuditReport(report);
-    console.log("[enrich] Audit enrichment complete — swot:", !!enriched?.swot, "root_causes:", !!(enriched?.root_cause_hypotheses?.length), "roadmap:", !!enriched?.roadmap);
-
-    if (!report.full_tier) report.full_tier = {};
-    if (enriched?.full_tier) report.full_tier = { ...report.full_tier, ...enriched.full_tier };
-    if (enriched?.swot) report.full_tier.swot = enriched.swot;
-    if (enriched?.roadmap) report.full_tier.roadmap = { ...(report.full_tier.roadmap || {}), ...enriched.roadmap };
-    if (enriched?.pricing_packaging_audit) report.full_tier.pricing_packaging_audit = { ...(report.full_tier.pricing_packaging_audit || {}), ...enriched.pricing_packaging_audit };
-    if (enriched?.competitive_context) report.full_tier.competitive_context = { ...(report.full_tier.competitive_context || {}), ...enriched.competitive_context };
-    if (enriched?.root_cause_hypotheses?.length) report.full_tier.root_cause_hypotheses = enriched.root_cause_hypotheses;
-    if (enriched?.constraint_chain?.length) report.full_tier.constraint_chain = enriched.constraint_chain;
-    if (enriched?.constraint_analysis) report.full_tier.constraint_analysis = enriched.constraint_analysis;
-
-    if (!report.narrative) report.narrative = {};
-    if (enriched?.narrative?.headline_diagnosis) report.narrative.headline_diagnosis = enriched.narrative.headline_diagnosis;
-    if (enriched?.narrative?.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.narrative.what_this_means_in_practice;
-    if (enriched?.narrative?.the_operating_tension) report.narrative.the_operating_tension = enriched.narrative.the_operating_tension;
-    if (enriched?.narrative?.what_good_looks_like) report.narrative.what_good_looks_like = enriched.narrative.what_good_looks_like;
-    if (enriched?.headline_diagnosis && !report.narrative.headline_diagnosis) report.narrative.headline_diagnosis = enriched.headline_diagnosis;
-    if (enriched?.what_this_means_in_practice?.length && !report.narrative.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.what_this_means_in_practice;
-    if (enriched?.the_operating_tension && !report.narrative.the_operating_tension) report.narrative.the_operating_tension = enriched.the_operating_tension;
-    if (enriched?.what_good_looks_like && !report.narrative.what_good_looks_like) report.narrative.what_good_looks_like = enriched.what_good_looks_like;
-
-    if (auditReportId) {
-      try {
-        const auditData = buildAuditReportData(report);
-        await saveReport(auditReportId, { tier: "audit", reportData: auditData });
-        console.log("[enrich] Audit report saved to Redis id=", auditReportId);
-      } catch (e) { console.error("[enrich] AUDIT SAVE FAILED:", e.message); }
-    }
-
-    // STEP 2: Hidden enrichment — populates slides 11-13
-    console.log("[enrich] Starting hidden enrichment");
-    const hiddenEnriched = await enrichHiddenReport(report);
-    console.log("[enrich] Hidden enrichment complete — hypothesis:", !!hiddenEnriched?.constraint_hypothesis_summary, "questions:", !!(hiddenEnriched?.discovery_questions?.length));
-
-    if (hiddenEnriched?.constraint_hypothesis_summary) report.constraint_hypothesis_summary = hiddenEnriched.constraint_hypothesis_summary;
-    if (hiddenEnriched?.constraint_hypothesis?.length) report.constraint_hypothesis = hiddenEnriched.constraint_hypothesis;
-    if (hiddenEnriched?.commercial_friction?.length) report.commercial_friction = hiddenEnriched.commercial_friction;
-    if (hiddenEnriched?.likely_objections?.length) report.likely_objections = hiddenEnriched.likely_objections;
-    if (hiddenEnriched?.discovery_questions?.length) report.discovery_questions = hiddenEnriched.discovery_questions;
-    if (hiddenEnriched?.conversation_strategy?.length) report.conversation_strategy = hiddenEnriched.conversation_strategy;
-    if (hiddenEnriched?.engagement_opportunities?.length) report.engagement_opportunities = hiddenEnriched.engagement_opportunities;
-    if (hiddenEnriched?.consulting_opportunity) report.consulting_opportunity = hiddenEnriched.consulting_opportunity;
-    if (hiddenEnriched?.call_briefing) report.call_briefing = { ...(report.call_briefing || {}), ...hiddenEnriched.call_briefing };
-
-    // STEP 3: Save hidden report AFTER both enrichments complete
-    try {
-      const hiddenData = buildHiddenReportData(report);
-      await saveReport(hiddenReportId, { tier: "hidden", reportData: hiddenData });
-      console.log("[enrich] Hidden report saved to Redis id=", hiddenReportId);
-    } catch (e) { console.error("[enrich] HIDDEN SAVE FAILED:", e.message); }
-
-    console.log("[enrich] ALL COMPLETE");
-  } catch (err) {
-    console.error("[enrich] FAILED:", err.message);
-  }
-
-  // Respond immediately so Zapier doesn't time out
+  // Respond immediately so Zapier does not time out
   res.status(200).json({ status: "enrichment queued" });
 
-  // Run enrichment after response is sent
-  runEnrichment({ report, tier, auditReportId, hiddenReportId }).catch(err => {
-    console.error("[enrich] background enrichment failed:", err.message);
-  });
+  // Await AFTER responding — keeps Vercel function alive for full 300s
+  await enrichPromise;
 }
