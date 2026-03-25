@@ -191,13 +191,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing report" });
   }
 
-  // Start enrichment BEFORE responding so Vercel keeps the function alive
-  const enrichPromise = runEnrichment({ report, tier, auditReportId, hiddenReportId })
-    .catch(err => console.error("[enrich] enrichment failed:", err.message));
-
   // Respond immediately so Zapier does not time out
   res.status(200).json({ status: "enrichment queued" });
 
   // Await AFTER responding — keeps Vercel function alive for full 300s
-  await enrichPromise;
+  await runEnrichment({ report, tier, auditReportId, hiddenReportId });
 }
