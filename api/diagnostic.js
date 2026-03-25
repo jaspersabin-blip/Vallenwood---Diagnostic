@@ -95,12 +95,12 @@ function normalizeAnswers(answers) {
     close_rate: answers["Close Rate (%)"] ?? null,
 
     category: answers["What category do you compete in?"] ?? null,
-    compared_to: answers["Who do customers compare you to most often?"] ?? null,
+    compared_to: answers["What brands, products, or services do prospective customers most often compare you to?"] ?? null,
 
     win_reason: answers["Why do you most often win deals?"] ?? null,
     lose_reason: answers["Why do you most often lose deals?"] ?? null,
     positioning_consistency:
-      answers["Do customers describe your company consistently?"] ?? null,
+      answers["Do current and prospective customers describe your offering consistently?"] ?? null,
 
     roi_repeatable: answers["Can you quantify ROI for most customers?"] ?? null,
     sales_lead: answers["Sales conversations primarily lead with:"] ?? null,
@@ -115,12 +115,13 @@ function normalizeAnswers(answers) {
 
     acquisition_channels:
       answers["What are your primary acquisition channels (select up to 3)"] ?? null,
-    cac_by_channel: answers["Do you know CAC by channel?"] ?? null,
+    cac_by_channel: answers["Do you know your Customer Acquisition Cost (CAC) by channel?"] ?? null,
 
     growth_status: answers["How would you rate your growth status?"] ?? null,
     marketing_measured_by: answers["Marketing is measured primarily by:"] ?? null,
-    attribution_trusted: answers["Is attribution trusted internally?"] ?? null,
+    attribution_trusted: answers["Do you have confidence in what your marketing is delivering (revenue, pipeline attribution)?"] ?? null,
     forecast_accuracy: answers["Are revenue forecasts accurate within 10%"] ?? null,
+    win_lose_other: answers["Win lose other"] ?? null,
   };
 }
 
@@ -1131,7 +1132,7 @@ export default async function handler(req, res) {
         disclaimer: { ai_assisted: false, limitations: ["This diagnostic requires a minimum set of inputs to produce a reliable score."] },
       };
       const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
-      const auditReportUrl = tier === "audit" ? await buildReportUrl(req, report, "audit") : null;
+      const auditReportUrl = await buildReportUrl(req, report, "audit");
       const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
       L.finish(200);
       return res.status(200).json({ report, summary: { score: null, band: "Insufficient data", primary_constraint: null, insufficient_data: true }, tier, exec_report_url: execReportUrl, audit_report_url: auditReportUrl, hidden_report_url: hiddenReportUrl, email_subject: content.subject, email_body_text: content.bodyText, email_body_html: null, client_email: clientEmail });
