@@ -1,6 +1,7 @@
 // api/enrich.js
 import { saveReport } from "../lib/reportStore.js";
 import { enrichAuditReport, enrichHiddenReport } from "../lib/enrichAudit.js";
+import { saveReport, getReport } from "../lib/reportStore.js";
 
 export const config = { maxDuration: 300 };
 
@@ -160,8 +161,14 @@ export default async function handler(req, res) {
   const token = req.headers["x-vw-token"];
   if (!token || token !== process.env.VW_TOKEN) return res.status(401).json({ error: "Unauthorized" });
 
-  const { report, tier } = req.body || {};
+  let { report, tier } = req.body || {};
   let { auditReportId, hiddenReportId } = req.body || {};
+
+  // If report not provided, load it from Redis using the hiddenReportId
+  if (!report && hiddenReportId) {
+    const stored = await getReport(extractId(hiddenReportId));
+    if (stored) report = stored.reportData || stored;
+  }
 
   // Accept either a bare ID or a full URL
   function extractId(val) {
