@@ -190,6 +190,37 @@ export default async function handler(req, res) {
     // Audit tier uses the same Redis record as hidden — just a different template.
     // The audit URL is the hidden URL with tier=audit, so reportId is the hidden report ID.
 
+    // For exec tier: pull AI-enriched fields from the hidden report record so slides 4 and 5
+    // can use enriched content. hidden_report_id is stored in the exec record at write time.
+    if (tier === "exec" && finalReportData.hidden_report_id) {
+      try {
+        const hiddenStored = await getReport(finalReportData.hidden_report_id);
+        if (hiddenStored) {
+          const h = hiddenStored.reportData || hiddenStored;
+          const ENRICH_FIELDS = [
+            "headline_diagnosis",
+            "the_operating_tension",
+            "what_this_means_in_practice",
+            "what_good_looks_like",
+            "constraint_chain",
+            "swot",
+            "root_cause_hypotheses",
+            "signal_analysis",
+          ];
+          const patch = {};
+          for (const field of ENRICH_FIELDS) {
+            const val = h[field];
+            if (val === undefined || val === null || val === "") continue;
+            if (Array.isArray(val) && val.length === 0) continue;
+            patch[field] = val;
+          }
+          finalReportData = { ...finalReportData, ...patch };
+        }
+      } catch (e) {
+        console.warn("[report] Could not load hidden report for exec enrichment:", e.message);
+      }
+    }
+
     // Select the correct HTML template for this tier
     let templatePath;
     if (tier === "audit") {

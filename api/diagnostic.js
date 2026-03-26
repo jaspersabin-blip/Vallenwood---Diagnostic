@@ -1018,14 +1018,14 @@ function buildHiddenReportData(report) {
   };
 }
 
-async function buildReportUrl(req, report, tier) {
+async function buildReportUrl(req, report, tier, extraFields = {}) {
   const baseUrl = getBaseUrl(req);
   const reportId = makeReportId();
   let reportData;
   if (tier === "audit") reportData = buildAuditReportData(report);
   else if (tier === "hidden") reportData = buildHiddenReportData(report);
   else reportData = buildExecReportData(report);
-  await saveReport(reportId, { tier, reportData });
+  await saveReport(reportId, { tier, reportData: { ...reportData, ...extraFields } });
   return `${baseUrl}/api/report?id=${reportId}&tier=${tier}`;
 }
 
@@ -1134,9 +1134,10 @@ export default async function handler(req, res) {
         deliverables: { email: { subject: content.subject, body_text: content.bodyText, body_html: null }, pdf: { title: "Brand-to-GTM OS Executive Summary", pdf_url: null, html_url: null, pages_estimate: 1 } },
         disclaimer: { ai_assisted: false, limitations: ["This diagnostic requires a minimum set of inputs to produce a reliable score."] },
       };
-      const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
-      const auditReportUrl = await buildReportUrl(req, report, "audit");
       const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
+      const auditReportUrl = await buildReportUrl(req, report, "audit");
+      const hiddenReportId = new URL(hiddenReportUrl).searchParams.get("id");
+      const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec", { hidden_report_id: hiddenReportId }) : null;
       L.finish(200);
       return res.status(200).json({ report, summary: { score: null, band: "Insufficient data", primary_constraint: null, insufficient_data: true }, tier, exec_report_url: execReportUrl, audit_report_url: auditReportUrl, hidden_report_url: hiddenReportUrl, email_subject: content.subject, email_body_text: content.bodyText, email_body_html: null, client_email: clientEmail });
     }
@@ -1187,8 +1188,10 @@ export default async function handler(req, res) {
     };
 
     // Build report URLs and save initial (unenriched) versions to Redis
-    const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec") : null;
+    // Build hidden first so we can store hidden_report_id in the exec record for enrichment lookup
     const hiddenReportUrl = await buildReportUrl(req, report, "hidden");
+    const hiddenReportId = hiddenReportUrl ? new URL(hiddenReportUrl).searchParams.get("id") : null;
+    const execReportUrl = tier === "exec" ? await buildReportUrl(req, report, "exec", { hidden_report_id: hiddenReportId }) : null;
     // Audit URL reuses hidden report data with audit template — no separate Redis write
     const auditReportUrl = hiddenReportUrl ? hiddenReportUrl.replace("tier=hidden", "tier=audit") : null;
 

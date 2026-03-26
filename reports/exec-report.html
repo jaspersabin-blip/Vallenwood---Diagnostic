@@ -283,6 +283,30 @@
       color: var(--text);
     }
 
+    /* ══ SLIDE 4: DIAGNOSIS — enriched callout ══ */
+    .ai-callout { background: rgba(138,166,119,0.08); border: 1px solid rgba(138,166,119,0.3); border-radius: 12px; padding: 18px 20px; flex-shrink: 0; }
+    .ai-callout-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-dark); margin-bottom: 8px; }
+    .ai-callout-text { font-family: 'Playfair Display', Georgia, serif; font-size: 16px; line-height: 1.55; color: var(--text); font-style: italic; }
+
+    .wtm-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .wtm-item { padding: 11px 16px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; display: flex; align-items: center; gap: 12px; }
+    .wtm-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-dark); flex-shrink: 0; }
+    .wtm-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+
+    /* ══ SLIDE 5: CONSTRAINT — enriched ══ */
+    .coi-block { border-left: 4px solid var(--warning); background: rgba(198,123,92,0.07); border-radius: 0 10px 10px 0; padding: 12px 16px; }
+    .coi-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warning); margin-bottom: 5px; }
+    .coi-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+
+    .signal-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .signal-item { padding: 12px 16px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+    .signal-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; }
+    .signal-body { font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 3px; }
+
+    .upgrade-cta { display: flex; align-items: center; gap: 20px; padding: 12px 0 0; border-top: 1px solid var(--line); flex-shrink: 0; margin-top: 10px; }
+    .upgrade-cta-text { font-size: 13px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; }
+    .upgrade-cta-btn { font-size: 13px; font-weight: 600; color: white; background: var(--accent-dark); padding: 8px 22px; border-radius: 20px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
+
     /* ══ SLIDE 6: UPGRADE BRIDGE ══ */
     .upgrade-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
 
@@ -421,8 +445,9 @@
       .upgrade-desc { color: var(--muted) !important; }
       .upgrade-feature-text { color: var(--text) !important; }
 
-      /* ── Downstream number circles → light ── */
-      .downstream-num { background: var(--bg) !important; color: var(--text) !important; border: 1px solid var(--line); }
+      /* ── Slide 4/5 elements ── */
+      .ai-callout { background: white !important; border-color: var(--line) !important; }
+      .upgrade-cta-btn { background: var(--accent-dark) !important; color: white !important; }
 
       /* ── Closing slide: dark → white ── */
       .slide-closing { background: white !important; }
@@ -612,15 +637,18 @@
       <div class="slide-rule"></div>
       <div class="diagnosis-layout">
         <div class="diag-left">
-          <p class="diag-headline" id="headline-diagnosis"></p>
+          <div class="ai-callout" id="ai-callout" style="display:none">
+            <div class="ai-callout-kicker">Diagnosis</div>
+            <p class="ai-callout-text" id="headline-diagnosis"></p>
+          </div>
           <div class="tension-card" id="tension-card" style="display:none">
             <div class="tension-kicker">The tension worth paying attention to</div>
             <p class="tension-body" id="operating-tension"></p>
           </div>
         </div>
         <div class="diag-right">
-          <div class="practice-kicker">Operating signals detected</div>
-          <div class="ot-items-wrap" id="ot-list"></div>
+          <div class="practice-kicker">What this means for your business</div>
+          <div class="wtm-items-wrap" id="wtm-list"></div>
         </div>
       </div>
     </div>
@@ -646,21 +674,28 @@
         <div class="constraint-main">
           <div>
             <div class="constraint-name" id="constraint-name">—</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.04em;">Primary constraint identified by your Revenue System Score</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.04em;">Primary constraint identified by your Revenue System Score</div>
           </div>
-          <p class="constraint-why" id="constraint-why"></p>
           <div class="constraint-score-row">
             <div>
               <span class="constraint-score-num" id="constraint-score">—</span>
               <span class="constraint-score-denom">/20</span>
             </div>
-            <div class="constraint-score-label">This pillar scores furthest below target, creating the most value leakage in your current system.</div>
+            <p class="constraint-why" id="constraint-why"></p>
+          </div>
+          <div class="coi-block" id="coi-block" style="display:none">
+            <div class="coi-kicker">Cost of inaction</div>
+            <p class="coi-text" id="coi-text"></p>
           </div>
         </div>
         <div class="constraint-right">
-          <div class="downstream-title">Observable signals in your business</div>
-          <div class="downstream-items-wrap" id="symptom-list"></div>
+          <div class="downstream-title">Where this shows up in the business</div>
+          <div class="signal-items-wrap" id="signal-list"></div>
         </div>
+      </div>
+      <div class="upgrade-cta">
+        <span class="upgrade-cta-text"><em>The full audit identifies the specific fix and a 30/60/90-day action plan to address it.</em></span>
+        <a href="https://buy.stripe.com/7sY6oI06Jdh0cMA5Nk0VO00" class="upgrade-cta-btn" target="_blank">See the full audit →</a>
       </div>
     </div>
   </div>
@@ -817,46 +852,61 @@ if (bmEl) {
   });
 })();
 
-// Diagnosis — with fallbacks for exec tier
+// Slide 4 — Diagnosis
 (function(){
-  const hd = d.headline_diagnosis||d.executive_headline||"";
-  const sub = d.executive_summary_paragraph||"";
-  const hdEl = document.getElementById("headline-diagnosis");
-  if(hdEl) hdEl.textContent = hd;
-  const subEl = document.getElementById("headline-sub");
-  if(subEl && sub && sub !== "This diagnostic scores your revenue system across five pillars. The goal is to identify the one constraint that, if addressed, will unlock the most commercial leverage.") subEl.textContent = sub;
+  // Headline diagnosis: use AI-enriched value if available, else pre-enrichment fallback
+  const hd = d.headline_diagnosis || d.executive_headline || "";
+  if (hd) {
+    set("headline-diagnosis", hd);
+    const callout = document.getElementById("ai-callout");
+    if (callout) callout.style.display = "";
+  }
 
+  // Operating tension
   const scoringTensions = d.scoring_operating_tensions || [];
   const tensionText = d.the_operating_tension || (scoringTensions.length ? scoringTensions[0]?.implication || scoringTensions[0]?.tension || "" : "");
-  if(tensionText){const tc=document.getElementById("tension-card");if(tc){tc.style.display="flex";set("operating-tension",tensionText);}}
+  if (tensionText) { const tc = document.getElementById("tension-card"); if (tc) { tc.style.display = "flex"; set("operating-tension", tensionText); } }
 
-  const otEl = document.getElementById("ot-list");
-  if (otEl) {
-    const otItems = scoringTensions.length ? scoringTensions : (d.diagnosis_implications || []).map(s => ({ tension: s }));
-    otItems.slice(0, 4).forEach(t => {
-      const div = document.createElement("div");
-      div.className = "ot-item";
-      const body = esc(t.tension || t.implication || "");
-      const impl = (t.tension && t.implication) ? `<div class="ot-item-impl">${esc(t.implication)}</div>` : "";
-      div.innerHTML = `<div class="ot-item-body">${body}</div>${impl}`;
-      otEl.appendChild(div);
+  // What this means in practice (AI-enriched array) — fall back to scoring tensions
+  const wtmEl = document.getElementById("wtm-list");
+  if (wtmEl) {
+    const wtmItems = d.what_this_means_in_practice?.length ? d.what_this_means_in_practice
+      : scoringTensions.map(t => t.implication || t.tension || "").filter(Boolean);
+    wtmItems.slice(0, 4).forEach(text => {
+      const div = document.createElement("div"); div.className = "wtm-item";
+      div.innerHTML = `<div class="wtm-dot"></div><span class="wtm-text">${esc(String(text))}</span>`;
+      wtmEl.appendChild(div);
     });
   }
 })();
 
-// Primary constraint
+// Slide 5 — Primary constraint
 set("constraint-name", constraint);
 set("constraint-why", d.primary_constraint_why_it_matters || "This pillar most constrains performance across brand clarity, pricing power, and go-to-market execution.");
 const constraintKey = Object.entries(pillarScores).sort((a,b)=>Number(a[1])-Number(b[1]))[0]?.[0];
 set("constraint-score", constraintKey ? String(pillarScores[constraintKey]) : "—");
 
-const symptoms = d.primary_constraint_symptoms?.length ? d.primary_constraint_symptoms : d.diagnosis_implications || [];
-const sympEl = document.getElementById("symptom-list");
-if (sympEl) {
-  symptoms.slice(0, 4).forEach((s, i) => {
-    const div = document.createElement("div"); div.className = "downstream-item";
-    div.innerHTML = `<div class="downstream-num">${i + 1}</div><span class="downstream-text">${esc(s)}</span>`;
-    sympEl.appendChild(div);
+// Cost of inaction — last item of constraint_chain is the downstream business impact
+const chain = Array.isArray(d.constraint_chain) ? d.constraint_chain : [];
+const coiText = chain.length ? chain[chain.length - 1]
+  : (d.scoring_operating_tensions?.[0]?.implication || "");
+if (coiText) {
+  const coiBlock = document.getElementById("coi-block");
+  if (coiBlock) coiBlock.style.display = "";
+  set("coi-text", coiText);
+}
+
+// Right column — operating tensions as signal cards (title + implication)
+const sigEl = document.getElementById("signal-list");
+if (sigEl) {
+  const tensions = (d.signal_analysis?.operating_tensions?.length ? d.signal_analysis.operating_tensions
+    : d.scoring_operating_tensions || []);
+  tensions.slice(0, 3).forEach(t => {
+    const div = document.createElement("div"); div.className = "signal-item";
+    const title = esc(t.tension || t.implication || "");
+    const body = (t.tension && t.implication) ? `<div class="signal-body">${esc(t.implication)}</div>` : "";
+    div.innerHTML = `<div class="signal-title">${title}</div>${body}`;
+    sigEl.appendChild(div);
   });
 }
 
