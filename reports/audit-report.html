@@ -1592,10 +1592,12 @@ function splitLabel(label) {
 }
 
 const company = d.company_name || "";
-const score = d.overall_score ?? 0;
-const constraint = d.primary_constraint_label || "—";
+const score = d.scoring?.overall_score ?? d.overall_score ?? 0;
+const band = d.scoring?.score_band ?? d.score_band ?? "";
+const constraint = d.scoring?.primary_constraint?.label ?? d.primary_constraint_label ?? "—";
 const date = d.report_date || "";
-const pillarScores = d.pillar_scores || {};
+const rawPillar = d.scoring?.pillar_scores ?? d.pillar_scores ?? {};
+const pillarScores = Array.isArray(rawPillar) ? Object.fromEntries(rawPillar.map(p => [p.key, p.score])) : rawPillar;
 const targetScores = d.target_pillar_scores || { positioning:16, value_architecture:15, pricing_packaging:15, gtm_focus:16, measurement:15 };
 const radarLabels = d.radar_labels || { positioning:"Positioning", value_architecture:"Value", pricing_packaging:"Pricing", gtm_focus:"GTM", measurement:"Measurement" };
 
@@ -1611,7 +1613,7 @@ set("cover-date", date);
 
 // ── Score slide
 set("big-score", score);
-set("score-band", d.score_band || "");
+set("score-band", band);
 // confidence removed from client reports
 
 // Benchmarks
