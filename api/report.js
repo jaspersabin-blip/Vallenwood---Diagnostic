@@ -187,6 +187,9 @@ export default async function handler(req, res) {
     const tier = requestedTier || stored.tier || "exec";
     let finalReportData = stored.reportData || stored;
 
+    // Audit tier uses the same Redis record as hidden — just a different template.
+    // The audit URL is the hidden URL with tier=audit, so reportId is the hidden report ID.
+
     // Select the correct HTML template for this tier
     let templatePath;
     if (tier === "audit") {

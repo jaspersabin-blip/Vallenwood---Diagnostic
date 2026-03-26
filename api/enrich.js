@@ -126,13 +126,7 @@ export async function runEnrichment({ report, tier, auditReportId, hiddenReportI
     if (enriched?.what_this_means_in_practice?.length && !report.narrative.what_this_means_in_practice?.length) report.narrative.what_this_means_in_practice = enriched.what_this_means_in_practice;
     if (enriched?.the_operating_tension && !report.narrative.the_operating_tension) report.narrative.the_operating_tension = enriched.the_operating_tension;
     if (enriched?.what_good_looks_like && !report.narrative.what_good_looks_like) report.narrative.what_good_looks_like = enriched.what_good_looks_like;
-    if (auditReportId) {
-      try {
-        const auditData = buildAuditReportData(report);
-        await saveReport(auditReportId, { tier: "audit", reportData: auditData });
-        console.log("[enrich] Audit report saved id=", auditReportId);
-      } catch (e) { console.error("[enrich] AUDIT SAVE FAILED:", e.message); }
-    }
+    // Audit report is served from hidden report data — no separate write needed
     console.log("[enrich] Starting hidden enrichment");
     const hiddenEnriched = await enrichHiddenReport(report);
     console.log("[enrich] Hidden complete — hypothesis:", !!hiddenEnriched?.constraint_hypothesis_summary, "questions:", !!(hiddenEnriched?.discovery_questions?.length));
