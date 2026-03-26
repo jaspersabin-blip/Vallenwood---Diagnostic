@@ -541,7 +541,7 @@ function renderInternalEmail({ osScored, clientName, clientCompany, clientEmail,
     </div>
   </div>`;
 
-  const bodyText = `New Diagnostic Submission — ${clientCompany || "Unknown"}\n\nContact: ${clientName || ""} (${clientEmail || ""})\nScore: ${osScored.brand_to_gtm_os_score}/100 — ${osScored.interpretation_band}\nPrimary Constraint: ${niceConstraint}\n\nClient report: ${auditReportUrl || ""}\nInternal brief: ${hiddenReportUrl || ""}\n\n— Vallenwood Consulting`;
+  const bodyText = `New Diagnostic Submission — ${clientCompany || "Unknown"}\n\nContact: ${clientName || ""} (${clientEmail || ""})\nScore: ${osScored.brand_to_gtm_os_score}/100 — ${osScored.interpretation_band}\nPrimary Constraint: ${niceConstraint}\n\nClient report: ${execReportUrl || ""}\nAudit report: ${auditReportUrl || ""}\nInternal brief: ${hiddenReportUrl || ""}\n\n— Vallenwood Consulting`;
 
   return { subject, bodyText, bodyHtml };
 }
@@ -1197,7 +1197,7 @@ export default async function handler(req, res) {
       : renderExecSummary({ osScored, clientName, clientCompany, execReportUrl });
     L.step("render", tRender);
 
-    const internalContent = renderInternalEmail({ osScored, clientName, clientCompany, clientEmail, clientWebsite, auditReportUrl, hiddenReportUrl, answers });
+    const internalContent = renderInternalEmail({ osScored, clientName, clientCompany, clientEmail, clientWebsite, execReportUrl, auditReportUrl, hiddenReportUrl, answers });
 
     report.deliverables.email = { subject: content.subject, body_text: content.bodyText, body_html: content.bodyHtml || null };
     report.deliverables.internal_email = { subject: internalContent.subject, body_text: internalContent.bodyText, body_html: internalContent.bodyHtml || null };
