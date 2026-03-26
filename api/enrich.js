@@ -43,7 +43,7 @@ function buildAuditReportData(report) {
   return {
     company_name: report?.client?.company_name || report?.company_name || "Company", contact_name: report?.client?.contact_name || "Client", website: report?.client?.website || "",
     report_date: report?.generated_at ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" }) : "",
-    overall_score: report?.scoring?.overall_score ?? 0, score_band: report?.scoring?.band || "", confidence: report?.scoring?.confidence || "Moderate",
+    overall_score: report?.scoring?.overall_score ?? 0, score_band: report?.scoring?.score_band || report?.scoring?.band || "", confidence: report?.scoring?.confidence || "Moderate",
     primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
     headline_diagnosis: report?.headline_diagnosis || narr?.headline_diagnosis || es?.headline || "",
     executive_summary_paragraph: es?.summary_paragraph || "", executive_headline: es?.headline || "",
@@ -74,11 +74,11 @@ function buildHiddenReportData(report) {
   const rawChannels = na?.acquisition_channels;
   const primaryChannels = Array.isArray(rawChannels) ? rawChannels : typeof rawChannels === "string" ? rawChannels.split(",").map(s => s.trim()).filter(Boolean) : [];
   return {
-    company_name: report?.client?.company_name || "Company", contact_name: report?.client?.contact_name || "Client",
+    company_name: report?.client?.company_name || report?.company_name || "Company", contact_name: report?.client?.contact_name || report?.contact_name || "Client",
     report_date: report?.generated_at ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" }) : "",
     diagnostic_snapshot: { annual_revenue: na?.annual_revenue || null, acv: na?.acv || null, sales_cycle: na?.sales_cycle || null, close_rate: na?.close_rate || null, primary_channels: primaryChannels, measurement_model: na?.marketing_measured_by || null, growth_status: na?.growth_status || null },
     benchmark_context: { average_saas_company: 62, top_quartile: 78, elite_gtm_system: 88 },
-    scoring: { overall_score: report?.scoring?.overall_score || 0, score_band: report?.scoring?.band || "", confidence: report?.scoring?.confidence || "Moderate", pillar_scores: pillarScores, target_pillar_scores: target, radar_labels: radar, pillar_ranked: ranked.map(p => ({ key: p.key, label: p.label, score: p.score })), primary_constraint: primary ? { key: primary.key, label: primary.label, score: primary.score } : null },
+    scoring: { overall_score: report?.scoring?.overall_score || 0, score_band: report?.scoring?.band || "", confidence: report?.scoring?.confidence || "Moderate", pillar_scores: pillarScores, target_pillar_scores: target, radar_labels: radar, pillar_ranked: ranked.map(p => ({ key: p.key, label: prettyPillar(p.key), score: p.score })), primary_constraint: primary ? { key: primary.key, label: prettyPillar(primary.key), score: primary.score } : null },
     signal_analysis: { operating_tensions: report?.scoring?.operating_tensions || [], strength_signals: [], constraint_signals: [], risk_signals: (report?.scoring?.operating_tensions || []).slice(0, 3).map(c => c.implication), opportunity_signals: [] },
     interpretation: { executive_readout: "Initial diagnostic suggests the primary leverage point lies in improving the constraint most likely to suppress pricing power, differentiation, or GTM efficiency.", root_cause_hypotheses: (report?.scoring?.operating_tensions || []).slice(0, 3).map(c => c.implication) },
     call_briefing: report?.call_briefing || { opening_summary: "Begin by confirming where the commercial motion appears stronger than the proof, pricing, or measurement systems supporting it.", top_questions_to_ask: ["How do prospects typically evaluate ROI before purchasing?", "Where in the sales process do pricing objections appear?", "Which customer proof points most often move deals forward?"], areas_to_validate_live: ["Whether pricing tiers reflect actual customer value segments", "Whether sales messaging consistently leads with outcomes", "Whether attribution trust matches leadership expectations"] },
