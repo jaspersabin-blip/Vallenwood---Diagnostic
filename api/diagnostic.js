@@ -468,7 +468,7 @@ function renderAudit({ osScored, clientName, clientCompany, auditReportUrl }) {
   return { subject, bodyText, bodyHtml };
 }
 
-function renderInternalEmail({ osScored, clientName, clientCompany, clientEmail, clientWebsite, auditReportUrl, hiddenReportUrl, answers }) {
+function renderInternalEmail({ osScored, clientName, clientCompany, clientEmail, clientWebsite, execReportUrl, auditReportUrl, hiddenReportUrl, answers }) {
   const niceConstraint = prettyPillar(osScored.primary_constraint_key);
   const subject = `New Diagnostic — ${clientCompany || "Unknown Company"} · ${niceConstraint}`;
   const na = normalizeAnswers(answers || {});
@@ -531,7 +531,7 @@ function renderInternalEmail({ osScored, clientName, clientCompany, clientEmail,
         </div>
         <div style="border:1px solid #e6dfcf;border-radius:14px;padding:16px;background:#fff;margin-bottom:20px;">
           <p style="margin:0 0 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6f6f69;">Report Links</p>
-          <p style="margin:0 0 8px;font-size:13px;"><strong>Client report:</strong> <a href="${auditReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Audit Report →</a></p>
+          <p style="margin:0 0 8px;font-size:13px;"><strong>Client report:</strong> <a href="${execReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Exec Report →</a></p>
           <p style="margin:0 0 8px;font-size:13px;"><strong>Audit report:</strong> <a href="${auditReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Audit Report →</a></p>
           <p style="margin:0;font-size:13px;"><strong>Internal brief:</strong> <a href="${hiddenReportUrl || ""}" style="color:#6f875f;text-decoration:none;font-weight:600;">View Client Briefing →</a></p>
         </div>
