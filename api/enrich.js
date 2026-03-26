@@ -43,7 +43,7 @@ function buildAuditReportData(report) {
   return {
     company_name: report?.client?.company_name || report?.company_name || "Company", contact_name: report?.client?.contact_name || "Client", website: report?.client?.website || "",
     report_date: report?.generated_at ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" }) : "",
-    overall_score: report?.scoring?.overall_score ?? 0, score_band: report?.scoring?.score_band || report?.scoring?.band || "", confidence: report?.scoring?.confidence || "Moderate",
+    overall_score: report?.scoring?.overall_score ?? 0, score_band: report?.scoring?.score_band || report?.scoring?.band || report?.scoring?.interpretation_band || report?.score_band || "", confidence: report?.scoring?.confidence || "Moderate",
     primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
     headline_diagnosis: report?.headline_diagnosis || narr?.headline_diagnosis || es?.headline || "",
     executive_summary_paragraph: es?.summary_paragraph || "", executive_headline: es?.headline || "",
@@ -100,7 +100,7 @@ function buildHiddenReportData(report) {
     discovery_questions: report?.discovery_questions || [],
     conversation_strategy: report?.conversation_strategy || [],
     engagement_opportunities: report?.engagement_opportunities || [],
-    pillar_scores: pillarScores, target_pillar_scores: target, radar_labels: radar, primary_constraint_label: primary?.label || "",
+    pillar_scores: pillarScores, target_pillar_scores: target, radar_labels: radar, primary_constraint_label: prettyPillar(primary?.key) || "",
   };
 }
 
