@@ -177,10 +177,10 @@
     .tension-body { font-size: 13px; line-height: 1.7; color: var(--text); }
     .diag-right { display: flex; flex-direction: column; }
     .practice-kicker { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; flex-shrink: 0; }
-    .practice-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-    .practice-item { display: flex; gap: 14px; align-items: center; padding: 0 18px; background: white; border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; }
-    .practice-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-dark); flex-shrink: 0; }
-    .practice-text { font-size: 14px; line-height: 1.55; color: var(--text); }
+    .ot-items-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .ot-item { padding: 12px 16px; background: white; border: 1px solid var(--line); border-left: 3px solid var(--warning); border-radius: 0 10px 10px 0; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+    .ot-item-body { font-size: 13px; line-height: 1.5; color: var(--text); font-weight: 500; }
+    .ot-item-impl { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
 
     /* ══ SLIDE 5: PRIMARY CONSTRAINT ══ */
     .constraint-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
@@ -584,8 +584,8 @@
           </div>
         </div>
         <div class="diag-right">
-          <div class="practice-kicker">What this looks like in your business</div>
-          <div class="practice-items-wrap" id="practice-list"></div>
+          <div class="practice-kicker">Operating signals detected</div>
+          <div class="ot-items-wrap" id="ot-list"></div>
         </div>
       </div>
     </div>
@@ -605,7 +605,7 @@
       </div>
     </div>
     <div class="slide-body">
-      <div class="slide-title">The single highest-leverage constraint in your system</div>
+      <div class="slide-title">Why this constraint is holding your system back</div>
       <div class="slide-rule"></div>
       <div class="constraint-layout">
         <div class="constraint-main">
@@ -623,8 +623,8 @@
           </div>
         </div>
         <div class="constraint-right">
-          <div class="downstream-title">What this is likely costing you</div>
-          <div class="downstream-items-wrap" id="downstream-list"></div>
+          <div class="downstream-title">Observable signals in your business</div>
+          <div class="downstream-items-wrap" id="symptom-list"></div>
         </div>
       </div>
     </div>
@@ -791,14 +791,22 @@ if (bmEl) {
   const subEl = document.getElementById("headline-sub");
   if(subEl && sub && sub !== "This diagnostic scores your revenue system across five pillars. The goal is to identify the one constraint that, if addressed, will unlock the most commercial leverage.") subEl.textContent = sub;
 
-  const tensions = d.operating_tensions || [];
-  const tensionText = d.the_operating_tension || (tensions.length ? tensions.map(t => t.implication || t.tension).filter(Boolean).join(" ") : "");
+  const scoringTensions = d.scoring_operating_tensions || [];
+  const tensionText = d.the_operating_tension || (scoringTensions.length ? scoringTensions[0]?.implication || scoringTensions[0]?.tension || "" : "");
   if(tensionText){const tc=document.getElementById("tension-card");if(tc){tc.style.display="flex";set("operating-tension",tensionText);}}
 
-  const items=(d.what_this_means_in_practice?.length?d.what_this_means_in_practice:d.diagnosis_implications?.length?d.diagnosis_implications:tensions.map(t=>t.implication).filter(Boolean));
-  const allItems = [...new Set([...items, ...(d.risks||[])])].slice(0,5);
-  const pl=document.getElementById("practice-list");
-  if(pl){allItems.forEach(item=>{const div=document.createElement("div");div.className="practice-item";div.innerHTML=`<div class="practice-dot"></div><span class="practice-text">${esc(item)}</span>`;pl.appendChild(div);});}
+  const otEl = document.getElementById("ot-list");
+  if (otEl) {
+    const otItems = scoringTensions.length ? scoringTensions : (d.diagnosis_implications || []).map(s => ({ tension: s }));
+    otItems.slice(0, 4).forEach(t => {
+      const div = document.createElement("div");
+      div.className = "ot-item";
+      const body = esc(t.tension || t.implication || "");
+      const impl = (t.tension && t.implication) ? `<div class="ot-item-impl">${esc(t.implication)}</div>` : "";
+      div.innerHTML = `<div class="ot-item-body">${body}</div>${impl}`;
+      otEl.appendChild(div);
+    });
+  }
 })();
 
 // Primary constraint
@@ -807,13 +815,13 @@ set("constraint-why", d.primary_constraint_why_it_matters || "This pillar most c
 const constraintKey = Object.entries(pillarScores).sort((a,b)=>Number(a[1])-Number(b[1]))[0]?.[0];
 set("constraint-score", constraintKey ? String(pillarScores[constraintKey]) : "—");
 
-const downstream = d.scoring?.primary_constraint?.downstream_impacts || ["Lower win rates in competitive deals","Discounting pressure and margin compression","Inconsistent messaging and weak differentiation"];
-const dlEl = document.getElementById("downstream-list");
-if (dlEl) {
-  downstream.slice(0,3).forEach((item,i)=>{
-    const div=document.createElement("div");div.className="downstream-item";
-    div.innerHTML=`<div class="downstream-num">${i+1}</div><span class="downstream-text">${esc(item)}</span>`;
-    dlEl.appendChild(div);
+const symptoms = d.primary_constraint_symptoms?.length ? d.primary_constraint_symptoms : d.diagnosis_implications || [];
+const sympEl = document.getElementById("symptom-list");
+if (sympEl) {
+  symptoms.slice(0, 4).forEach((s, i) => {
+    const div = document.createElement("div"); div.className = "downstream-item";
+    div.innerHTML = `<div class="downstream-num">${i + 1}</div><span class="downstream-text">${esc(s)}</span>`;
+    sympEl.appendChild(div);
   });
 }
 

@@ -846,6 +846,8 @@ function buildExecReportData(report) {
     the_operating_tension: report?.the_operating_tension || report?.narrative?.the_operating_tension || "",
     upgrade_bridge: report?.narrative?.upgrade_bridge || [],
     diagnosis_implications: report?.scoring?.primary_constraint?.downstream_impacts?.slice(0, 3) || [],
+    primary_constraint_symptoms: report?.scoring?.primary_constraint?.symptoms || [],
+    scoring_operating_tensions: (report?.scoring?.operating_tensions || []).slice(0, 4),
     risks: report?.narrative?.operating_tensions?.slice(0, 3).map((t) => t.tension) || report?.scoring?.legacy?.flags?.slice(0, 3) || [],
     operating_tensions: report?.narrative?.operating_tensions?.slice(0, 3) || [],
     benchmark_context: { average_saas_company: 62, top_quartile: 78, elite_gtm_system: 85 },
