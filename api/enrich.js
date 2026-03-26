@@ -41,7 +41,7 @@ function buildAuditReportData(report) {
   const narr = report?.narrative || {};
   const es = narr?.executive_summary || {};
   return {
-    company_name: report?.client?.company_name || "Company", contact_name: report?.client?.contact_name || "Client", website: report?.client?.website || "",
+    company_name: report?.client?.company_name || report?.company_name || "Company", contact_name: report?.client?.contact_name || "Client", website: report?.client?.website || "",
     report_date: report?.generated_at ? new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long" }) : "",
     overall_score: report?.scoring?.overall_score ?? 0, score_band: report?.scoring?.band || "", confidence: report?.scoring?.confidence || "Moderate",
     primary_constraint_label: report?.scoring?.primary_constraint?.label || "",
@@ -60,10 +60,13 @@ function buildAuditReportData(report) {
 }
 
 function buildHiddenReportData(report) {
-  const pa = Array.isArray(report?.scoring?.pillar_scores) ? report.scoring.pillar_scores : [];
+  // pillar_scores may be an array [{key,score}] or already an object {key:score}
+  const rawPillar = report?.scoring?.pillar_scores ?? {};
+  const pillarScores = Array.isArray(rawPillar)
+    ? Object.fromEntries(rawPillar.map(p => [p.key, p.score]))
+    : rawPillar;
+  const pa = Object.entries(pillarScores).map(([key, score]) => ({ key, score }));
   const ranked = [...pa].sort((a, b) => a.score - b.score);
-  const pillarScores = {};
-  pa.forEach(p => { pillarScores[p.key] = p.score; });
   const primary = ranked[0] || null;
   const na = report?.inputs?.normalized_answers || {};
   const target = getDynamicTargetPillarScores(na, "hidden");
